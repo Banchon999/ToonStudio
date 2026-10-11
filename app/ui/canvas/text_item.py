@@ -335,6 +335,9 @@ class TextBlockItem(QGraphicsTextItem):
         effective_family = font_family.strip() if isinstance(font_family, str) and font_family.strip() else QApplication.font().family()
         font = self._with_letter_spacing(QFont(effective_family, font_size))
         self.update_text_format('font', font)
+        if self.shadow_enabled:
+            # Which engine draws the shadow depends on the family (skia_paint.can_paint).
+            self.apply_shadow()
 
     def _with_letter_spacing(self, font: QFont) -> QFont:
         """Stamp the current letter spacing onto a font about to be applied.
@@ -422,7 +425,7 @@ class TextBlockItem(QGraphicsTextItem):
         # Skia bakes the shadow into the raster it hands back, so attaching
         # Qt's effect as well renders it twice — darker and double-offset.
         # Re-applied on every engine switch (see controller.apply_text_engine).
-        if not self.shadow_enabled or text_engine.paints_with_skia():
+        if not self.shadow_enabled or skia_paint.can_paint(self):
             self.setGraphicsEffect(None)
             return
 
@@ -1175,7 +1178,7 @@ class TextBlockItem(QGraphicsTextItem):
         # block flips back to Skia the moment focus leaves it.
         if (
             not self.editing_mode
-            and text_engine.paints_with_skia()
+            and skia_paint.can_paint(self)
             and skia_paint.paint_item(painter, self)
         ):
             if self.selected:
