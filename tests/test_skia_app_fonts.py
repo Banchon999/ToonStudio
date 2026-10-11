@@ -9,12 +9,13 @@ the box by hand. Found while drawing the README's demo page in the bundled
 IBM Plex Sans Thai; the same happens with a font imported in Settings.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from app.ui.canvas.save_renderer import build_text_item
-from app.ui.fonts import load_ui_fonts
 from core import text_engine, text_measure
 from core.skia_text import SkiaTextMeasurer, has_family, is_available
 from core.text_measure import Alignment, LayoutDirection, TextStyle
@@ -23,16 +24,26 @@ from core.text_style import build_text_item_state
 pytestmark = pytest.mark.skipif(not is_available(), reason="skia-python not usable here")
 
 APP_FONT = "IBM Plex Sans Thai"      # bundled in resources/fonts/ui, registered with Qt only
+UI_FONT_DIR = Path(__file__).resolve().parent.parent / "resources" / "fonts" / "ui"
 TEXT = "เรากำลังจะไปไหน\nกันเหรอ จุน?"
 
 
 @pytest.fixture
 def app_font(qapp):
-    if APP_FONT not in load_ui_fonts():
-        pytest.skip("bundled UI font did not load")
+    """The bundled face, registered with Qt for this test only.
+
+    Registered and removed here rather than through `load_ui_fonts`, which
+    keeps it for the process: once Qt has it, Qt's fallback for Thai in a
+    blank family picks it while Skia's cannot, and `test_skia_measurer`'s
+    Thai case (run right after this file) measured 58 px apart on CI.
+    """
     if has_family(APP_FONT):
         pytest.skip("this machine has the font installed system-wide, so Skia sees it")
-    return APP_FONT
+    font_id = QtGui.QFontDatabase.addApplicationFont(str(UI_FONT_DIR / "IBMPlexSansThai-Regular.ttf"))
+    if font_id == -1 or APP_FONT not in QtGui.QFontDatabase.applicationFontFamilies(font_id):
+        pytest.skip("bundled UI font did not load")
+    yield APP_FONT
+    QtGui.QFontDatabase.removeApplicationFont(font_id)
 
 
 @pytest.fixture
