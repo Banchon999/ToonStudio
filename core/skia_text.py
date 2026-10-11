@@ -57,6 +57,7 @@ inventing a second convention.
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import logging
 import os
@@ -438,6 +439,38 @@ def apply_base_direction(text: str, style: TextStyle) -> str:
     return opening + text + closing
 
 
+#: Families Skia's own font manager can find, by name: see `has_family`.
+_family_known: dict[str, bool] = {}
+_family_lock = threading.Lock()
+
+
+def has_family(font_family: str) -> bool:
+    """Can Skia draw `font_family` itself, rather than a substitute?
+
+    The app registers its bundled UI face and every font a user imports
+    (Settings, `<user data>/fonts`) with Qt only — `QFontDatabase.
+    addApplicationFont` — and Skia's font manager reads the system's fonts,
+    so it never sees them and lays the text out in a fallback face. The two
+    engines then disagree about every width: the text box is sized by Qt and
+    the Skia raster is wider, so the last letters of each line were drawn
+    past the box and clipped — "ไปไหน" came out "ไปไห" — until the box was
+    widened by hand. skia-python exposes no way to add font files beside the
+    system's (FontCollection has no asset manager in this binding), so text in
+    such a family is measured and painted by Qt instead, which uses one font
+    for both. A blank family is the measurer's own default and always known.
+    """
+    name = font_family.strip() if isinstance(font_family, str) else ""
+    if not name or skia is None:
+        return True
+    with _family_lock:
+        known = _family_known.get(name.casefold())
+    if known is None:
+        known = skia.FontMgr().matchFamilyStyle(name, skia.FontStyle()) is not None
+        with _family_lock:
+            _family_known[name.casefold()] = known
+    return known
+
+
 def _font_style(style: TextStyle):
     return skia.FontStyle(
         skia.FontStyle.kBold_Weight if style.bold else skia.FontStyle.kNormal_Weight,
@@ -542,9 +575,31 @@ class SkiaTextMeasurer(TextMeasurer):
     # -- the interface -----------------------------------------------------
 
     def measure(self, text: str, style: TextStyle) -> tuple[float, float]:
+        if not has_family(style.font_family):
+            # Qt will paint this family (see has_family), so Qt measures it:
+            # a box fitted to a substitute face's widths clips the real one.
+            fallback = self._qt_measurer()
+            if fallback is not None:
+                return fallback.measure(text, style)
         if style.vertical:
             return self._measure_vertical(text, style)
         return self._measure_horizontal(text, style)
+
+    def _qt_measurer(self):
+        """The Qt measurer, when Qt is there to be asked; None headless."""
+        cached = getattr(self, "_qt", False)
+        if cached is not False:
+            return cached
+        measurer = None
+        try:
+            if importlib.util.find_spec("PySide6") is not None:
+                from app.ui.canvas.text.qt_measurer import QtTextMeasurer
+
+                measurer = QtTextMeasurer()
+        except Exception:
+            measurer = None
+        self._qt = measurer
+        return measurer
 
     def _measure_horizontal(self, text: str, style: TextStyle) -> tuple[float, float]:
         width, natural_height = self._natural_size(text, style)

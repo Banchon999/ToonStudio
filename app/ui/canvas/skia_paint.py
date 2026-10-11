@@ -24,7 +24,7 @@ from PySide6 import QtCore
 from PySide6.QtCore import QRectF
 from PySide6.QtGui import QImage, QPainter
 
-from core import render_guard
+from core import render_guard, text_engine
 from core.enums import Alignment, LayoutDirection
 from core.skia_render import (
     CharRun,
@@ -35,6 +35,7 @@ from core.skia_render import (
     SurfaceTooLarge,
     TextRenderSpec,
 )
+from core.skia_text import has_family
 from core.text_measure import TextStyle
 
 logger = logging.getLogger(__name__)
@@ -214,6 +215,23 @@ def _alignment(item) -> Alignment:
         return Alignment(_enum_int(item.alignment, Alignment.Center))
     except ValueError:
         return Alignment.Center
+
+
+def can_paint(item) -> bool:
+    """Whether Skia should draw `item`: the engine is on and Skia has every
+    font the item uses. A family only Qt knows (one the app registered from a
+    file) is left to Qt, which measures and paints it with the same face —
+    see `core.skia_text.has_family` for what went wrong otherwise."""
+    if not text_engine.paints_with_skia():
+        return False
+    families = {getattr(item, "font_family", "") or ""}
+    try:
+        families.add(item.document().defaultFont().family())
+        text = _plain_text(item)
+        families.update(run.font_family for run in _char_runs(item, text) if run.font_family)
+    except Exception:
+        pass
+    return all(has_family(family) for family in families)
 
 
 def paint_item(painter: QPainter, item) -> bool:
