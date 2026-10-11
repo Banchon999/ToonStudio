@@ -1,186 +1,182 @@
-# Comic Translate
-English | [한국어](docs/README_ko.md) | [Français](docs/README_fr.md) | [简体中文](docs/README_zh-CN.md)
+<div align="center">
 
-<img src="https://i.imgur.com/QUVK6mK.png">
+<img src="resources/icons/icon.png" width="96" alt="Toon Studio">
 
-## Intro
-Many Automatic Manga Translators exist. Very few properly support comics of other kinds in other languages. 
-This project was created to utilize the ability of State of the Art (SOTA) Large Language Models (LLMs) like GPT and translate comics from all over the world. 
+# Toon Studio
 
-Currently, it supports translating comics from the following languages: English, Korean, Japanese, French, Simplified Chinese, Traditional Chinese, Russian, German, Dutch, Spanish and Italian. It can translate to the above mentioned and more. 
+**แปลมังงะ มันฮวา เว็บตูน และคอมิกส์ ด้วย AI — แล้วแก้ต่อได้เหมือนโปรแกรมแต่งภาพ**<br>
+Translate manga, manhwa, webtoons and comics with AI — then finish them in a real editor.
 
-- [The State of Machine Translation](#the-state-of-machine-translation)
-- [Preview](#comic-samples)
-- [Getting Started](#installation)
-    - [Installation](#installation)
-        - [Download](#download)
-        - [From Source](#from-source)
-    - [Usage](#usage)
-        - [Tips](#tips)
+[![Latest release](https://img.shields.io/github/v/release/Banchon999/ToonStudio?label=release)](https://github.com/Banchon999/ToonStudio/releases/latest)
+[![Tests](https://github.com/Banchon999/ToonStudio/actions/workflows/test.yml/badge.svg)](https://github.com/Banchon999/ToonStudio/actions/workflows/test.yml)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0--or--later-blue)](LICENSE)
 
-- [How it works](#how-it-works)
-    - [Text Detection](#text-detection)
-    - [OCR](#OCR)
-    - [Inpainting](#inpainting)
-    - [Translation](#translation)
-    - [Text Rendering](#text-rendering)
+<img src="docs/images/before-after.jpg" width="900" alt="ต้นฉบับภาษาอังกฤษ (ซ้าย) และผลแปลไทยของ Toon Studio (ขวา)">
 
-- [Acknowledgements](#acknowledgements)
+<sub>หน้าเดโมที่วาดขึ้นเอง แปลจริงด้วย Toon Studio: ตรวจจับ → OCR → แปล → ลบข้อความ → วางข้อความไทย · A demo page drawn for this README, translated end to end by the app.</sub>
 
-## The State of Machine Translation
-For a couple dozen languages, the best Machine Translator is not Google Translate, Papago or even DeepL, but a SOTA LLM like GPT-4, and by far. 
-This is very apparent for distant language pairs (Korean<->English, Japanese<->English etc) where other translators still often devolve into gibberish.
-Excerpt from "The Walking Practice"(보행 연습) by Dolki Min(돌기민)
-![Model](https://i.imgur.com/72jvLBa.png)
+</div>
 
-## Comic Samples
-GPT-4 as Translator.
-Note: Some of these also have Official English Translations
+---
 
-[The Wretched of the High Seas](https://www.drakoo.fr/bd/drakoo/les_damnes_du_grand_large/les_damnes_du_grand_large_-_histoire_complete/9782382330128)
+- [ทำอะไรได้ / What it does](#ทำอะไรได้--what-it-does)
+- [จุดเด่น / Highlights](#จุดเด่น--highlights)
+- [ภาพหน้าจอ / Screenshots](#ภาพหน้าจอ--screenshots)
+- [ดาวน์โหลด / Download](#ดาวน์โหลด--download)
+- [เริ่มใช้งาน / Quick start](#เริ่มใช้งาน--quick-start)
+- [เอนจินและภาษา / Engines and languages](#เอนจินและภาษา--engines-and-languages)
+- [รันจากซอร์ส / Run from source](#รันจากซอร์ส--run-from-source)
+- [เคล็ดลับและคีย์ลัด / Tips and shortcuts](#เคล็ดลับและคีย์ลัด--tips-and-shortcuts)
+- [สัญญาอนุญาตและเครดิต / License and credits](#สัญญาอนุญาตและเครดิต--license-and-credits)
 
-<img src="https://i.imgur.com/75HwK4r.jpg" width="49%"> <img src="https://i.imgur.com/3oRt5fX.jpg" width="49%">
+## ทำอะไรได้ / What it does
 
-[Journey to the West](https://ac.qq.com/Comic/comicInfo/id/541812)
+Toon Studio ทำงานเป็นขั้นตอนเดียวกับคนแปลการ์ตูน: **ตรวจจับ** บอลลูนและข้อความ → **อ่าน** ข้อความ (OCR) → **แปล** ด้วย AI ที่เห็นทั้งหน้า → **ลบ** ข้อความเดิมออกจากภาพ → **วาง** คำแปลกลับลงในบอลลูน
+<br>It follows a translator's own workflow: **detect** bubbles and text → **read** them (OCR) → **translate** with an AI that sees the whole page → **clean** the original lettering → **render** the translation back into each bubble.
 
-<img src="https://i.imgur.com/zk7yiKe.jpg" width="49%"> <img src="https://i.imgur.com/4ycSi8j.jpg" width="49%">
+- **อัตโนมัติ** — กด "แปลทั้งหมด" แล้วปล่อยให้ทำทั้งเล่ม · **Automatic**: press *Translate All* and let it run through every page.
+- **ทีละขั้น** — กดทีละปุ่ม ตรวจและแก้ผลแต่ละขั้นก่อนไปต่อ · **Step by step**: run one stage at a time and correct each before the next.
 
-[The Wormworld Saga](https://wormworldsaga.com/index.php)
+ผลทุกอย่างแก้ได้ภายหลัง: กล่องข้อความ ฟอนต์ เลเยอร์ และส่วนที่ลบ · Everything stays editable afterwards — text boxes, fonts, layers and every cleaned patch.
 
-<img src="https://i.imgur.com/cVVGVXp.jpg" width="49%"> <img src="https://i.imgur.com/SSl81sb.jpg" width="49%">
+## จุดเด่น / Highlights
 
-[Frieren: Beyond Journey's End](https://renta.papy.co.jp/renta/sc/frm/item/220775/title/742932/)
+**แปลไทยที่ถูกเพศ / Thai that knows who is speaking**
+- AI บอกว่าใครพูดแต่ละบอลลูนและเพศอะไร ใช้คุม ครับ/ค่ะ, ผม/ดิฉัน, เขา/เธอ และคำเรียกอย่าง คุณชาย/คุณหนู · Translating into Thai, the AI reports each bubble's speaker and gender and follows the rules for particles, pronouns and forms of address.
+- เตือนเมื่อบอลลูนใช้ ครับ กับ ค่ะ ปนกัน หรือไม่ตรงกับเพศคนพูด — เตือนเท่านั้น ไม่แก้ให้เอง · Warns, never rewrites, when a bubble mixes particles or contradicts its speaker.
 
-<img src="https://i.imgur.com/ANGHVhG.png" width="49%"> <img src="https://i.imgur.com/9zSh1DW.png" width="49%">
+**คลังคำศัพท์ต่อเรื่อง / A glossary per series**
+- ชื่อตัวละคร สถานที่ สกิล ถูกส่งให้ AI ทุกครั้งที่ปรากฏในหน้า จับได้แม้ OCR เว้นวรรคผิดหรืออ่านผิดหนึ่งตัวอักษร · Names, places and skills are sent whenever they appear, even when OCR splits a name or misreads one letter.
+- เตือนเมื่อคำแปลไม่ได้ใช้คำในคลัง, เตือนคำที่ซ้อนกันแล้วแปลขัดกัน, สกัดคำศัพท์ใหม่จากหน้าที่อ่านแล้วด้วย AI · Warns when a translation ignores the glossary, flags overlapping terms that disagree, and can extract new terms from what was read.
 
-[Days of Sand](https://9ekunst.nl/2021/05/20/nieuw-album-van-aimee-de-jongh-is-benauwend-als-een-zandstorm/)
+**เว็บตูน / Webtoons**
+- แปลทั้งแถบในคำขอเดียว AI เห็นบทสนทนาทั้งตอน — ทดสอบกับ AI จริง ระบุคนพูดถูก 14/14 (เดิมแปลทีละช่วงได้ 6–8) · A whole strip is translated in one request, so the model follows the conversation: 14 of 14 speakers right on a test strip, against 6–8 chunk by chunk.
+- **หน้าต่อภาพ (Stitch)** ต่อไฟล์ที่ถูกตัดมาแบบสุ่มเป็นแถบเดียว แล้วตัดใหม่ตรงช่องว่าง ไม่ผ่ากลางบอลลูน · The **Stitch** page joins slices cut wherever the uploader cut them and re-cuts the strip at blank rows, never through a bubble.
 
-<img src="https://i.imgur.com/m7PDiXN.jpg" width="49%"> <img src="https://i.imgur.com/eUwTGnn.jpg" width="49%">
+**ตัวแก้ไขแบบโปรแกรมแต่งภาพ / A real editor**
+- เลเยอร์ (ซ่อน/ล็อก/ความทึบ), เอฟเฟกต์ข้อความ (เส้นขอบหลายชั้น เงา ไล่สี โค้ง/warp มุมมอง), สไตล์สำเร็จรูป · Layers with visibility, locks and opacity; stacked strokes, shadow, gradient, warp and perspective text; style presets.
+- เครื่องมือเลือกพื้นที่ (กล่อง/ไม้กายสิทธิ์/บ่วงบาศ/คลิกบอลลูน), แปรงระบายสี, คืนภาพเดิม, ถังเทสี, แปรง AI ลบ, clone stamp, healing brush, ลบข้อความในบอลลูนขาวทั้งหน้าในคลิกเดียว · Selections (marquee, wand, lasso, one-click balloon), paint, restore, fill, AI inpaint brush, clone stamp, healing brush, and *Clean White Balloons* for a whole page at once.
 
-[Player (OH Hyeon-Jun)](https://comic.naver.com/webtoon/list?titleId=745876&page=1&sort=ASC&tab=fri)
+**ลบข้อความได้เนียน / Clean that holds up**
+- บอลลูนสีพื้น ไล่สี และตัวอักษรเรืองแสงถูกเติมให้กลืนกับพื้นรอบข้าง ส่วนที่เป็นลายหรือภาพวาดส่งต่อให้ AI (AOT / LaMa) · Flat, gradient and glowing lettering is filled from its surroundings; patterned art goes to an inpainting model (AOT, LaMa).
 
-<img src="https://i.imgur.com/KGwiHJh.jpg" width="49%"> <img src="https://i.imgur.com/B8RMbRQ.jpg" width="49%">
+**ส่งออก / Export**
+- PNG/JPG, **PSD ที่ข้อความยังแก้ได้** (เปิดใน Photoshop/Photopea), CBZ, PDF, ZIP และไฟล์ข้อความแปล · Images, **PSD with editable type layers**, CBZ, PDF, ZIP and the translations as text.
+- เปิดได้จากรูป โฟลเดอร์ PDF/EPUB ไฟล์บีบอัด CBZ/CBR และ PSD · Opens images, folders, PDF/EPUB, archives, CBZ/CBR and PSD.
 
-[Carbon & Silicon](https://www.amazon.com/Carbone-Silicium-French-Mathieu-Bablet-ebook/dp/B0C1LTGZ85/)
+## ภาพหน้าจอ / Screenshots
 
-<img src="https://i.imgur.com/h51XJx4.jpg" width="49%"> <img src="https://i.imgur.com/sLitjUY.jpg" width="49%">
+<table>
+<tr>
+<td width="50%"><img src="docs/images/editor.png" alt="ตัวแก้ไข"><br><sub><b>ตัวแก้ไข</b> — แถบขั้นตอน เครื่องมือด้านซ้าย ช่องตรวจข้อความด้านขวา · <b>Editor</b>: step bar, tool rail, inspector.</sub></td>
+<td width="50%"><img src="docs/images/editor-layers.png" alt="เลเยอร์"><br><sub><b>เลเยอร์</b> — ทุกกล่องข้อความและส่วนที่ลบเป็นเลเยอร์ของตัวเอง · <b>Layers</b>: every text box and cleaned patch is its own layer.</sub></td>
+</tr>
+<tr>
+<td><img src="docs/images/stitch.png" alt="หน้าต่อภาพ"><br><sub><b>ต่อภาพ</b> — เส้นประคือรอยตัดเดิม เส้นทึบคือรอยตัดใหม่ · <b>Stitch</b>: dashed = where the slices were cut, solid = the new cuts.</sub></td>
+<td><img src="docs/images/glossary.png" alt="คลังคำศัพท์"><br><sub><b>คลังคำศัพท์</b> — ชื่อ เพศ และประเภทของแต่ละคำ · <b>Glossary</b>: each term with its type and gender.</sub></td>
+</tr>
+<tr>
+<td><img src="docs/images/home.png" alt="หน้าแรก"><br><sub><b>หน้าแรก</b> · <b>Home</b></sub></td>
+<td><img src="docs/images/editor-light.png" alt="ธีมสว่าง"><br><sub><b>ธีมสว่าง</b> · <b>Light theme</b></sub></td>
+</tr>
+</table>
 
-## Installation
-### Download
-* **Desktop App**: Download and install Comic Translate for Windows and macOS from [here](https://www.comic-translate.com). 
+## ดาวน์โหลด / Download
 
-  >Ignore Smart Screen for Windows (Click More info > Run anyway). 
+ดาวน์โหลดเวอร์ชันล่าสุดจากหน้า **[Releases](https://github.com/Banchon999/ToonStudio/releases/latest)** · Get the latest build from **[Releases](https://github.com/Banchon999/ToonStudio/releases/latest)**.
 
-  >For macOS, after trying to open, go to Settings > Privacy and Security > Scroll down and click Open Anyway. 
+| | |
+|---|---|
+| Windows 10/11 (64-bit) | `ToonStudio-Windows-x86_64.zip` — แตกไฟล์แล้วเปิด `ToonStudio.exe` · unzip and run `ToonStudio.exe` |
+| Linux (x86_64) | `ToonStudio-Linux-x86_64.tar.gz` — แตกไฟล์แล้วรัน `./ToonStudio/ToonStudio` · extract and run `./ToonStudio/ToonStudio` |
+| macOS 15+ (Apple Silicon) | `ToonStudio-macOS-arm64.dmg` — ลาก Toon Studio ไปที่ Applications · drag Toon Studio to Applications |
 
-  >Note: GPU acceleration is currently only available when running from source.
+- **Windows:** ถ้า SmartScreen เตือน กด *More info → Run anyway* · If SmartScreen warns, choose *More info → Run anyway*.
+- **macOS:** ครั้งแรกให้ไปที่ System Settings → Privacy & Security แล้วกด **Open Anyway** (แอปไม่ได้ผ่าน notarisation ของ Apple) · The first time, go to System Settings → Privacy & Security and click **Open Anyway** (the app is not notarised). Intel Macs are not supported.
+- แอปจะแจ้งเมื่อมีเวอร์ชันใหม่ · The app tells you when a new version is out.
 
-* **Browser Extension**: Install the Comic Translate extension for Chromium-based browsers (Chrome, Edge, Brave, etc.) [here](https://www.comic-translate.com/download) to read directly on websites.
+## เริ่มใช้งาน / Quick start
 
-### From Source
-Alternatively, if you'd like to run the source code directly.
+1. **เปิดงาน** — หน้าแรก → *โปรเจกต์ใหม่* หรือลากรูป/โฟลเดอร์/ไฟล์ลงในหน้าต่าง · **Open your pages**: *New Project* on the home screen, or drop images, a folder or an archive onto the window.
+2. **เลือกภาษา** ต้นฉบับและภาษาเป้าหมายที่แถบด้านบน · **Pick the languages** in the top bar.
+3. **ใส่คีย์ AI** — ตั้งค่า → *Credentials* → **OpenRouter**: คีย์เดียวใช้ได้ทั้ง OCR และการแปล และเลือกโมเดล OCR แยกจากโมเดลแปลได้ (เช่นใช้รุ่นถูกสำหรับ OCR) · **Add an AI key**: Settings → *Credentials* → **OpenRouter**. One key covers OCR and translation, with a separate OCR model field so a cheap vision model can read while a stronger one translates. GPT, Claude, Gemini, DeepSeek and any OpenAI-compatible endpoint (*Custom*) work too.
+4. **แปล** — กด **แปลทั้งหมด** (อัตโนมัติ) หรือสลับเป็น **ทีละขั้น** แล้วกด ตรวจจับ → อ่านข้อความ → แปล → ลบข้อความ → แสดงผล · **Translate**: *Translate All*, or switch to step by step and run Detect → OCR → Translate → Clean → Render.
+5. **แก้ไข** ข้อความ ฟอนต์ ตำแหน่ง หรือภาพ ด้วยเครื่องมือด้านซ้ายและช่องตรวจด้านขวา · **Polish** text, fonts, placement or artwork with the tool rail and the inspector.
+6. **ส่งออก** เป็นรูป PSD CBZ หรือ PDF · **Export** to images, PSD, CBZ or PDF.
 
-Install Python 3.12. Tick "Add python.exe to PATH" during the setup.
+> ตั้งค่าเรื่องที่แปลประจำ (โฟลเดอร์ คลังคำศัพท์ สไตล์ prompt คู่ภาษา) เป็น **Workspace** แล้วสลับได้ในคลิกเดียว · Save a series' folders, glossary, prompt style and language pair as a **Workspace** and switch between series in one click.
+
+## เอนจินและภาษา / Engines and languages
+
+| ขั้นตอน / Stage | ตัวเลือก / Options |
+|---|---|
+| ตรวจจับ / Detection | RT-DETR-v2 (บอลลูน + ข้อความ) · RT-DETR-v2 + Bubble Seg |
+| OCR | ค่าเริ่มต้นตามภาษา (manga-ocr ญี่ปุ่น, Pororo เกาหลี, PaddleOCR อื่นๆ) · PaddleOCR / PaddleOCR (Server) · Pororo · Microsoft OCR · Gemini · **OpenRouter** (โมเดลใดก็ได้ที่อ่านภาพได้) · EasyOCR และ PaddleOCR-VL (ติดตั้งเพิ่ม) |
+| แปล / Translation | Gemini 3.1 Flash-Lite · GPT-4.1 / 4.1-mini · Claude 4.6 Sonnet / 4.5 Haiku · DeepSeek · **OpenRouter** · Custom (OpenAI-compatible) |
+| ลบข้อความ / Cleaning | เติมพื้นอัตโนมัติก่อนเสมอ แล้ว AOT · LaMa · Smart Fill สำหรับส่วนที่เหลือ · fast background fill first, then AOT, LaMa or Smart Fill |
+| วางข้อความ / Rendering | Skia หรือ Qt, ตัดคำไทยด้วย pythainlp, ตัวอักษรแนวตั้งสำหรับจีน/ญี่ปุ่น · Skia or Qt, Thai word breaking, vertical CJK |
+
+**ภาษาต้นฉบับและปลายทาง / Languages:** English, 한국어, 日本語, 简体中文, 繁體中文, Français, Deutsch, Español, Italiano, Русский, ไทย, Tiếng Việt, Bahasa Indonesia, Türkçe, Polski, Português, العربية, עברית และอื่นๆ (ทิศทางขวา-ซ้ายรองรับ) · and more, including right-to-left scripts.
+
+**ภาษาของหน้าจอ / UI languages:** ไทย, English, 한국어, Français, 简体中文, Русский, 日本語, Deutsch, Español, Italiano.
+
+## รันจากซอร์ส / Run from source
+
+ต้องมี Python 3.12, git และ [uv](https://docs.astral.sh/uv/getting-started/installation/) · Needs Python 3.12, git and uv.
+
 ```bash
-https://www.python.org/downloads/
-```
-Install git
-```bash
-https://git-scm.com/
-```
-Install uv
-```
-https://docs.astral.sh/uv/getting-started/installation/
-```
-
-Then, in the command line
-```bash
-git clone https://github.com/ogkalu2/comic-translate
-cd comic-translate
+git clone https://github.com/Banchon999/ToonStudio
+cd ToonStudio
 uv init --python 3.12
-```
-and install the requirements
-```bash
 uv add -r requirements.txt --compile-bytecode
-```
-
-To Update, run this in the comic-translate folder
-```bash
-git pull
-uv init --python 3.12 (Note: only run this line if you did not use uv for the first time installation)
-uv add -r requirements.txt --compile-bytecode
-```
-
-If you have an NVIDIA GPU, then it is recommended to run
-```bash
-uv pip install onnxruntime-gpu
-```
-
-## Usage
-In the comic-translate directory, run
-```bash
 uv run comic.py
 ```
-This will launch the GUI
 
-### Tips
-* If you have a CBR file, you'll need to install Winrar or 7-Zip then add the folder it's installed to (e.g "C:\Program Files\WinRAR" for Windows) to Path. If it's installed but not to Path, you may get the error, 
+ตัวเลือกเพิ่มเติม / Optional:
+
 ```bash
-raise RarCannotExec("Cannot find working tool")
+uv pip install onnxruntime-gpu                         # การ์ดจอ NVIDIA · NVIDIA GPU acceleration
+uv pip install torch torchvision "transformers>=5"     # เปิดใช้ PaddleOCR-VL · enables PaddleOCR-VL
 ```
-In that case, Instructions for [Windows](https://www.windowsdigitals.com/add-folder-to-path-environment-variable-in-windows-11-10/), [Linux](https://linuxize.com/post/how-to-add-directory-to-path-in-linux/), [Mac](https://techpp.com/2021/09/08/set-path-variable-in-macos-guide/)
 
-* Make sure the selected Font supports characters of the target language
-* v2.0 introduces a Manual Mode. When you run into issues with Automatic Mode (No text detected, Incorrect OCR, Insufficient Cleaning etc), you are now able to make corrections. Simply Undo the Image and toggle Manual Mode.
-* In Automatic Mode, Once an Image has been processed, it is loaded in the Viewer or stored to be loaded on switch so you can keep reading in the app as the other Images are being translated.
-* Ctrl + Mouse Wheel to Zoom otherwise Vertical Scrolling
-* The Usual Trackpad Gestures work for viewing the Image
-* Right, Left Keys to Navigate Between Images
+อัปเดต: `git pull` แล้ว `uv add -r requirements.txt --compile-bytecode` · To update, pull and re-run the install line.
 
-## How it works
-### Speech Bubble Detection and Text Segmentation
-[bubble-and-text-detector](https://huggingface.co/ogkalu/comic-text-and-bubble-detector). RT-DETR-v2 model trained on 11k images of comics (Manga, Webtoons, Western).
-Algorithmic segmentation based on the boxes provided from the detection model.
+นักพัฒนา / Developers: `uv pip install -r requirements-dev.txt`, then `pytest` and `ruff check .`. Architecture notes live in [CLAUDE.md](CLAUDE.md); the images in this README are regenerated by `scripts/build_readme_images.py`.
 
-<img src="https://i.imgur.com/TlzVH3j.jpg" width="49%"> <img src="https://i.imgur.com/h18XrYT.jpg" width="49%"> 
+## เคล็ดลับและคีย์ลัด / Tips and shortcuts
 
-### OCR
-By Default:
-* [manga-ocr](https://github.com/kha-white/manga-ocr) for Japanese
-* [Pororo](https://github.com/yunwoong7/korean_ocr_using_pororo) for Korean 
-* [PPOCRv5](https://www.paddleocr.ai/main/en/version3.x/algorithm/PP-OCRv5/PP-OCRv5.html) for Everything Else
+| | |
+|---|---|
+| `Ctrl+S` / `Ctrl+E` | บันทึกโปรเจกต์ / บันทึกรูปที่เปิดอยู่ · Save project / save current image |
+| `Ctrl+Z` / `Ctrl+Y` | ย้อนกลับ / ทำซ้ำ · Undo / redo |
+| `Ctrl+A` / `Ctrl+Shift+A` / `Ctrl+Shift+I` | เลือกทั้งหน้า / ยกเลิกการเลือก / กลับด้าน · Select all / deselect / invert |
+| `Alt`+คลิก | ดูดสีขณะระบาย, ตั้งจุดต้นทางของ clone stamp · Pick a colour while painting, set the clone source |
+| `Ctrl`+ล้อเมาส์ | ซูม · Zoom |
+| `←` `→` | เปลี่ยนหน้า · Previous / next page |
 
-Optional:
+- เลือกฟอนต์ที่มีตัวอักษรภาษาเป้าหมาย (เช่น ฟอนต์ไทยสำหรับคำแปลไทย) นำเข้าฟอนต์ของตัวเองได้ที่ ตั้งค่า → การแสดงข้อความ · Pick a font that covers the target language; import your own under Settings → Text Rendering. ทุกคีย์ลัดเปลี่ยนได้ใน ตั้งค่า → คีย์ลัด · Every shortcut can be changed under Settings → Shortcuts.
+- ไฟล์ CBR ต้องมี WinRAR หรือ 7-Zip อยู่ใน PATH · CBR files need WinRAR or 7-Zip on your PATH.
 
-These can be used for any of the supported languages.
+## สัญญาอนุญาตและเครดิต / License and credits
 
-* Gemini 2.0 Flash
-* Microsoft Azure Vision
+Toon Studio เผยแพร่ภายใต้ **GPL-3.0-or-later** ([LICENSE](LICENSE)) · Toon Studio is distributed under the GPL-3.0-or-later.
 
-### Inpainting
-To remove the segmented text
-* A [Manga/Anime finetuned](https://huggingface.co/dreMaz/AnimeMangaInpainting) [lama](https://github.com/advimman/lama) checkpoint. Implementation courtsey of [lama-cleaner](https://github.com/Sanster/lama-cleaner)
-* [AOT-GAN](https://arxiv.org/abs/2104.01431) based model by [zyddnys](https://github.com/zyddnys)
+- พัฒนาต่อจาก [comic-translate](https://github.com/ogkalu2/comic-translate) ของ ogkalu2 (Apache-2.0, [LICENSE-Apache-2.0](LICENSE-Apache-2.0)) · A fork of ogkalu2's comic-translate (Apache-2.0). บัญชีออนไลน์ "Comic Translate" ในแอปเป็นบริการของโครงการต้นทาง · The "Comic Translate" sign-in in the app is the upstream project's hosted service.
+- การลบข้อความบางส่วนดัดแปลงจาก [PanelCleaner](https://github.com/VoxelCubes/PanelCleaner) (GPL-3.0) · Parts of the cleaning code are adapted from PanelCleaner. รายละเอียดใน [NOTICE.md](NOTICE.md) · Details in NOTICE.md.
 
-<img src="https://i.imgur.com/cVVGVXp.jpg" width="49%"> <img src="https://i.imgur.com/bLkPyqG.jpg" width="49%">
-
-### Translation
-Currently, this supports using GPT-4.1, Claude-4.5, 
-Gemini-2.5.
-
-All LLMs are fed the entire page text to aid translations. 
-There is also the Option to provide the Image itself for further context. 
-
-### Text Rendering
-Wrapped text in bounding boxes obtained from bubbles and text.
-
-## Acknowledgements
-
-* [https://github.com/Sanster/lama-cleaner](https://github.com/Sanster/lama-cleaner)
-* [https://huggingface.co/dreMaz](https://huggingface.co/dreMaz)
-* [https://github.com/yunwoong7/korean_ocr_using_pororo](https://github.com/yunwoong7/korean_ocr_using_pororo)
-* [https://github.com/kha-white/manga-ocr](https://github.com/kha-white/manga-ocr)
-* [https://github.com/JaidedAI/EasyOCR](https://github.com/JaidedAI/EasyOCR)
-* [https://github.com/PaddlePaddle/PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)
-* [https://github.com/RapidAI/RapidOCR](https://github.com/RapidAI/RapidOCR)
-* [https://github.com/phenom-films/dayu_widgets](https://github.com/phenom-films/dayu_widgets)
+ขอบคุณโมเดลและไลบรารีเหล่านี้ / Built on:
+[comic-text-and-bubble-detector](https://huggingface.co/ogkalu/comic-text-and-bubble-detector) ·
+[comic-text-detector](https://github.com/dmMaze/comic-text-detector) ·
+[manga-ocr](https://github.com/kha-white/manga-ocr) ·
+[Pororo OCR](https://github.com/yunwoong7/korean_ocr_using_pororo) ·
+[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) ·
+[RapidOCR](https://github.com/RapidAI/RapidOCR) ·
+[EasyOCR](https://github.com/JaidedAI/EasyOCR) ·
+[lama-cleaner](https://github.com/Sanster/lama-cleaner) ·
+[AnimeMangaInpainting](https://huggingface.co/dreMaz) ·
+[PanelCleaner](https://github.com/VoxelCubes/PanelCleaner) ·
+[PyThaiNLP](https://github.com/PyThaiNLP/pythainlp) ·
+[skia-python](https://github.com/kyamagu/skia-python) ·
+[PhotoshopAPI](https://github.com/EmilDohne/PhotoshopAPI) ·
+[dayu_widgets](https://github.com/phenom-films/dayu_widgets) ·
+[IBM Plex Sans Thai](https://github.com/IBM/plex)

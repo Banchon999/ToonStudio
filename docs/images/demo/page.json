@@ -1,0 +1,119 @@
+{
+ "model": "google/gemini-3.1-flash-lite",
+ "blocks": [
+  {
+   "xyxy": [
+    103,
+    545,
+    275,
+    665
+   ],
+   "bubble": [
+    43,
+    502,
+    336,
+    707
+   ],
+   "class": "text_bubble",
+   "text": "TO THE OLD LIGHTHOUSE, MINA.",
+   "translation": "ไปที่ประภาคารเก่ากัน มินา",
+   "speaker": "จุน",
+   "gender": "male"
+  },
+  {
+   "xyxy": [
+    613,
+    261,
+    840,
+    357
+   ],
+   "bubble": [
+    511,
+    201,
+    939,
+    406
+   ],
+   "class": "text_bubble",
+   "text": "WHERE ARE WE GOING, JUN?",
+   "translation": "เรากำลังจะไปไหนกันเหรอ จุน?",
+   "speaker": "มินา",
+   "gender": "female"
+  },
+  {
+   "xyxy": [
+    341,
+    680,
+    503,
+    762
+   ],
+   "bubble": [
+    278,
+    617,
+    559,
+    823
+   ],
+   "class": "text_bubble",
+   "text": "YOU PROMISED!",
+   "translation": "เธอสัญญาแล้วนะ!",
+   "speaker": "มินา",
+   "gender": "female"
+  },
+  {
+   "xyxy": [
+    194,
+    1267,
+    478,
+    1353
+   ],
+   "bubble": [
+    104,
+    1213,
+    566,
+    1404
+   ],
+   "class": "text_bubble",
+   "text": "SOMEONE IS WAITING FOR US UP THERE.….",
+   "translation": "มีคนกำลังรอเราอยู่ที่นั่น...",
+   "speaker": "จุน",
+   "gender": "male"
+  },
+  {
+   "xyxy": [
+    131,
+    1106,
+    400,
+    1153
+   ],
+   "bubble": [
+    57,
+    1084,
+    473,
+    1171
+   ],
+   "class": "text_bubble",
+   "text": "THE LIGHT WAS STILL ON.",
+   "translation": "ไฟยังคงสว่างอยู่",
+   "speaker": "narration",
+   "gender": ""
+  },
+  {
+   "xyxy": [
+    160,
+    65,
+    415,
+    140
+   ],
+   "bubble": [
+    166,
+    66,
+    410,
+    135
+   ],
+   "class": "text_bubble",
+   "text": "THE NEXT MORNING, AT THE EDGE OF TOWN",
+   "translation": "เช้าวันต่อมา ที่ชายขอบของเมือง",
+   "speaker": "narration",
+   "gender": ""
+  }
+ ]
+}
