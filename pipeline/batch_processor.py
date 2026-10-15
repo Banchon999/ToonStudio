@@ -27,7 +27,6 @@ from modules.utils.translator_utils import get_raw_translation, get_raw_text, fo
 from modules.rendering.render import get_best_render_area, pyside_word_wrap, is_vertical_block, font_family_for_block, default_preset_for
 from modules.utils.text_presets import apply_to_state as apply_text_preset
 from modules.utils.device import resolve_device
-from modules.utils.exceptions import InsufficientCreditsException
 from modules.utils.glossary import collect_source_text, issue_rows
 from core.path_materialization import ensure_path_materialized
 from .cache_manager import CacheManager
@@ -234,8 +233,6 @@ class BatchProcessor:
             self.emit_progress(index, total, 2, 10, False)
             try:
                 self._ocr_with_cache(image, blk_list, source_lang, settings_page)
-            except InsufficientCreditsException:
-                raise
             except Exception:
                 logger.exception("Glossary pre-pass OCR failed for %s; continuing", image_path)
                 continue
@@ -256,8 +253,6 @@ class BatchProcessor:
         existing_sources = {entry.source for entry in manager.entries}
         try:
             entries = extract_glossary_terms(self.main_page, text_blob, existing_sources)
-        except InsufficientCreditsException:
-            raise
         except Exception:
             logger.exception("Glossary pre-pass extraction failed; translating without new terms")
             return
@@ -283,8 +278,6 @@ class BatchProcessor:
         # Phase A (optional): OCR everything and extract the glossary first
         try:
             self._glossary_prepass(image_list)
-        except InsufficientCreditsException:
-            raise
         except Exception:
             logger.exception("Glossary pre-pass failed; continuing with normal batch")
 
@@ -350,8 +343,6 @@ class BatchProcessor:
                     rtl = True if source_lang == 'Japanese' else False
                     blk_list = sort_blk_list(blk_list, rtl)
 
-                except InsufficientCreditsException:
-                    raise
                 except Exception as e:
                     # if it's a connection/network error, give a short message
                     if isinstance(e, requests.exceptions.ConnectionError):
@@ -404,8 +395,6 @@ class BatchProcessor:
                 translator.translate(blk_list, image, extra_context)
                 # Cache the translation results for potential future use
                 self.cache_manager._cache_translation_results(translation_cache_key, blk_list)
-            except InsufficientCreditsException:
-                raise
             except Exception as e:
                 # if it's a connection/network error, give a short message
                 if isinstance(e, requests.exceptions.ConnectionError):

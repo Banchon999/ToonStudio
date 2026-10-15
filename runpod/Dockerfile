@@ -75,11 +75,6 @@ ENV DISPLAY=:1 \
     RESOLUTION=1920x1080 \
     DATA_ROOT=/workspace/comic-translate
 
-# There is no D-Bus secret service in a container. Failing outright is what
-# makes app/account/auth/token_storage.py fall back to QSettings, which lives
-# on the volume; a silent no-op backend would accept the token and drop it.
-ENV PYTHON_KEYRING_BACKEND=keyring.backends.fail.Keyring
-
 EXPOSE 6080
 
 CMD ["/opt/comic-translate/runpod/start.sh"]

@@ -41,7 +41,6 @@ from core.layers import DocumentLayers
 from app.controllers.layers import LayerController
 from app.controllers.selection import SelectionController
 from app.controllers.paint import PaintController
-from modules.utils.exceptions import InsufficientCreditsException, ContentFlaggedException
 
 
 # Ensure any pre-declared mandatory models
@@ -779,18 +778,8 @@ class ComicTranslate(ComicTranslateUI):
     def default_error_handler(self, error_tuple: Tuple):
         exctype, value, traceback_str = error_tuple
         
-        # Handle specific exceptions
-        if exctype is InsufficientCreditsException:
-            Messages.show_insufficient_credits_error(self, details=str(value))
-            
-        elif exctype is ContentFlaggedException:
-            err_msg = str(value)
-            reason = err_msg.split(": ")[-1] if ": " in err_msg else err_msg
-            context = getattr(value, 'context', 'Operation')
-            Messages.show_content_flagged_error(self, details=reason, context=context)
-        
         # Handle HTTP Errors (Server-side)
-        elif issubclass(exctype, requests.exceptions.HTTPError):
+        if issubclass(exctype, requests.exceptions.HTTPError):
             response = value.response
             if response is not None:
                 status_code = response.status_code

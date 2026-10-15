@@ -120,8 +120,8 @@ _HEX = re.compile(r"#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b")
 
 def test_no_old_accent_blue_is_left_in_the_ui():
     offenders = []
-    # The Qt app's own code; dayu's colour-name constants (MTheme.blue) and the
-    # sign-in web page served to the browser are not the app's theme.
+    # The Qt app's own code; dayu's colour-name constants (MTheme.blue) are not
+    # the app's theme.
     paths = list((REPO / "app" / "ui").rglob("*.py")) + list((REPO / "app" / "controllers").rglob("*.py"))
     for path in paths + [REPO / "resources" / "static" / "main.qss"]:
         if "dayu_widgets" in path.parts:

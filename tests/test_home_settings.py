@@ -66,7 +66,7 @@ class TestSettingsNav:
         page.deleteLater()
 
     def test_every_section_has_an_icon_and_one_is_selected(self, ui):
-        assert len(ui.nav_cards) == ui.stacked_widget.count() - 1 or len(ui.nav_cards) == 10
+        assert len(ui.nav_cards) == ui.stacked_widget.count() == 9
         assert all(not b.icon().isNull() for b in ui.nav_cards)
         assert [b.isChecked() for b in ui.nav_cards].count(True) == 1
         assert ui.nav_cards[0].isChecked()
@@ -111,3 +111,26 @@ def test_the_window_tells_the_home_screen_its_workspace(qapp):
         win.file_tree_panel.workspaces.delete("Gatekeeper")
         win._skip_close_prompt = True
         win.close()
+
+
+def test_settings_has_no_account_section_and_drops_its_leftovers(qapp):
+    """The hosted sign-in was removed: no Account tab, and the profile and
+    tokens an earlier version cached in QSettings are deleted on load."""
+    from PySide6.QtCore import QSettings
+    from app.ui.settings.settings_page import SettingsPage
+
+    stored = QSettings("ComicLabs", "ComicTranslate")
+    stored.setValue("user_info/email", "someone@example.com")
+    stored.setValue("auth/access_token", "stale")
+    stored.sync()
+
+    page = SettingsPage()
+    try:
+        assert not hasattr(page.ui, "account_page")
+        assert all("Account" not in b.text() for b in page.ui.nav_cards)
+        page.load_settings()
+        stored.sync()
+        assert stored.value("user_info/email") is None
+        assert stored.value("auth/access_token") is None
+    finally:
+        page.deleteLater()

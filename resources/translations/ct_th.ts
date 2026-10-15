@@ -4,7 +4,7 @@
 <context>
     <name></name>
     <message>
-        <location filename="../../app/validation.py" line="59"/>
+        <location filename="../../app/validation.py" line="51"/>
         <source>Custom</source>
         <translation>กำหนดเอง</translation>
     </message>
@@ -30,129 +30,117 @@
 <context>
     <name>AccountPage</name>
     <message>
-        <location filename="../../app/ui/messages.py" line="90"/>
-        <location filename="../../app/ui/settings/account_page.py" line="93"/>
         <source>Buy Credits</source>
-        <translation>ซื้อเครดิต</translation>
+        <translation type="vanished">ซื้อเครดิต</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/account_page.py" line="23"/>
         <source>Sign in to Comic Translate</source>
-        <translation>เข้าสู่ระบบ Comic Translate</translation>
+        <translation type="vanished">เข้าสู่ระบบ Comic Translate</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/account_page.py" line="27"/>
         <source>Sign in to use Comic Translate, see your credits balance, and purchase additional credits.</source>
-        <translation>เข้าสู่ระบบเพื่อใช้งาน Comic Translate ดูยอดเครดิตคงเหลือ และซื้อเครดิตเพิ่มเติม</translation>
+        <translation type="vanished">เข้าสู่ระบบเพื่อใช้งาน Comic Translate ดูยอดเครดิตคงเหลือ และซื้อเครดิตเพิ่มเติม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/account_page.py" line="34"/>
         <source>Sign In</source>
-        <translation>เข้าสู่ระบบ</translation>
+        <translation type="vanished">เข้าสู่ระบบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/account_page.py" line="44"/>
-        <location filename="../../app/ui/settings/account_page.py" line="86"/>
         <source>See model credit costs</source>
-        <translation>ดูค่าเครดิตของแต่ละโมเดล</translation>
+        <translation type="vanished">ดูค่าเครดิตของแต่ละโมเดล</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/account_page.py" line="61"/>
         <source>Account Information</source>
-        <translation>ข้อมูลบัญชี</translation>
+        <translation type="vanished">ข้อมูลบัญชี</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/account_page.py" line="64"/>
         <source>Email:</source>
-        <translation>อีเมล:</translation>
+        <translation type="vanished">อีเมล:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/account_page.py" line="71"/>
         <source>Subscription Tier:</source>
-        <translation>ระดับสมาชิก:</translation>
+        <translation type="vanished">ระดับสมาชิก:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/account_page.py" line="78"/>
         <source>Credits:</source>
-        <translation>เครดิต:</translation>
+        <translation type="vanished">เครดิต:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/account_page.py" line="96"/>
         <source>Sign Out</source>
-        <translation>ออกจากระบบ</translation>
+        <translation type="vanished">ออกจากระบบ</translation>
     </message>
 </context>
 <context>
     <name>ComicTranslate</name>
     <message>
-        <location filename="../../controller.py" line="359"/>
+        <location filename="../../controller.py" line="358"/>
         <source>Open Folder</source>
         <translation>เปิดโฟลเดอร์</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="360"/>
+        <location filename="../../controller.py" line="359"/>
         <source>No supported images were found in the selected folder.</source>
         <translation>ไม่พบรูปภาพที่รองรับในโฟลเดอร์ที่เลือก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="579"/>
+        <location filename="../../controller.py" line="578"/>
         <source>Glossary: {0}</source>
         <translation>Glossary: {0}</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="581"/>
+        <location filename="../../controller.py" line="580"/>
         <source>Style: {0}</source>
         <translation>สไตล์: {0}</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="654"/>
+        <location filename="../../controller.py" line="653"/>
         <source>Remove this font from favourites</source>
         <translation>นำฟอนต์นี้ออกจากรายการโปรด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="655"/>
+        <location filename="../../controller.py" line="654"/>
         <source>Add this font to favourites</source>
         <translation>เพิ่มฟอนต์นี้ในรายการโปรด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="669"/>
+        <location filename="../../controller.py" line="668"/>
         <source>No favourite fonts yet</source>
         <translation>ยังไม่มีฟอนต์โปรด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="834"/>
-        <location filename="../../controller.py" line="844"/>
+        <location filename="../../controller.py" line="823"/>
+        <location filename="../../controller.py" line="833"/>
         <source>Error</source>
         <translation>ข้อผิดพลาด</translation>
     </message>
     <message>
+        <location filename="../../controller.py" line="1082"/>
         <location filename="../../controller.py" line="1093"/>
-        <location filename="../../controller.py" line="1104"/>
         <source>Downloading model file: {filename}</source>
         <translation>กำลังดาวน์โหลดไฟล์โมเดล: {filename}</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1135"/>
+        <location filename="../../controller.py" line="1124"/>
         <source>Unsaved Changes</source>
         <translation>มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1136"/>
+        <location filename="../../controller.py" line="1125"/>
         <source>Save changes to this file?</source>
         <translation>บันทึกการเปลี่ยนแปลงของไฟล์นี้หรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1137"/>
+        <location filename="../../controller.py" line="1126"/>
         <source>Save</source>
         <translation>บันทึก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1138"/>
+        <location filename="../../controller.py" line="1127"/>
         <source>Don&apos;t Save</source>
         <translation>ไม่บันทึก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1139"/>
+        <location filename="../../controller.py" line="1128"/>
         <source>Cancel</source>
         <translation>ยกเลิก</translation>
     </message>
@@ -1589,109 +1577,111 @@ Go to Settings &gt; Text Rendering &gt; Font to select or import one </source>
 ไปที่ ตั้งค่า &gt; การแสดงผลข้อความ &gt; ฟอนต์ เพื่อเลือกหรือนำเข้าฟอนต์ </translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="36"/>
         <source>Please sign in or sign up via Settings &gt; Account to continue.</source>
-        <translation>กรุณาเข้าสู่ระบบหรือสมัครสมาชิกที่ ตั้งค่า &gt; บัญชี เพื่อดำเนินการต่อ</translation>
+        <translation type="vanished">กรุณาเข้าสู่ระบบหรือสมัครสมาชิกที่ ตั้งค่า &gt; บัญชี เพื่อดำเนินการต่อ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="48"/>
+        <location filename="../../app/ui/messages.py" line="36"/>
         <source>The translator does not support the selected target language. Please choose a different language or tool.</source>
         <translation>ตัวแปลไม่รองรับภาษาปลายทางที่เลือก กรุณาเลือกภาษาอื่นหรือเปลี่ยนเครื่องมือ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="60"/>
+        <location filename="../../app/ui/messages.py" line="48"/>
         <source>No {} selected. Please select a {} in Settings &gt; Tools.</source>
         <translation>ยังไม่ได้เลือก{} กรุณาเลือก{}ที่ ตั้งค่า &gt; เครื่องมือ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="80"/>
         <source>Insufficient Credits</source>
-        <translation>เครดิตไม่เพียงพอ</translation>
+        <translation type="vanished">เครดิตไม่เพียงพอ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="81"/>
         <source>Insufficient credits to perform this action.
 Go to Settings &gt; Account to buy more credits.</source>
-        <translation>เครดิตไม่เพียงพอสำหรับการดำเนินการนี้
+        <translation type="vanished">เครดิตไม่เพียงพอสำหรับการดำเนินการนี้
 ไปที่ ตั้งค่า &gt; บัญชี เพื่อซื้อเครดิตเพิ่ม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="94"/>
-        <location filename="../../app/ui/messages.py" line="149"/>
+        <location filename="../../app/ui/messages.py" line="98"/>
         <source>OK</source>
         <translation>ตกลง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="112"/>
         <source>Custom requires advanced API configuration. Most users should use the Credits system instead.
 Please sign in via Settings &gt; Account to use credits, or configure Custom API settings in Settings &gt; Advanced.</source>
-        <translation>&quot;กำหนดเอง&quot; ต้องตั้งค่า API ขั้นสูง ผู้ใช้ทั่วไปควรใช้ระบบเครดิตแทน
+        <translation type="vanished">&quot;กำหนดเอง&quot; ต้องตั้งค่า API ขั้นสูง ผู้ใช้ทั่วไปควรใช้ระบบเครดิตแทน
 กรุณาเข้าสู่ระบบที่ ตั้งค่า &gt; บัญชี เพื่อใช้เครดิต หรือตั้งค่า Custom API ที่ ตั้งค่า &gt; ขั้นสูง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="148"/>
+        <location filename="../../app/ui/messages.py" line="61"/>
+        <source>Custom needs an API key, an endpoint URL and a model.
+Fill them in under Settings &gt; Advanced.</source>
+        <translation>&quot;กำหนดเอง&quot; ต้องมี API key, URL ปลายทาง และชื่อโมเดล
+กรอกได้ที่ ตั้งค่า &gt; ขั้นสูง</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/messages.py" line="97"/>
         <source>Copy</source>
         <translation>คัดลอก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="150"/>
+        <location filename="../../app/ui/messages.py" line="99"/>
         <source>Close</source>
         <translation>ปิด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="230"/>
+        <location filename="../../app/ui/messages.py" line="179"/>
         <source>Nothing is marked to clean.
 Draw a box over the leftover text, or paint it with the brush, lasso or magic wand, then press Clean.</source>
         <translation>ยังไม่ได้ทำเครื่องหมายส่วนที่จะลบข้อความ
 ลากกล่องครอบข้อความที่เหลือ หรือระบายด้วยแปรง บ่วงบาศ หรือไม้กายสิทธิ์ แล้วกด ลบข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="263"/>
+        <location filename="../../app/ui/messages.py" line="212"/>
         <source>both ครับ and ค่ะ/คะ in one bubble</source>
         <translation>มีทั้ง ครับ และ ค่ะ/คะ ในบอลลูนเดียว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="266"/>
+        <location filename="../../app/ui/messages.py" line="215"/>
         <source>says ผม but ends with ค่ะ/คะ</source>
         <translation>แทนตัวว่า ผม แต่ลงท้าย ค่ะ/คะ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="269"/>
+        <location filename="../../app/ui/messages.py" line="218"/>
         <source>says ดิฉัน but ends with ครับ</source>
         <translation>แทนตัวว่า ดิฉัน แต่ลงท้าย ครับ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="272"/>
+        <location filename="../../app/ui/messages.py" line="221"/>
         <source>the AI says {0} (female) speaks, but the line uses ครับ/กระผม</source>
         <translation>AI บอกว่า {0} (หญิง) เป็นคนพูด แต่ใช้ ครับ/กระผม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="275"/>
+        <location filename="../../app/ui/messages.py" line="224"/>
         <source>the AI says {0} (male) speaks, but the line uses ค่ะ/คะ/ดิฉัน</source>
         <translation>AI บอกว่า {0} (ชาย) เป็นคนพูด แต่ใช้ ค่ะ/คะ/ดิฉัน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="282"/>
+        <location filename="../../app/ui/messages.py" line="231"/>
         <source>the speaker</source>
         <translation>ผู้พูด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="290"/>
+        <location filename="../../app/ui/messages.py" line="239"/>
         <source>«{0}»: {1}</source>
         <translation>«{0}»: {1}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="306"/>
+        <location filename="../../app/ui/messages.py" line="255"/>
         <source>{0} glossary term(s) were not translated as set in the glossary:</source>
         <translation>มี {0} คำที่แปลไม่ตรงกับที่ตั้งไว้ใน Glossary:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="311"/>
+        <location filename="../../app/ui/messages.py" line="260"/>
         <source>«{0}» should be «{1}»</source>
         <translation>«{0}» ควรเป็น «{1}»</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="324"/>
+        <location filename="../../app/ui/messages.py" line="273"/>
         <source>{0} bubble(s) with ครับ/ค่ะ that need checking:</source>
         <translation>มี {0} บอลลูนที่ต้องตรวจ ครับ/ค่ะ:</translation>
     </message>
@@ -1700,7 +1690,7 @@ Draw a box over the leftover text, or paint it with the brush, lasso or magic wa
         <translation type="vanished">{0} บอลลูนใช้คำพูดชาย/หญิงปนกัน (ครับ/ค่ะ):</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="352"/>
+        <location filename="../../app/ui/messages.py" line="301"/>
         <source>{0} page(s) have translations that do not follow the glossary.
 Open Batch Report to see which terms.</source>
         <translation>มี {0} หน้าที่คำแปลไม่ตรงกับ Glossary
@@ -1749,13 +1739,13 @@ Please select a different tool in Settings.</source>
 กรุณาเลือกเครื่องมืออื่นในหน้าตั้งค่า</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="193"/>
-        <location filename="../../pipeline/batch_processor.py" line="358"/>
-        <location filename="../../pipeline/batch_processor.py" line="412"/>
-        <location filename="../../pipeline/webtoon_batch/chunk.py" line="99"/>
+        <location filename="../../app/ui/messages.py" line="142"/>
+        <location filename="../../pipeline/batch_processor.py" line="349"/>
+        <location filename="../../pipeline/batch_processor.py" line="401"/>
+        <location filename="../../pipeline/webtoon_batch/chunk.py" line="107"/>
         <source>Unable to connect to the server.
 Please check your internet connection.</source>
-        <extracomment>Blocks per translation request when a whole strip is translated at once.</extracomment>
+        <extracomment>Blocks per translation request when a whole strip is translated at once. Told to a request that sees only part of a strip. Told when other requests&apos; lettering was covered in that image. What covers other groups&apos; lettering in a group&apos;s image.</extracomment>
         <translation>ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้
 กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</translation>
     </message>
@@ -1778,7 +1768,7 @@ Please try a different tool.</source>
 กรุณาลองใช้เครื่องมืออื่น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="246"/>
+        <location filename="../../app/ui/messages.py" line="195"/>
         <source>{0} image(s) were skipped in this batch.
 Open Batch Report to see all skipped images and reasons.</source>
         <translation>มีรูปภาพถูกข้าม {0} รูปในชุดนี้
@@ -1790,17 +1780,17 @@ Open Batch Report to see all skipped images and reasons.</source>
         <translation>โมเดลอ่านข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/validation.py" line="49"/>
+        <location filename="../../app/validation.py" line="45"/>
         <source>Translator</source>
         <translation>ตัวแปล</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1058"/>
+        <location filename="../../controller.py" line="1047"/>
         <source>Processing:</source>
         <translation>กำลังประมวลผล:</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1061"/>
+        <location filename="../../controller.py" line="1050"/>
         <source>Archiving:</source>
         <translation>กำลังบีบอัด:</translation>
     </message>
@@ -2414,204 +2404,179 @@ This folder is separate from Auto-Recover snapshots.</source>
 <context>
     <name>SettingsPage</name>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="718"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="606"/>
         <source>OK</source>
         <translation>ตกลง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="731"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="1076"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="615"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="688"/>
         <source>Yes</source>
         <translation>ใช่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="732"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="1077"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="616"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="689"/>
         <source>No</source>
         <translation>ไม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="741"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="625"/>
         <source>Restart Required</source>
         <translation>ต้องเริ่มโปรแกรมใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="742"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="626"/>
         <source>The application needs to restart for the language changes to take effect.
 Restart now?</source>
         <translation>ต้องเริ่มโปรแกรมใหม่เพื่อให้การเปลี่ยนภาษามีผล
 เริ่มใหม่ตอนนี้หรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="785"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="1121"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="733"/>
         <source>Cancel</source>
         <translation>ยกเลิก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="793"/>
         <source>Failed to initiate sign-in process.</source>
-        <translation>ไม่สามารถเริ่มขั้นตอนการเข้าสู่ระบบได้</translation>
+        <translation type="vanished">ไม่สามารถเริ่มขั้นตอนการเข้าสู่ระบบได้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="810"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="1038"/>
         <source>Sign In</source>
-        <translation>เข้าสู่ระบบ</translation>
+        <translation type="vanished">เข้าสู่ระบบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="827"/>
         <source>Sign In Required</source>
-        <translation>ต้องเข้าสู่ระบบ</translation>
+        <translation type="vanished">ต้องเข้าสู่ระบบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="828"/>
         <source>Please sign in to purchase or manage credits.</source>
-        <translation>กรุณาเข้าสู่ระบบเพื่อซื้อหรือจัดการเครดิต</translation>
+        <translation type="vanished">กรุณาเข้าสู่ระบบเพื่อซื้อหรือจัดการเครดิต</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="837"/>
         <source>Unable to Open Browser</source>
-        <translation>ไม่สามารถเปิดเบราว์เซอร์ได้</translation>
+        <translation type="vanished">ไม่สามารถเปิดเบราว์เซอร์ได้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="838"/>
         <source>Please open the pricing page in your browser: {url}</source>
-        <translation>กรุณาเปิดหน้าราคาในเบราว์เซอร์ของคุณ: {url}</translation>
+        <translation type="vanished">กรุณาเปิดหน้าราคาในเบราว์เซอร์ของคุณ: {url}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="910"/>
         <source>Sign In Error</source>
-        <translation>เข้าสู่ระบบผิดพลาด</translation>
+        <translation type="vanished">เข้าสู่ระบบผิดพลาด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="911"/>
         <source>Authentication failed: {error}</source>
-        <translation>ยืนยันตัวตนไม่สำเร็จ: {error}</translation>
+        <translation type="vanished">ยืนยันตัวตนไม่สำเร็จ: {error}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="925"/>
         <source>Confirm Sign Out</source>
-        <translation>ยืนยันการออกจากระบบ</translation>
+        <translation type="vanished">ยืนยันการออกจากระบบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="926"/>
         <source>Are you sure you want to sign out?</source>
-        <translation>ต้องการออกจากระบบใช่หรือไม่?</translation>
+        <translation type="vanished">ต้องการออกจากระบบใช่หรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="930"/>
         <source>Signing Out...</source>
-        <translation>กำลังออกจากระบบ...</translation>
+        <translation type="vanished">กำลังออกจากระบบ...</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="953"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="1031"/>
         <source>Sign Out</source>
-        <translation>ออกจากระบบ</translation>
+        <translation type="vanished">ออกจากระบบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="969"/>
         <source>Session Expired</source>
-        <translation>เซสชันหมดอายุ</translation>
+        <translation type="vanished">เซสชันหมดอายุ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="970"/>
         <source>Your session has expired. Please sign in again.</source>
-        <translation>เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง</translation>
+        <translation type="vanished">เซสชันของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบอีกครั้ง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="984"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="987"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="1006"/>
         <source>N/A</source>
-        <translation>ไม่มี</translation>
+        <translation type="vanished">ไม่มี</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="998"/>
         <source>Free</source>
-        <translation>ฟรี</translation>
+        <translation type="vanished">ฟรี</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1013"/>
         <source>Subscription</source>
-        <translation>สมาชิกรายเดือน</translation>
+        <translation type="vanished">สมาชิกรายเดือน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1016"/>
         <source>One-time</source>
-        <translation>ครั้งเดียว</translation>
+        <translation type="vanished">ครั้งเดียว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1019"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="1024"/>
         <source>Total</source>
-        <translation>รวม</translation>
+        <translation type="vanished">รวม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1053"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="665"/>
         <source>Checking...</source>
         <translation>กำลังตรวจสอบ...</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1059"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="1096"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="1109"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="671"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="708"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="721"/>
         <source>Check for Updates</source>
         <translation>ตรวจหาอัปเดต</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1069"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="681"/>
         <source>Update Available</source>
         <translation>มีอัปเดตใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1072"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="684"/>
         <source>A new version {version} is available.</source>
         <translation>มีเวอร์ชันใหม่ {version} พร้อมให้ใช้งาน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1073"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="685"/>
         <source>Release Notes</source>
         <translation>บันทึกการเปลี่ยนแปลง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1081"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="693"/>
         <source>Skip This Version</source>
         <translation>ข้ามเวอร์ชันนี้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1099"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="711"/>
         <source>Up to Date</source>
         <translation>เป็นเวอร์ชันล่าสุดแล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1100"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="712"/>
         <source>You are using the latest version.</source>
         <translation>คุณกำลังใช้เวอร์ชันล่าสุดอยู่แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1115"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="727"/>
         <source>Update Error</source>
         <translation>อัปเดตผิดพลาด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1121"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="733"/>
         <source>Downloading update...</source>
         <translation>กำลังดาวน์โหลดอัปเดต...</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1142"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="754"/>
         <source>Update downloaded to {path}. Show it in its folder? Unpack it and run Toon Studio from the new folder.</source>
         <translation>ดาวน์โหลดอัปเดตไว้ที่ {path} แล้ว เปิดโฟลเดอร์ที่เก็บไฟล์ไหม? แตกไฟล์แล้วเปิด Toon Studio จากโฟลเดอร์ใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1145"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="757"/>
         <source>Download Complete</source>
         <translation>ดาวน์โหลดเสร็จสิ้น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="1139"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="751"/>
         <source>Installer downloaded to {path}. Run it now?</source>
         <translation>ดาวน์โหลดตัวติดตั้งไปที่ {path} แล้ว เรียกใช้เลยหรือไม่?</translation>
     </message>
@@ -2619,222 +2584,221 @@ Restart now?</source>
 <context>
     <name>SettingsPageUI</name>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="61"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="154"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="60"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="153"/>
         <source>Default</source>
         <translation>ค่าเริ่มต้น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="67"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="155"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="66"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="154"/>
         <source>Microsoft OCR</source>
         <translation>Microsoft OCR</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="68"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="67"/>
         <source>Gemini-2.5-Flash-Lite</source>
         <translation>Gemini-2.5-Flash-Lite</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="86"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="173"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="85"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="172"/>
         <source>Resize</source>
         <translation>ย่อ/ขยาย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="86"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="174"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="85"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="173"/>
         <source>Original</source>
         <translation>ขนาดเดิม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="86"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="175"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="85"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="174"/>
         <source>Crop</source>
         <translation>ครอบตัด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="87"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="136"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="86"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="135"/>
         <source>Dark</source>
         <translation>มืด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="87"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="137"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="86"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="136"/>
         <source>Light</source>
         <translation>สว่าง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="88"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="178"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="87"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="177"/>
         <source>Left</source>
         <translation>ชิดซ้าย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="88"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="179"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="87"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="178"/>
         <source>Center</source>
         <translation>กึ่งกลาง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="88"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="180"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="87"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="179"/>
         <source>Right</source>
         <translation>ชิดขวา</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="91"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="103"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="140"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="183"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="90"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="102"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="139"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="182"/>
         <source>Custom</source>
         <translation>กำหนดเอง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="69"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="92"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="102"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="141"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="68"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="91"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="101"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="140"/>
         <source>OpenRouter</source>
         <translation>OpenRouter</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="96"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="148"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="95"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="147"/>
         <source>Gemini-3.1-Flash-Lite</source>
         <translation>Gemini-3.1-Flash-Lite</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="97"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="143"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="96"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="142"/>
         <source>GPT-4.1</source>
         <translation>GPT-4.1</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="98"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="144"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="97"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="143"/>
         <source>GPT-4.1-mini</source>
         <translation>GPT-4.1-mini</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="99"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="146"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="98"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="145"/>
         <source>Claude-4.6-Sonnet</source>
         <translation>Claude-4.6-Sonnet</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="100"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="147"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="99"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="146"/>
         <source>Claude-4.5-Haiku</source>
         <translation>Claude-4.5-Haiku</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="101"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="142"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="184"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="100"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="141"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="183"/>
         <source>Deepseek</source>
         <translation>Deepseek</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="145"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="189"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="144"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="188"/>
         <source>DeepL</source>
         <translation>DeepL</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="149"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="148"/>
         <source>Gemini-2.5-Pro</source>
         <translation>Gemini-2.5-Pro</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="150"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="191"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="149"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="190"/>
         <source>Yandex</source>
         <translation>Yandex</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="151"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="150"/>
         <source>Microsoft Translator</source>
         <translation>Microsoft Translator</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="156"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="155"/>
         <source>Google Cloud Vision</source>
         <translation>Google Cloud Vision</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="185"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="184"/>
         <source>Open AI GPT</source>
         <translation>Open AI GPT</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="186"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="185"/>
         <source>Microsoft Azure</source>
         <translation>Microsoft Azure</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="187"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="186"/>
         <source>Google Cloud</source>
         <translation>Google Cloud</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="188"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="187"/>
         <source>Google Gemini</source>
         <translation>Google Gemini</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="190"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="189"/>
         <source>Anthropic Claude</source>
         <translation>Anthropic Claude</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="375"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="362"/>
         <source>Personalization</source>
         <translation>การปรับแต่งส่วนตัว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="375"/>
         <source>Account</source>
-        <translation>บัญชี</translation>
+        <translation type="vanished">บัญชี</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="375"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="362"/>
         <source>Tools</source>
         <translation>เครื่องมือ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="375"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="362"/>
         <source>LLMs</source>
         <translation>โมเดลภาษา (LLM)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="376"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="363"/>
         <source>Text Rendering</source>
         <translation>การแสดงผลข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="376"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="363"/>
         <source>Project</source>
         <translation>โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="376"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="363"/>
         <source>Export</source>
         <translation>ส่งออก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="376"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="363"/>
         <source>Shortcuts</source>
         <translation>คีย์ลัด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="377"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="364"/>
         <source>Advanced</source>
         <translation>ขั้นสูง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="377"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="364"/>
         <source>About</source>
         <translation>เกี่ยวกับ</translation>
     </message>
@@ -4547,231 +4511,229 @@ It may have already been moved, renamed, or deleted.
         <translation>ผู้ให้บริการ AI ตีเนื้อหานี้ว่าไม่เหมาะสม</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="92"/>
         <source>Insufficient credits</source>
-        <translation>เครดิตไม่เพียงพอ</translation>
+        <translation type="vanished">เครดิตไม่เพียงพอ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="94"/>
+        <location filename="../../app/controllers/batch_report.py" line="92"/>
         <source>Request timed out</source>
         <translation>คำขอหมดเวลา</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="100"/>
+        <location filename="../../app/controllers/batch_report.py" line="98"/>
         <source>Rate limited by provider</source>
         <translation>ถูกผู้ให้บริการจำกัดอัตราการเรียกใช้</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="107"/>
+        <location filename="../../app/controllers/batch_report.py" line="105"/>
         <source>Authentication failed</source>
         <translation>ยืนยันตัวตนไม่สำเร็จ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="114"/>
+        <location filename="../../app/controllers/batch_report.py" line="112"/>
         <source>Network or connection error</source>
         <translation>เครือข่ายหรือการเชื่อมต่อผิดพลาด</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="123"/>
+        <location filename="../../app/controllers/batch_report.py" line="121"/>
         <source>Provider unavailable</source>
         <translation>ผู้ให้บริการไม่พร้อมใช้งาน</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="129"/>
+        <location filename="../../app/controllers/batch_report.py" line="127"/>
         <source>Invalid translation response</source>
         <translation>ผลลัพธ์การแปลไม่ถูกต้อง</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="130"/>
+        <location filename="../../app/controllers/batch_report.py" line="128"/>
         <source>Unexpected tool error</source>
         <translation>เครื่องมือเกิดข้อผิดพลาดที่ไม่คาดคิด</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="138"/>
-        <location filename="../../app/controllers/batch_report.py" line="187"/>
+        <location filename="../../app/controllers/batch_report.py" line="136"/>
+        <location filename="../../app/controllers/batch_report.py" line="183"/>
         <source>Try another text recognition tool</source>
         <translation>ลองใช้เครื่องมืออ่านข้อความอื่น</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="142"/>
-        <location filename="../../app/controllers/batch_report.py" line="191"/>
+        <location filename="../../app/controllers/batch_report.py" line="140"/>
+        <location filename="../../app/controllers/batch_report.py" line="187"/>
         <source>Try another translator</source>
         <translation>ลองใช้ตัวแปลอื่น</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="143"/>
+        <location filename="../../app/controllers/batch_report.py" line="141"/>
         <source>Try another tool</source>
         <translation>ลองใช้เครื่องมืออื่น</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="145"/>
         <source>Buy more credits</source>
-        <translation>ซื้อเครดิตเพิ่ม</translation>
+        <translation type="vanished">ซื้อเครดิตเพิ่ม</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="147"/>
-        <location filename="../../app/controllers/batch_report.py" line="182"/>
-        <location filename="../../app/controllers/batch_report.py" line="192"/>
+        <location filename="../../app/controllers/batch_report.py" line="143"/>
+        <location filename="../../app/controllers/batch_report.py" line="178"/>
+        <location filename="../../app/controllers/batch_report.py" line="188"/>
         <source>Try again</source>
         <translation>ลองใหม่อีกครั้ง</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="153"/>
+        <location filename="../../app/controllers/batch_report.py" line="149"/>
         <source>Wait and try again</source>
         <translation>รอสักครู่แล้วลองใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="160"/>
+        <location filename="../../app/controllers/batch_report.py" line="156"/>
         <source>Check API settings</source>
         <translation>ตรวจสอบการตั้งค่า API</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="167"/>
+        <location filename="../../app/controllers/batch_report.py" line="163"/>
         <source>Check your connection</source>
         <translation>ตรวจสอบการเชื่อมต่อ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="176"/>
+        <location filename="../../app/controllers/batch_report.py" line="172"/>
         <source>Try again later</source>
         <translation>ลองใหม่ภายหลัง</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="198"/>
+        <location filename="../../app/controllers/batch_report.py" line="194"/>
         <source>Image could not be opened</source>
         <translation>ไม่สามารถเปิดรูปภาพได้</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="199"/>
+        <location filename="../../app/controllers/batch_report.py" line="195"/>
         <source>No text blocks detected</source>
         <translation>ไม่พบกล่องข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="200"/>
+        <location filename="../../app/controllers/batch_report.py" line="196"/>
         <source>Text recognition failed</source>
         <translation>อ่านข้อความไม่สำเร็จ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="201"/>
+        <location filename="../../app/controllers/batch_report.py" line="197"/>
         <source>Translation failed</source>
         <translation>แปลไม่สำเร็จ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="202"/>
+        <location filename="../../app/controllers/batch_report.py" line="198"/>
         <source>Webtoon text recognition chunk failed</source>
         <translation>อ่านข้อความในส่วนย่อยของเว็บตูนไม่สำเร็จ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="204"/>
+        <location filename="../../app/controllers/batch_report.py" line="200"/>
         <source>Webtoon translation chunk failed</source>
         <translation>แปลส่วนย่อยของเว็บตูนไม่สำเร็จ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="207"/>
+        <location filename="../../app/controllers/batch_report.py" line="203"/>
         <source>Page processing failed</source>
         <translation>ประมวลผลหน้านี้ไม่สำเร็จ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="298"/>
+        <location filename="../../app/controllers/batch_report.py" line="294"/>
         <source>This image is not in the current project.</source>
         <translation>รูปภาพนี้ไม่ได้อยู่ในโปรเจกต์ปัจจุบัน</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="322"/>
-        <location filename="../../app/controllers/batch_report.py" line="544"/>
+        <location filename="../../app/controllers/batch_report.py" line="318"/>
+        <location filename="../../app/controllers/batch_report.py" line="540"/>
         <source>No batch report is available yet.</source>
         <translation>ยังไม่มีรายงานการประมวลผลชุด</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="337"/>
-        <location filename="../../app/controllers/batch_report.py" line="429"/>
+        <location filename="../../app/controllers/batch_report.py" line="333"/>
+        <location filename="../../app/controllers/batch_report.py" line="425"/>
         <source>No skipped images are available to retry.</source>
         <translation>ไม่มีรูปภาพที่ถูกข้ามให้ลองใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="345"/>
-        <location filename="../../app/controllers/batch_report.py" line="425"/>
+        <location filename="../../app/controllers/batch_report.py" line="341"/>
+        <location filename="../../app/controllers/batch_report.py" line="421"/>
         <source>Wait for the current batch to finish before retrying skipped images.</source>
         <translation>กรุณารอให้การประมวลผลชุดปัจจุบันเสร็จก่อน จึงลองรูปที่ถูกข้ามใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="370"/>
+        <location filename="../../app/controllers/batch_report.py" line="366"/>
         <source>Cancelled</source>
         <translation>ยกเลิกแล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="370"/>
+        <location filename="../../app/controllers/batch_report.py" line="366"/>
         <source>Completed</source>
         <translation>เสร็จสิ้น</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="373"/>
+        <location filename="../../app/controllers/batch_report.py" line="369"/>
         <source>{0}  |  Updated {1}</source>
         <translation>{0}  |  อัปเดตเมื่อ {1}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="401"/>
+        <location filename="../../app/controllers/batch_report.py" line="397"/>
         <source>Total</source>
         <translation>รวม</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="402"/>
-        <location filename="../../app/controllers/batch_report.py" line="465"/>
+        <location filename="../../app/controllers/batch_report.py" line="398"/>
+        <location filename="../../app/controllers/batch_report.py" line="461"/>
         <source>Skipped</source>
         <translation>ข้ามแล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="412"/>
+        <location filename="../../app/controllers/batch_report.py" line="408"/>
         <source>Skipped Images ({0})</source>
         <translation>รูปภาพที่ถูกข้าม ({0})</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="418"/>
+        <location filename="../../app/controllers/batch_report.py" line="414"/>
         <source>Retry Skipped Images</source>
         <translation>ลองรูปที่ถูกข้ามใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="436"/>
+        <location filename="../../app/controllers/batch_report.py" line="432"/>
         <source>Double-click a row to open that page.</source>
         <translation>ดับเบิลคลิกที่แถวเพื่อเปิดหน้านั้น</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="441"/>
-        <location filename="../../app/controllers/batch_report.py" line="504"/>
+        <location filename="../../app/controllers/batch_report.py" line="437"/>
+        <location filename="../../app/controllers/batch_report.py" line="500"/>
         <source>Image</source>
         <translation>รูปภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="441"/>
+        <location filename="../../app/controllers/batch_report.py" line="437"/>
         <source>Reason</source>
         <translation>เหตุผล</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="475"/>
+        <location filename="../../app/controllers/batch_report.py" line="471"/>
         <source>No skipped images in this batch.</source>
         <translation>ไม่มีรูปภาพที่ถูกข้ามในชุดนี้</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="493"/>
+        <location filename="../../app/controllers/batch_report.py" line="489"/>
         <source>Glossary Warnings ({0})</source>
         <translation>คำเตือน Glossary ({0})</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="497"/>
+        <location filename="../../app/controllers/batch_report.py" line="493"/>
         <source>These pages were translated, but some glossary terms were not translated as set. Double-click a row to open that page.</source>
         <translation>หน้าเหล่านี้แปลเสร็จแล้ว แต่บางคำแปลไม่ตรงกับที่ตั้งไว้ใน Glossary ดับเบิลคลิกแถวเพื่อเปิดหน้านั้น</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="504"/>
+        <location filename="../../app/controllers/batch_report.py" line="500"/>
         <source>Terms</source>
         <translation>คำ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="517"/>
+        <location filename="../../app/controllers/batch_report.py" line="513"/>
         <source>«{0}» should be «{1}»</source>
         <translation>«{0}» ควรเป็น «{1}»</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/batch_report.py" line="558"/>
+        <location filename="../../app/controllers/batch_report.py" line="554"/>
         <source>Batch Report</source>
         <translation>รายงานการประมวลผลชุด</translation>
     </message>
@@ -5017,7 +4979,7 @@ It may have been moved, renamed, or deleted.
     <name>self.settings.ui</name>
     <message>
         <location filename="../../modules/ocr/processor.py" line="169"/>
-        <location filename="../../modules/translation/processor.py" line="67"/>
+        <location filename="../../modules/translation/processor.py" line="68"/>
         <source>GPT-4.1-mini</source>
         <translation>GPT-4.1-mini</translation>
     </message>
@@ -5042,57 +5004,57 @@ It may have been moved, renamed, or deleted.
         <translation>ค่าเริ่มต้น</translation>
     </message>
     <message>
-        <location filename="../../modules/translation/processor.py" line="63"/>
+        <location filename="../../modules/translation/processor.py" line="64"/>
         <source>Custom</source>
         <translation>กำหนดเอง</translation>
     </message>
     <message>
-        <location filename="../../modules/translation/processor.py" line="64"/>
+        <location filename="../../modules/translation/processor.py" line="65"/>
         <source>OpenRouter</source>
         <translation>OpenRouter</translation>
     </message>
     <message>
-        <location filename="../../modules/translation/processor.py" line="65"/>
+        <location filename="../../modules/translation/processor.py" line="66"/>
         <source>Deepseek</source>
         <translation>Deepseek</translation>
     </message>
     <message>
-        <location filename="../../modules/translation/processor.py" line="66"/>
+        <location filename="../../modules/translation/processor.py" line="67"/>
         <source>GPT-4.1</source>
         <translation>GPT-4.1</translation>
     </message>
     <message>
-        <location filename="../../modules/translation/processor.py" line="68"/>
+        <location filename="../../modules/translation/processor.py" line="69"/>
         <source>Claude-4.6-Sonnet</source>
         <translation>Claude-4.6-Sonnet</translation>
     </message>
     <message>
-        <location filename="../../modules/translation/processor.py" line="69"/>
+        <location filename="../../modules/translation/processor.py" line="70"/>
         <source>Claude-4.5-Haiku</source>
         <translation>Claude-4.5-Haiku</translation>
     </message>
     <message>
-        <location filename="../../modules/translation/processor.py" line="70"/>
+        <location filename="../../modules/translation/processor.py" line="71"/>
         <source>Gemini-3.1-Flash-Lite</source>
         <translation>Gemini-3.1-Flash-Lite</translation>
     </message>
     <message>
-        <location filename="../../modules/translation/processor.py" line="71"/>
+        <location filename="../../modules/translation/processor.py" line="72"/>
         <source>Gemini-2.5-Pro</source>
         <translation>Gemini-2.5-Pro</translation>
     </message>
     <message>
-        <location filename="../../modules/translation/processor.py" line="72"/>
+        <location filename="../../modules/translation/processor.py" line="73"/>
         <source>Microsoft Translator</source>
         <translation>Microsoft Translator</translation>
     </message>
     <message>
-        <location filename="../../modules/translation/processor.py" line="73"/>
+        <location filename="../../modules/translation/processor.py" line="74"/>
         <source>DeepL</source>
         <translation>DeepL</translation>
     </message>
     <message>
-        <location filename="../../modules/translation/processor.py" line="74"/>
+        <location filename="../../modules/translation/processor.py" line="75"/>
         <source>Yandex</source>
         <translation>Yandex</translation>
     </message>
@@ -5109,13 +5071,13 @@ It may have been moved, renamed, or deleted.
 <context>
     <name>self.ui</name>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="333"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="290"/>
         <source>Resize</source>
         <extracomment>Marks that the &quot;Skia on by default&quot; change has been applied to this profile. Bump the suffix only if a later default change needs to reach existing users again.</extracomment>
         <translation>ย่อ/ขยาย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="335"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="292"/>
         <source>Crop</source>
         <translation>ครอบตัด</translation>
     </message>
@@ -5123,24 +5085,24 @@ It may have been moved, renamed, or deleted.
 <context>
     <name>settings.ui</name>
     <message>
-        <location filename="../../modules/ocr/factory.py" line="237"/>
+        <location filename="../../modules/ocr/factory.py" line="224"/>
         <location filename="../../modules/translation/microsoft.py" line="25"/>
         <source>Microsoft Azure</source>
         <translation>Microsoft Azure</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/factory.py" line="247"/>
+        <location filename="../../modules/ocr/factory.py" line="234"/>
         <source>Google Cloud</source>
         <translation>Google Cloud</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/factory.py" line="254"/>
+        <location filename="../../modules/ocr/factory.py" line="241"/>
         <location filename="../../modules/translation/llm/gpt.py" line="37"/>
         <source>Open AI GPT</source>
         <translation>Open AI GPT</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/gemini_ocr.py" line="36"/>
+        <location filename="../../modules/ocr/gemini_ocr.py" line="37"/>
         <location filename="../../modules/translation/llm/gemini.py" line="31"/>
         <source>Google Gemini</source>
         <translation>Google Gemini</translation>
