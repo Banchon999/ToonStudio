@@ -9,7 +9,6 @@ certifi>=2024.2.2
 py7zr>=0.20.8
 rarfile>=4.1
 pypdfium2>=5.8.0
-keyring>=25.7.0
 jaconv>=0.3.4
 pythainlp>=5.0.0
 wget>=3.2
@@ -24,7 +23,6 @@ pyclipper>=1.3.0.post6
 six>=1.16.0
 PhotoshopAPI>=0.9.0
 send2trash>=2.1.0
-PyJWT>=2.8.0
 
 # Text layout and rasterisation for the canvas. Optional at import time —
 # core/skia_text.py degrades to the Qt measurer when it is missing — but the

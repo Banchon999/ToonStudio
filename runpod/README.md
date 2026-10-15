@@ -106,10 +106,6 @@ container filesystem, so stopping and starting the pod loses nothing.
 
 ## Notes
 
-- Keyring is deliberately set to the failing backend. A container has no D-Bus
-  secret service, and that is what makes `app/account/auth/token_storage.py`
-  fall back to QSettings on the volume. A silent no-op backend would accept the
-  account token and quietly drop it.
 - The app is supervised by a loop in `start.sh`: if it crashes, or you close the
   window, it comes back in three seconds. Closing the window is not how you stop
   the pod — stop the pod.

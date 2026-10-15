@@ -26,10 +26,6 @@ os.environ["HOME"] = os.path.join(_SANDBOX, "home")
 for _key in ("XDG_DATA_HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "HOME"):
     Path(os.environ[_key]).mkdir(parents=True, exist_ok=True)
 
-# No D-Bus secret service under a test runner. The failing backend is what makes
-# token storage fall back to QSettings; the null one would swallow writes.
-os.environ.setdefault("PYTHON_KEYRING_BACKEND", "keyring.backends.fail.Keyring")
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest  # noqa: E402

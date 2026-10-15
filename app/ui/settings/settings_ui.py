@@ -17,7 +17,6 @@ from .text_rendering_page import TextRenderingPage
 from .project_page import ProjectPage
 from .export_page import ExportPage
 from .shortcuts_page import ShortcutsPage
-from .account_page import AccountPage
 from .about_page import AboutPage
 
 
@@ -233,7 +232,6 @@ class SettingsPageUI(QtWidgets.QWidget):
         self.project_page = ProjectPage(parent=self)
         self.export_page = ExportPage(parent=self)
         self.shortcuts_page = ShortcutsPage(parent=self)
-        self.account_page = AccountPage(parent=self)
         self.about_page = AboutPage(parent=self)
 
         # Backward-compatible attribute proxies for existing SettingsPage references
@@ -292,23 +290,12 @@ class SettingsPageUI(QtWidgets.QWidget):
         self.project_autosave_interval_spinbox = self.project_page.project_autosave_interval_spinbox
         self.project_autosave_folder_input = self.project_page.project_autosave_folder_input
 
-        # Account
-        self.sign_in_button = self.account_page.sign_in_button
-        self.sign_out_button = self.account_page.sign_out_button
-        self.buy_credits_button = self.account_page.buy_credits_button
-        self.email_value_label = self.account_page.email_value_label
-        self.tier_value_label = self.account_page.tier_value_label
-        self.credits_value_label = self.account_page.credits_value_label
-        self.logged_out_widget = self.account_page.logged_out_widget
-        self.logged_in_widget = self.account_page.logged_in_widget
-        
         # System
         self.check_update_button = self.about_page.check_update_button
 
 
         # Add pages to stacked widget (order must match navbar order)
         self.stacked_widget.addWidget(self.personalization_page)
-        self.stacked_widget.addWidget(self.account_page)
         self.stacked_widget.addWidget(self.tools_page)
         self.stacked_widget.addWidget(self.llms_page)
         self.stacked_widget.addWidget(self.text_rendering_page)
@@ -358,7 +345,7 @@ class SettingsPageUI(QtWidgets.QWidget):
     # Section icons for the navbar, in stacked_widget order (resources/static,
     # drawn by scripts/build_icons.py).
     NAV_ICONS = (
-        "nav-personalize.svg", "nav-account.svg", "nav-tools.svg", "nav-llm.svg",
+        "nav-personalize.svg", "nav-tools.svg", "nav-llm.svg",
         "nav-text.svg", "nav-project.svg", "nav-export.svg", "nav-shortcuts.svg",
         "nav-advanced.svg", "nav-about.svg",
     )
@@ -372,7 +359,7 @@ class SettingsPageUI(QtWidgets.QWidget):
         navbar_layout.setSpacing(2)
 
         titles = [
-            self.tr("Personalization"), self.tr("Account"), self.tr("Tools"), self.tr("LLMs"),
+            self.tr("Personalization"), self.tr("Tools"), self.tr("LLMs"),
             self.tr("Text Rendering"), self.tr("Project"), self.tr("Export"), self.tr("Shortcuts"),
             self.tr("Advanced"), self.tr("About"),
         ]

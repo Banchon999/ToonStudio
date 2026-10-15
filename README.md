@@ -161,7 +161,7 @@ uv pip install torch torchvision "transformers>=5"     # เปิดใช้ P
 
 Toon Studio เผยแพร่ภายใต้ **GPL-3.0-or-later** ([LICENSE](LICENSE)) · Toon Studio is distributed under the GPL-3.0-or-later.
 
-- พัฒนาต่อจาก [comic-translate](https://github.com/ogkalu2/comic-translate) ของ ogkalu2 (Apache-2.0, [LICENSE-Apache-2.0](LICENSE-Apache-2.0)) · A fork of ogkalu2's comic-translate (Apache-2.0). บัญชีออนไลน์ "Comic Translate" ในแอปเป็นบริการของโครงการต้นทาง · The "Comic Translate" sign-in in the app is the upstream project's hosted service.
+- พัฒนาต่อจาก [comic-translate](https://github.com/ogkalu2/comic-translate) ของ ogkalu2 (Apache-2.0, [LICENSE-Apache-2.0](LICENSE-Apache-2.0)) · A fork of ogkalu2's comic-translate (Apache-2.0).
 - การลบข้อความบางส่วนดัดแปลงจาก [PanelCleaner](https://github.com/VoxelCubes/PanelCleaner) (GPL-3.0) · Parts of the cleaning code are adapted from PanelCleaner. รายละเอียดใน [NOTICE.md](NOTICE.md) · Details in NOTICE.md.
 
 ขอบคุณโมเดลและไลบรารีเหล่านี้ / Built on:

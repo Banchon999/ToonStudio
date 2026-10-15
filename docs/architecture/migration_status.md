@@ -13,14 +13,13 @@ The dev container starts with no Python dependencies and no Qt system
 libraries. To get a working environment:
 
 ```bash
-pip install --ignore-installed PyJWT -r requirements-dev.txt
+pip install -r requirements-dev.txt
 apt-get update -q && apt-get install -y libegl1 libgl1 libxkbcommon0 \
     libdbus-1-3 libfontconfig1 libxcb-cursor0 libxcb-icccm4 libxcb-keysyms1 \
     libxcb-shape0 libxcb-xinerama0 libxrender1 libxi6
 ```
 
-`--ignore-installed PyJWT` is needed because the base image has a Debian-packaged
-PyJWT with no RECORD file, which pip refuses to uninstall. Without the `libegl1`
+Without the `libegl1`
 group, every Qt test module fails collection with
 `ImportError: libEGL.so.1: cannot open shared object file`.
 

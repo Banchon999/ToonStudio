@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 def validate_ocr(main: ComicTranslate):
-    """Ensure either API credentials are set or the user is authenticated."""
+    """Ensure a text recognition model is selected."""
     settings_page = main.settings_page
     settings = settings_page.get_all_settings()
     ocr_tool = settings['tools']['ocr']
@@ -30,15 +30,11 @@ def validate_ocr(main: ComicTranslate):
         Messages.show_missing_tool_error(main, translate("Messages", "Text Recognition model"))
         return False
 
-    if not settings_page.is_logged_in():
-        Messages.show_not_logged_in_error(main)
-        return False
-
     return True
 
 
 def validate_translator(main: ComicTranslate, target_lang: str):
-    """Ensure either API credentials are set or the user is authenticated, plus check compatibility."""
+    """Ensure a translator is selected and, for Custom, configured."""
     settings_page = main.settings_page
     tr = settings_page.ui.tr
     settings = settings_page.get_all_settings()
@@ -47,10 +43,6 @@ def validate_translator(main: ComicTranslate, target_lang: str):
 
     if not translator_tool:
         Messages.show_missing_tool_error(main, translate("Messages", "Translator"))
-        return False
-
-    if not settings_page.is_logged_in():
-        Messages.show_not_logged_in_error(main)
         return False
 
     # Credential checks
