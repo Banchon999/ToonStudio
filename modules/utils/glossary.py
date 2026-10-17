@@ -4,7 +4,7 @@ import csv
 import json
 import logging
 import unicodedata
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 from .paths import get_user_data_dir
 from .thai_speech import SpeechIssue, fix_address_gender, is_thai, thai_gender_details
@@ -52,6 +52,51 @@ def term_key(text: str) -> str:
     return normalize_term(text).casefold()
 
 
+def parse_alias(text: str) -> tuple[str, str]:
+    """An alias as the user wrote it: "도윤" or "도윤=โดยุน" → (source, target or "")."""
+    source, _, target = str(text or "").partition("=")
+    return normalize_term(source), normalize_term(target.lstrip(">"))
+
+
+def parse_aliases(value) -> list[str]:
+    """Aliases from a stored list or from one cell of text separated by , ; or newlines."""
+    if isinstance(value, str):
+        value = re.split(r"[,;\n、，]", value)
+    out: list[str] = []
+    for item in value or []:
+        source, target = parse_alias(item)
+        if source:
+            out.append(f"{source}={target}" if target else source)
+    return out
+
+
+# Korean family names, for telling the given name of a character apart: in a
+# conversation people call 한도윤 "도윤아", and that short form has to reach the
+# glossary too. One syllable covers almost everyone; the two-syllable ones are
+# the compound surnames that do occur in fiction.
+_KOREAN_SURNAMES = set(
+    "김이박최정강조윤장임한오서신권황안송류전홍고문양손배백허유남심노하곽성차주우구민진나지엄채원천방공현함변염여추도소석선설마길연위표명기반왕금옥육인맹제모탁국어은편용예경봉사부"
+)
+_KOREAN_SURNAMES_2 = {"남궁", "선우", "제갈", "황보", "독고", "사공", "서문"}
+_HANGUL_SYLLABLES = re.compile("^[가-힣]+$")
+
+
+def korean_given_name(source: str) -> str:
+    """The given name in a Korean full name ("한도윤" → "도윤"), or "".
+
+    Only a family name plus a two-syllable given name qualifies: a one-syllable
+    given name ("김준" → "준") would match inside half the words on a page.
+    """
+    name = compact_key(source)
+    if not _HANGUL_SYLLABLES.match(name):
+        return ""
+    if len(name) == 3 and name[0] in _KOREAN_SURNAMES:
+        return name[1:]
+    if len(name) == 4 and name[:2] in _KOREAN_SURNAMES_2:
+        return name[2:]
+    return ""
+
+
 @dataclass
 class GlossaryEntry:
     source: str
@@ -59,6 +104,10 @@ class GlossaryEntry:
     type: str = "term"
     gender: str = ""  # male / female / neutral, only meaningful for characters
     note: str = ""
+    # Other names the same character/thing goes by ("도윤", or "도윤=โดยุน" to
+    # give its own translation). Korean characters also get their given name
+    # without listing it — see GlossaryManager.alias_entries.
+    aliases: list[str] = field(default_factory=list)
 
     @property
     def key(self) -> str:
@@ -90,6 +139,7 @@ class GlossaryEntry:
             type=str(data.get("type", "") or "term").strip() or "term",
             gender=gender,
             note=str(data.get("note", "") or "").strip(),
+            aliases=[a for a in parse_aliases(data.get("aliases")) if term_key(parse_alias(a)[0]) != term_key(source)],
         )
 
 
@@ -216,6 +266,14 @@ class GlossaryMatch:
     seen_as: str          # the text as it actually appears (OCR spelling)
     fuzzy: bool = False   # found with one character wrong, missing or extra
     suppressed_by: "GlossaryEntry | None" = None  # only ever inside a longer term
+    # Set when what was found is another name of alias_of (entry is then a
+    # stand-in carrying the alias as its source); alias_target is the alias's
+    # own translation, or "" when only the full name's is known.
+    alias_of: "GlossaryEntry | None" = None
+    alias_target: str = ""
+    # Set (to the text that shows it, e.g. "철수하라는") when the page uses a
+    # character's name only as an ordinary word; such a match is not sent.
+    ordinary_word: str = ""
 
 
 @dataclass
@@ -244,6 +302,46 @@ class GlossaryOverlap:
 
 def _overlaps(a: tuple[int, int], b: tuple[int, int]) -> bool:
     return a[0] < b[1] and b[0] < a[1]
+
+
+# What follows a Korean noun when it is used as a verb or adjective
+# (철수하라, 철수했다, 철수시켜, 철수된): 하다/되다/시키다 attached with no space.
+# 하고/한테/한데 are left out on purpose: "철수하고" and "철수한테" are "with
+# Cheol-su" and "to Cheol-su".
+_KO_VERB_AFTER = re.compile(
+    r"(하(?!고|구)|했|해|할|함|합|한(?!테|텐|데)|되|돼|됐|될|된|됨|시키|시켜|시킨|시킬|시켰)"
+)
+# What only follows a person: vocative 야/아, an honorific or title, or the
+# 이 that Korean puts after a name ending in a consonant (서연이가).
+_KO_NAME_AFTER = re.compile(
+    r"(야|아(?![가-힣])|씨|님|군|양|선배|형|오빠|누나|언니|선생|이(?:가|는|를|도|랑|야|한테|에게|네|와|의))"
+)
+
+
+def _ordinary_use(entry: "GlossaryEntry", display: str, spans: list[tuple[int, int]]) -> str:
+    """The text showing a Korean character name is only an ordinary word here, or "".
+
+    Every occurrence is read by what is attached right after it: a verb
+    ending makes it the word, a vocative or honorific makes it the person,
+    anything else ("전원 철수!") decides nothing. The name is held back only
+    when some use is the word and none is the person.
+    """
+    if entry.type != "character" or not _HANGUL_SYLLABLES.match(compact_key(entry.source)):
+        return ""
+    evidence = ""
+    for start, end in spans:
+        after = display[end:end + 4]
+        if _KO_NAME_AFTER.match(after):
+            return ""
+        if not evidence and _KO_VERB_AFTER.match(after):
+            tail = re.match(r"[가-힣]*", display[end:]).group(0)
+            evidence = display[start:end] + tail
+    return evidence
+
+
+def _starts_word(display: str, start: int) -> bool:
+    """True when display[start] begins a word: nothing, a space or punctuation before it."""
+    return start == 0 or not _is_letter(display[start - 1])
 
 
 def _exact_spans(key: str, spaceless: bool, text: "_IndexedText") -> list[tuple[int, int]]:
@@ -714,7 +812,7 @@ class GlossaryManager:
             if has_header:
                 rows = list(csv.DictReader(f))
             else:
-                fields = ["source", "target", "type", "gender", "note"]
+                fields = ["source", "target", "type", "gender", "note", "aliases"]
                 rows = [
                     dict(zip(fields, row))
                     for row in csv.reader(f) if row
@@ -728,11 +826,49 @@ class GlossaryManager:
     def export_csv(self, path: str) -> None:
         with open(path, "w", encoding="utf-8-sig", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow(["source", "target", "type", "gender", "note"])
+            writer.writerow(["source", "target", "type", "gender", "note", "aliases"])
             for e in self.entries:
-                writer.writerow([e.source, e.target, e.type, e.gender, e.note])
+                writer.writerow([e.source, e.target, e.type, e.gender, e.note, ", ".join(e.aliases)])
 
     # Matching
+
+    def alias_entries(self) -> list[tuple[GlossaryEntry, GlossaryEntry, str]]:
+        """Every other name an entry goes by, as (stand-in entry, owner, own target).
+
+        Listed aliases, plus the given name of each Korean character ("도윤"
+        for "한도윤"), since a conversation calls people by it. An alias that
+        is itself a term in the glossary is that term, and one claimed by two
+        entries (two characters both called 민준) belongs to neither.
+        """
+        real = {e.key for e in self.entries if e.key}
+        found: dict[str, list[tuple[str, GlossaryEntry, str]]] = {}
+        for entry in self.entries:
+            if not entry.key:
+                continue
+            names = [parse_alias(a) for a in entry.aliases]
+            if entry.type == "character":
+                given = korean_given_name(entry.source)
+                if given and all(term_key(given) != term_key(n) for n, _ in names):
+                    names.append((given, ""))
+            for source, target in names:
+                key = term_key(source)
+                if not key or key in real or key == entry.key:
+                    continue
+                owners = found.setdefault(key, [])
+                if all(o is not entry for _, o, _ in owners):
+                    owners.append((source, entry, target))
+        out = []
+        for key, owners in found.items():
+            if len(owners) != 1:
+                continue
+            source, owner, target = owners[0]
+            stand_in = GlossaryEntry(
+                source=source, target=target or owner.target, type=owner.type,
+                gender=owner.gender, note=owner.note,
+            )
+            out.append((stand_in, owner, target))
+        out.sort(key=lambda item: len(compact_key(item[0].source)), reverse=True)
+        return out
 
     def match_report(self, source_text: str) -> list[GlossaryMatch]:
         """Every term found in source_text, including ones a longer term hides.
@@ -792,6 +928,40 @@ class GlossaryManager:
                     entry, text.seen_as(spans[0]), suppressed_by=blocker
                 )
 
+        # A Korean name that is also a word (철수: Cheol-su, and "withdraw"):
+        # where every use on the page reads as the word, the name is not sent —
+        # told "translate exactly as given", a model will now and then write
+        # the name into an order to retreat.
+        for key, (entry, spans) in list(claims.items()):
+            evidence = _ordinary_use(entry, text_for(entry).display, spans)
+            if evidence:
+                # It keeps its claim: "전원철수" is not "김철수" misread as "원철수".
+                results[key] = GlossaryMatch(entry, evidence, ordinary_word=evidence)
+
+        # Other names (aliases, Korean given names): exact only, and only where
+        # a word starts — "서연" is a name in "서연아" but not in "협회에서연락",
+        # which is what OCR makes of "협회에서 연락". A full name found first has
+        # already claimed its text, so "도윤" inside "한도윤" is not sent twice.
+        for stand_in, owner, own_target in self.alias_entries():
+            spaced_alias = _is_spaceless_term(stand_in.key)
+            text = text_for(stand_in)
+            spans = [
+                sp for sp in _exact_spans(stand_in.key, spaced_alias, text)
+                if _starts_word(text.display, sp[0]) and holder_of(sp) is None
+            ]
+            evidence = _ordinary_use(stand_in, text.display, spans) if spans else ""
+            if evidence:
+                results[stand_in.key] = GlossaryMatch(
+                    stand_in, evidence, alias_of=owner, alias_target=own_target, ordinary_word=evidence
+                )
+                order.append(stand_in)
+            elif spans:
+                results[stand_in.key] = GlossaryMatch(
+                    stand_in, text.seen_as(spans[0]), alias_of=owner, alias_target=own_target
+                )
+                claims[stand_in.key] = (stand_in, spans)
+                order.append(stand_in)
+
         exact_keys = set(claims)
         for entry in unmatched:
             needle = compact_key(entry.source)
@@ -836,7 +1006,10 @@ class GlossaryManager:
 
     def find_matches(self, source_text: str) -> list[GlossaryMatch]:
         """The terms that apply to source_text: match_report minus suppressed ones."""
-        return [m for m in self.match_report(source_text) if m.suppressed_by is None]
+        return [
+            m for m in self.match_report(source_text)
+            if m.suppressed_by is None and not m.ordinary_word
+        ]
 
     def check_translation(self, blk_list) -> list[GlossaryIssue]:
         """Blocks whose source uses a term and whose translation leaves it out.
@@ -847,23 +1020,47 @@ class GlossaryManager:
         if not self.enabled or not self.entries:
             return []
         issues: list[GlossaryIssue] = []
+        # A name the page uses as an ordinary word was never sent (match_report
+        # decides that from the whole page, which one block alone cannot show:
+        # "전원 철수!" is only an order to retreat beside "철수하라는 명령").
+        ordinary = {
+            m.entry.key for m in self.match_report(collect_source_text(blk_list)) if m.ordinary_word
+        }
         for index, blk in enumerate(blk_list):
             source = getattr(blk, "text", "") or ""
             translation = _squash(getattr(blk, "translation", "") or "")
             if not source.strip() or not translation:
                 continue
             for match in self.find_matches(source):
-                if match.fuzzy:
+                if match.fuzzy or match.entry.key in ordinary:
                     continue
-                expected = _squash(match.entry.prompt_target)
-                if expected and expected not in translation:
+                expected_text, expected = self._expected_for(match)
+                if expected and not any(e in translation for e in expected):
                     issues.append(GlossaryIssue(
                         block_index=index,
                         source_term=match.entry.source,
-                        expected=match.entry.prompt_target,
+                        expected=expected_text,
                         seen_as=match.seen_as,
                     ))
         return issues
+
+    @staticmethod
+    def _expected_for(match: GlossaryMatch) -> tuple[str, list[str]]:
+        """What a translation must contain for match: (shown to the user, squashed forms).
+
+        A given name with no translation of its own can only be checked when
+        the full name's translation is written as separate words ("โดยุน ฮัน");
+        any one of them will do, since which is the given name is not recorded.
+        """
+        if match.alias_of is not None and not match.alias_target:
+            parts = [_squash(p) for p in match.alias_of.prompt_target.split()]
+            parts = [p for p in parts if p]
+            if len(parts) < 2:
+                return "", []
+            return " / ".join(match.alias_of.prompt_target.split()), parts
+        target = match.entry.prompt_target
+        squashed = _squash(target)
+        return target, [squashed] if squashed else []
 
     def find_overlaps(self) -> list[GlossaryOverlap]:
         """Pairs of terms where the shorter appears inside the longer."""
@@ -912,6 +1109,17 @@ class GlossaryManager:
         for m in matches:
             e = m.entry
             target = e.prompt_target
+            if m.alias_of is not None and not m.alias_target:
+                # A given name whose own translation nobody wrote down: point at
+                # the full name's and ask for the same name, not a new spelling.
+                full = m.alias_of
+                target = (
+                    f"the given name from «{full.prompt_target}» (short for {full.source}); "
+                    "write only that part, spelled exactly the same and entirely in the "
+                    "target language's script"
+                )
+            elif m.alias_of is not None:
+                target = f"{target} (short for {m.alias_of.source} => {m.alias_of.prompt_target})"
             details = []
             if e.type and e.type != "term":
                 details.append(e.type)
