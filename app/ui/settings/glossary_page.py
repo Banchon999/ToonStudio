@@ -14,7 +14,7 @@ from ..dayu_widgets.text_edit import MTextEdit
 
 from modules.utils.glossary import (
     GlossaryManager, GlossaryEntry, GLOSSARY_PRESET_TYPES, GLOSSARY_GENDERS,
-    collect_source_text,
+    collect_source_text, parse_alias, parse_aliases,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,11 +57,22 @@ class GlossaryEntryDialog(QtWidgets.QDialog):
         self.note_input = MTextEdit()
         self.note_input.setMaximumHeight(70)
 
+        # Other names the same character/thing is called by. A Korean
+        # character's given name is matched without being listed here.
+        self.aliases_input = MLineEdit()
+        self.aliases_input.setPlaceholderText(self.tr("e.g. 도윤, 도윤이=โดยุน"))
+        self.aliases_input.setToolTip(self.tr(
+            "Other names this term goes by, separated by commas. Add =translation to give "
+            "one its own translation. A Korean character's given name (도윤 for 한도윤) "
+            "is matched automatically."
+        ))
+
         layout.addRow(MLabel(self.tr("Original Term:")), self.source_input)
         layout.addRow(MLabel(self.tr("Translation:")), self.target_input)
         layout.addRow(MLabel(self.tr("Type:")), self.type_combo)
         self.gender_label = MLabel(self.tr("Gender:"))
         layout.addRow(self.gender_label, self.gender_combo)
+        layout.addRow(MLabel(self.tr("Also called:")), self.aliases_input)
         layout.addRow(MLabel(self.tr("Note:")), self.note_input)
 
         buttons = QtWidgets.QDialogButtonBox(
@@ -83,6 +94,7 @@ class GlossaryEntryDialog(QtWidgets.QDialog):
         self._sync_gender_visibility(self.type_combo.currentText())
         if entry:
             self.note_input.setPlainText(entry.note)
+            self.aliases_input.setText(", ".join(entry.aliases))
 
     def _sync_gender_visibility(self, entry_type: str):
         is_character = entry_type.strip() == "character"
@@ -109,6 +121,7 @@ class GlossaryEntryDialog(QtWidgets.QDialog):
             type=entry_type,
             gender=gender,
             note=self.note_input.toPlainText().strip(),
+            aliases=parse_aliases(self.aliases_input.text()),
         )
 
 
@@ -169,6 +182,17 @@ class GlossaryMatchTestDialog(QtWidgets.QDialog):
                         "{0} → {1}: not sent, it is part of «{2}» here"
                     ).format(src, tgt, _html(m.suppressed_by.source)) + "</span>"
                 )
+            elif m.ordinary_word:
+                rows.append(
+                    "<span style='color:gray'>– " + self.tr(
+                        "{0} → {1}: not sent, used here as an ordinary word («{2}»)"
+                    ).format(src, tgt, _html(m.ordinary_word)) + "</span>"
+                )
+            elif m.alias_of is not None:
+                tgt = _html(m.alias_target or m.alias_of.target)
+                rows.append("✓ " + self.tr(
+                    "{0} → {1}: sent, another name of «{2}»"
+                ).format(src, tgt, _html(m.alias_of.source)))
             elif m.fuzzy:
                 rows.append("≈ " + self.tr(
                     "{0} → {1}: sent, the text has «{2}» (one letter different)"
@@ -191,7 +215,7 @@ def _html(text: str) -> str:
 class GlossaryPage(QtWidgets.QWidget):
     """Settings tab for managing the translation glossary."""
 
-    COLUMNS = ["source", "target", "type", "gender", "note"]
+    COLUMNS = ["source", "target", "type", "gender", "aliases", "note"]
 
     # Emitted from the OCR worker thread once a page's text is recognised.
     # Qt queues it onto the GUI thread, which is where the extraction queue lives.
@@ -312,7 +336,7 @@ class GlossaryPage(QtWidgets.QWidget):
         self.table = QtWidgets.QTableWidget(0, len(self.COLUMNS))
         self.table.setHorizontalHeaderLabels([
             self.tr("Original"), self.tr("Translation"), self.tr("Type"),
-            self.tr("Gender"), self.tr("Note"),
+            self.tr("Gender"), self.tr("Also called"), self.tr("Note"),
         ])
         self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
@@ -320,11 +344,12 @@ class GlossaryPage(QtWidgets.QWidget):
         self.table.verticalHeader().setVisible(False)
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(4, QtWidgets.QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(5, QtWidgets.QHeaderView.ResizeMode.Stretch)
         self.table.setColumnWidth(0, 160)
         self.table.setColumnWidth(1, 160)
         self.table.setColumnWidth(2, 90)
         self.table.setColumnWidth(3, 70)
+        self.table.setColumnWidth(4, 120)
         self.table.setMinimumHeight(280)
         self.table.doubleClicked.connect(lambda _: self.edit_selected())
 
@@ -657,6 +682,15 @@ class GlossaryPage(QtWidgets.QWidget):
             self.type_filter_combo.setCurrentIndex(index)
         self.type_filter_combo.blockSignals(False)
 
+    def _shown_aliases(self, entry) -> list[str]:
+        """The aliases column: listed aliases, plus the given name matched for a Korean character."""
+        names = list(entry.aliases)
+        listed = {parse_alias(a)[0] for a in names}
+        for stand_in, owner, own_target in getattr(self, "_alias_cache", []):
+            if owner is entry and not own_target and stand_in.source not in listed:
+                names.append(self.tr("{0} (auto)").format(stand_in.source))
+        return names
+
     def _visible_entries(self):
         query = self.search_input.text().strip().lower()
         type_filter = (
@@ -669,6 +703,7 @@ class GlossaryPage(QtWidgets.QWidget):
                 e for e in entries
                 if query in e.source.lower() or query in e.target.lower()
                 or query in e.note.lower()
+                or any(query in a.lower() for a in e.aliases)
             ]
         if type_filter:
             entries = [e for e in entries if e.type == type_filter]
@@ -709,9 +744,11 @@ class GlossaryPage(QtWidgets.QWidget):
         self.overlaps_button.set_dayu_type(
             MPushButton.DangerType if conflicts else MPushButton.DefaultType
         )
+        self._alias_cache = self.manager.alias_entries()
         self.table.setRowCount(len(entries))
         for row, entry in enumerate(entries):
-            values = [entry.source, entry.target, entry.type, entry.gender, entry.note]
+            values = [entry.source, entry.target, entry.type, entry.gender,
+                      ", ".join(self._shown_aliases(entry)), entry.note]
             conflict, overlap_lines = notes.get(entry.key, (False, []))
             for col, value in enumerate(values):
                 item = QtWidgets.QTableWidgetItem(value)
