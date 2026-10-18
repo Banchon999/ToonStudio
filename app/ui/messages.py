@@ -69,6 +69,21 @@ class Messages:
         )
 
     @staticmethod
+    def show_openrouter_key_missing_error(parent):
+        """Show an error when a model that runs on the OpenRouter key has none."""
+        MMessage.error(
+            text=QCoreApplication.translate(
+                "Messages",
+                "No OpenRouter API key is set.\n"
+                "Enter it under Settings > Advanced > OpenRouter, and tick Save Keys "
+                "to keep it after restarting."
+            ),
+            parent=parent,
+            duration=None,
+            closable=True
+        )
+
+    @staticmethod
     def show_error_with_copy(parent, title: str, text: str, detailed_text: str | None = None):
         """
         Show a critical error dialog where the main text is selectable and the

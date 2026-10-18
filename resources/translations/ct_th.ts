@@ -4,7 +4,7 @@
 <context>
     <name></name>
     <message>
-        <location filename="../../app/validation.py" line="51"/>
+        <location filename="../../app/validation.py" line="67"/>
         <source>Custom</source>
         <translation>กำหนดเอง</translation>
     </message>
@@ -301,58 +301,62 @@
         <translation>บันทึกคีย์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/credentials_page.py" line="24"/>
         <source>These settings are for advanced users who wish to use their own Custom API endpoints (e.g. Local Language Models) for translation. For most users, no configuration is needed here.</source>
-        <translation>การตั้งค่าเหล่านี้สำหรับผู้ใช้ขั้นสูงที่ต้องการใช้ API endpoint ของตนเอง (เช่น โมเดลภาษาที่รันในเครื่อง) ในการแปล ผู้ใช้ทั่วไปไม่จำเป็นต้องตั้งค่าอะไรในหน้านี้</translation>
+        <translation type="vanished">การตั้งค่าเหล่านี้สำหรับผู้ใช้ขั้นสูงที่ต้องการใช้ API endpoint ของตนเอง (เช่น โมเดลภาษาที่รันในเครื่อง) ในการแปล ผู้ใช้ทั่วไปไม่จำเป็นต้องตั้งค่าอะไรในหน้านี้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/credentials_page.py" line="44"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="24"/>
+        <source>Every AI model in the translator and OCR lists (GPT, Claude, Gemini, Deepseek and OpenRouter) runs on your OpenRouter API key below. Custom is for your own OpenAI-compatible endpoint, such as a local model. Tick Save Keys to keep the keys after restarting.</source>
+        <translation>โมเดล AI ทุกตัวในรายการตัวแปลและ OCR (GPT, Claude, Gemini, Deepseek และ OpenRouter) ใช้คีย์ API ของ OpenRouter ด้านล่าง ส่วน Custom ใช้กับ endpoint ที่เข้ากันได้กับ OpenAI ของคุณเอง เช่น โมเดลที่รันในเครื่อง ติ๊ก บันทึกคีย์ เพื่อให้คีย์ยังอยู่หลังเปิดโปรแกรมใหม่</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/settings/credentials_page.py" line="45"/>
         <source>OCR</source>
         <translation>OCR</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/credentials_page.py" line="50"/>
-        <location filename="../../app/ui/settings/credentials_page.py" line="94"/>
-        <location filename="../../app/ui/settings/credentials_page.py" line="123"/>
-        <location filename="../../app/ui/settings/credentials_page.py" line="175"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="51"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="95"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="124"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="176"/>
         <source>API Key</source>
         <translation>คีย์ API</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/credentials_page.py" line="59"/>
-        <location filename="../../app/ui/settings/credentials_page.py" line="103"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="60"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="104"/>
         <source>Endpoint URL</source>
         <translation>URL ของ Endpoint</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/credentials_page.py" line="112"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="113"/>
         <source>Model</source>
         <translation>โมเดล</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/credentials_page.py" line="139"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="140"/>
         <source>OCR Model</source>
         <translation>โมเดลสำหรับ OCR</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/credentials_page.py" line="140"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="141"/>
         <source>Same as above</source>
         <translation>ใช้ตัวเดียวกับด้านบน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/credentials_page.py" line="145"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="146"/>
         <source>Vision model used when OCR is set to OpenRouter.
 Leave empty to use the same model as translation.</source>
         <translation>โมเดลที่อ่านภาพได้ ใช้เมื่อตั้งค่า OCR เป็น OpenRouter
 เว้นว่างไว้เพื่อใช้โมเดลตัวเดียวกับการแปล</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/credentials_page.py" line="155"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="156"/>
         <source>Secret Key</source>
         <translation>คีย์ลับ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/credentials_page.py" line="164"/>
+        <location filename="../../app/ui/settings/credentials_page.py" line="165"/>
         <source>Folder ID</source>
         <translation>รหัสโฟลเดอร์</translation>
     </message>
@@ -1636,7 +1640,7 @@ Go to Settings &gt; Account to buy more credits.</source>
 ไปที่ ตั้งค่า &gt; บัญชี เพื่อซื้อเครดิตเพิ่ม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="98"/>
+        <location filename="../../app/ui/messages.py" line="113"/>
         <source>OK</source>
         <translation>ตกลง</translation>
     </message>
@@ -1654,69 +1658,76 @@ Fill them in under Settings &gt; Advanced.</source>
 กรอกได้ที่ ตั้งค่า &gt; ขั้นสูง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="97"/>
+        <location filename="../../app/ui/messages.py" line="75"/>
+        <source>No OpenRouter API key is set.
+Enter it under Settings &gt; Advanced &gt; OpenRouter, and tick Save Keys to keep it after restarting.</source>
+        <translation>ยังไม่ได้ใส่คีย์ API ของ OpenRouter
+ใส่ได้ที่ ตั้งค่า &gt; ขั้นสูง &gt; OpenRouter และติ๊ก บันทึกคีย์ เพื่อให้คีย์ยังอยู่หลังเปิดโปรแกรมใหม่</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/messages.py" line="112"/>
         <source>Copy</source>
         <translation>คัดลอก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="99"/>
+        <location filename="../../app/ui/messages.py" line="114"/>
         <source>Close</source>
         <translation>ปิด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="179"/>
+        <location filename="../../app/ui/messages.py" line="194"/>
         <source>Nothing is marked to clean.
 Draw a box over the leftover text, or paint it with the brush, lasso or magic wand, then press Clean.</source>
         <translation>ยังไม่ได้ทำเครื่องหมายส่วนที่จะลบข้อความ
 ลากกล่องครอบข้อความที่เหลือ หรือระบายด้วยแปรง บ่วงบาศ หรือไม้กายสิทธิ์ แล้วกด ลบข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="212"/>
+        <location filename="../../app/ui/messages.py" line="227"/>
         <source>both ครับ and ค่ะ/คะ in one bubble</source>
         <translation>มีทั้ง ครับ และ ค่ะ/คะ ในบอลลูนเดียว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="215"/>
+        <location filename="../../app/ui/messages.py" line="230"/>
         <source>says ผม but ends with ค่ะ/คะ</source>
         <translation>แทนตัวว่า ผม แต่ลงท้าย ค่ะ/คะ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="218"/>
+        <location filename="../../app/ui/messages.py" line="233"/>
         <source>says ดิฉัน but ends with ครับ</source>
         <translation>แทนตัวว่า ดิฉัน แต่ลงท้าย ครับ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="221"/>
+        <location filename="../../app/ui/messages.py" line="236"/>
         <source>the AI says {0} (female) speaks, but the line uses ครับ/กระผม</source>
         <translation>AI บอกว่า {0} (หญิง) เป็นคนพูด แต่ใช้ ครับ/กระผม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="224"/>
+        <location filename="../../app/ui/messages.py" line="239"/>
         <source>the AI says {0} (male) speaks, but the line uses ค่ะ/คะ/ดิฉัน</source>
         <translation>AI บอกว่า {0} (ชาย) เป็นคนพูด แต่ใช้ ค่ะ/คะ/ดิฉัน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="231"/>
+        <location filename="../../app/ui/messages.py" line="246"/>
         <source>the speaker</source>
         <translation>ผู้พูด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="239"/>
+        <location filename="../../app/ui/messages.py" line="254"/>
         <source>«{0}»: {1}</source>
         <translation>«{0}»: {1}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="255"/>
+        <location filename="../../app/ui/messages.py" line="270"/>
         <source>{0} glossary term(s) were not translated as set in the glossary:</source>
         <translation>มี {0} คำที่แปลไม่ตรงกับที่ตั้งไว้ใน Glossary:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="260"/>
+        <location filename="../../app/ui/messages.py" line="275"/>
         <source>«{0}» should be «{1}»</source>
         <translation>«{0}» ควรเป็น «{1}»</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="273"/>
+        <location filename="../../app/ui/messages.py" line="288"/>
         <source>{0} bubble(s) with ครับ/ค่ะ that need checking:</source>
         <translation>มี {0} บอลลูนที่ต้องตรวจ ครับ/ค่ะ:</translation>
     </message>
@@ -1725,7 +1736,7 @@ Draw a box over the leftover text, or paint it with the brush, lasso or magic wa
         <translation type="vanished">{0} บอลลูนใช้คำพูดชาย/หญิงปนกัน (ครับ/ค่ะ):</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="301"/>
+        <location filename="../../app/ui/messages.py" line="316"/>
         <source>{0} page(s) have translations that do not follow the glossary.
 Open Batch Report to see which terms.</source>
         <translation>มี {0} หน้าที่คำแปลไม่ตรงกับ Glossary
@@ -1774,7 +1785,7 @@ Please select a different tool in Settings.</source>
 กรุณาเลือกเครื่องมืออื่นในหน้าตั้งค่า</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="142"/>
+        <location filename="../../app/ui/messages.py" line="157"/>
         <location filename="../../pipeline/batch_processor.py" line="349"/>
         <location filename="../../pipeline/batch_processor.py" line="401"/>
         <location filename="../../pipeline/webtoon_batch/chunk.py" line="107"/>
@@ -1803,19 +1814,19 @@ Please try a different tool.</source>
 กรุณาลองใช้เครื่องมืออื่น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="195"/>
+        <location filename="../../app/ui/messages.py" line="210"/>
         <source>{0} image(s) were skipped in this batch.
 Open Batch Report to see all skipped images and reasons.</source>
         <translation>มีรูปภาพถูกข้าม {0} รูปในชุดนี้
 เปิด &quot;รายงานการประมวลผลชุด&quot; เพื่อดูรูปที่ถูกข้ามทั้งหมดพร้อมเหตุผล</translation>
     </message>
     <message>
-        <location filename="../../app/validation.py" line="30"/>
+        <location filename="../../app/validation.py" line="31"/>
         <source>Text Recognition model</source>
         <translation>โมเดลอ่านข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/validation.py" line="45"/>
+        <location filename="../../app/validation.py" line="61"/>
         <source>Translator</source>
         <translation>ตัวแปล</translation>
     </message>
@@ -5120,18 +5131,18 @@ It may have been moved, renamed, or deleted.
 <context>
     <name>settings.ui</name>
     <message>
-        <location filename="../../modules/ocr/factory.py" line="224"/>
+        <location filename="../../modules/ocr/factory.py" line="226"/>
         <location filename="../../modules/translation/microsoft.py" line="25"/>
         <source>Microsoft Azure</source>
         <translation>Microsoft Azure</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/factory.py" line="234"/>
+        <location filename="../../modules/ocr/factory.py" line="236"/>
         <source>Google Cloud</source>
         <translation>Google Cloud</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/factory.py" line="241"/>
+        <location filename="../../modules/ocr/factory.py" line="243"/>
         <location filename="../../modules/translation/llm/gpt.py" line="37"/>
         <source>Open AI GPT</source>
         <translation>Open AI GPT</translation>
@@ -5158,8 +5169,8 @@ It may have been moved, renamed, or deleted.
         <translation>Deepseek</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/openrouter_ocr.py" line="50"/>
-        <location filename="../../modules/translation/llm/openrouter.py" line="34"/>
+        <location filename="../../modules/ocr/openrouter_ocr.py" line="51"/>
+        <location filename="../../modules/translation/llm/openrouter.py" line="38"/>
         <source>OpenRouter</source>
         <extracomment>Sent for attribution on OpenRouter&apos;s public model rankings. Optional to them, and no part of authentication.</extracomment>
         <translation>OpenRouter</translation>
@@ -5181,6 +5192,11 @@ It may have been moved, renamed, or deleted.
         <location filename="../../modules/utils/pipeline_config.py" line="29"/>
         <source>Crop</source>
         <translation>ครอบตัด</translation>
+    </message>
+    <message>
+        <location filename="../../app/validation.py" line="48"/>
+        <source>OpenRouter</source>
+        <translation>OpenRouter</translation>
     </message>
 </context>
 <context>

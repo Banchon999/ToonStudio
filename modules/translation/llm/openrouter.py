@@ -1,4 +1,8 @@
 from typing import Any
+
+import numpy as np
+
+from modules.utils.openrouter_models import NAMED_MODELS, TEXT_ONLY_MODELS, missing_key_message
 from .gpt import GPTTranslation
 
 
@@ -32,6 +36,19 @@ class OpenRouterTranslation(GPTTranslation):
         super(GPTTranslation, self).initialize(settings, source_lang, target_lang, **kwargs)
 
         credentials = settings.get_credentials(settings.ui.tr("OpenRouter"))
-        self.api_key = credentials.get('api_key', '')
-        self.model = credentials.get('model', '')
+        # A pasted key often carries a space or newline; sent as is, the
+        # header is rejected the same way as no key at all.
+        self.api_key = (credentials.get('api_key') or '').strip()
+        # A named model (GPT-4.1, Gemini-3.1-Flash-Lite...) brings its own
+        # id; "OpenRouter" itself uses the model typed in the settings.
+        self.model = NAMED_MODELS.get(tr_key) or (credentials.get('model') or '').strip()
+        if tr_key in TEXT_ONLY_MODELS:
+            self.supports_images = False
         self.timeout = 120  # Routed models can be slower than first-party APIs
+
+    def _perform_translation(self, user_prompt: str, system_prompt: str, image: np.ndarray) -> str:
+        # Without a key OpenRouter answers "401 Missing Authentication
+        # header", which says nothing about where the key goes.
+        if not self.api_key:
+            raise RuntimeError(missing_key_message())
+        return super()._perform_translation(user_prompt, system_prompt, image)

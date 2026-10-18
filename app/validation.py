@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 
 from app.ui.messages import Messages
 from core.i18n import translate
+from modules.utils.openrouter_models import uses_openrouter
 
 if TYPE_CHECKING:
     from controller import ComicTranslate
@@ -30,11 +31,26 @@ def validate_ocr(main: ComicTranslate):
         Messages.show_missing_tool_error(main, translate("Messages", "Text Recognition model"))
         return False
 
+    if uses_openrouter(_internal(settings_page, ocr_tool)) and not _openrouter_key(settings_page):
+        Messages.show_openrouter_key_missing_error(main)
+        return False
+
     return True
 
 
+def _internal(settings_page, label: str) -> str:
+    """A combo box's (possibly translated) label as its internal name."""
+    return settings_page.ui.value_mappings.get(label, label)
+
+
+def _openrouter_key(settings_page) -> str:
+    """The OpenRouter key as it would be sent, or "" when there is none."""
+    creds = settings_page.get_credentials(settings_page.ui.tr("OpenRouter"))
+    return (creds.get('api_key') or '').strip()
+
+
 def validate_translator(main: ComicTranslate, target_lang: str):
-    """Ensure a translator is selected and, for Custom, configured."""
+    """Ensure a translator is selected and, for Custom and OpenRouter, configured."""
     settings_page = main.settings_page
     tr = settings_page.ui.tr
     settings = settings_page.get_all_settings()
@@ -55,6 +71,10 @@ def validate_translator(main: ComicTranslate, target_lang: str):
             Messages.show_custom_not_configured_error(main)
             return False
         return True
+
+    if uses_openrouter(_internal(settings_page, translator_tool)) and not _openrouter_key(settings_page):
+        Messages.show_openrouter_key_missing_error(main)
+        return False
 
     return True
 

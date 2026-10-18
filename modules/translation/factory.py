@@ -11,6 +11,7 @@ from .llm.gemini import GeminiTranslation
 from .llm.deepseek import DeepseekTranslation
 from .llm.custom import CustomTranslation
 from .llm.openrouter import OpenRouterTranslation
+from modules.utils.openrouter_models import NAMED_MODELS, uses_openrouter
 
 
 class TranslationFactory:
@@ -80,6 +81,10 @@ class TranslationFactory:
         # First check if it's a traditional translation engine (exact match)
         if translator_key in cls.TRADITIONAL_ENGINES:
             return cls.TRADITIONAL_ENGINES[translator_key]
+
+        # The named models run on the OpenRouter key (see NAMED_MODELS)
+        if translator_key in NAMED_MODELS:
+            return OpenRouterTranslation
         
         # Otherwise look for matching LLM engine (substring match)
         for identifier, engine_class in cls.LLM_ENGINE_IDENTIFIERS.items():
@@ -112,7 +117,7 @@ class TranslationFactory:
         extras = {}
 
         # Always grab credentials for this service (if any)
-        creds = settings.get_credentials(translator_key)
+        creds = settings.get_credentials("OpenRouter" if uses_openrouter(translator_key) else translator_key)
         if creds:
             extras["credentials"] = creds
 

@@ -1,5 +1,6 @@
 from typing import Any
 
+from modules.utils.openrouter_models import NAMED_MODELS, missing_key_message
 from .gpt_ocr import GPTOCR
 
 
@@ -43,17 +44,17 @@ class OpenRouterOCR(GPTOCR):
         field falls back to the translation model when left empty, so a single
         model still works with nothing to configure.
 
-        `model` is accepted so the factory can call every OCR engine the same
-        way, but it is ignored: which model runs is the user's choice in the
-        credentials page, not a name from the OCR dropdown.
+        `model` is a name from the OCR dropdown. A named model there
+        (Gemini-2.5-Flash-Lite) runs that model on the same key; "OpenRouter"
+        runs whichever model the user chose in the credentials page.
         """
         credentials = settings.get_credentials(settings.ui.tr("OpenRouter"))
-        self.api_key = credentials.get('api_key', '') or ''
+        self.api_key = (credentials.get('api_key') or '').strip()
         # Stripped before the choice, not after: a field holding only spaces
         # is truthy, so picking first and stripping second would take the
         # blank one and never reach the fallback.
         ocr_model = (credentials.get('ocr_model') or '').strip()
-        self.model = ocr_model or (credentials.get('model') or '').strip()
+        self.model = NAMED_MODELS.get(model) or ocr_model or (credentials.get('model') or '').strip()
         self.expansion_percentage = expansion_percentage
 
     def request_headers(self) -> dict:
@@ -63,6 +64,8 @@ class OpenRouterOCR(GPTOCR):
         return headers
 
     def _get_gpt_ocr(self, base64_image: str) -> str:
+        if not self.api_key:
+            raise ValueError(missing_key_message())
         if not self.model:
             raise ValueError(
                 "OpenRouter needs a model id. Set one in "
