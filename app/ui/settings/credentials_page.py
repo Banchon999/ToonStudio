@@ -21,8 +21,9 @@ class CredentialsPage(QtWidgets.QWidget):
         self.save_keys_checkbox = MCheckBox(self.tr("Save Keys"))
 
         info_label = MLabel(self.tr(
-            "These settings are for advanced users who wish to use their own Custom API endpoints (e.g. Local Language Models) for translation. "
-            "For most users, no configuration is needed here."
+            "Every AI model in the translator and OCR lists (GPT, Claude, Gemini, Deepseek and OpenRouter) "
+            "runs on your OpenRouter API key below. Custom is for your own OpenAI-compatible endpoint, "
+            "such as a local model. Tick Save Keys to keep the keys after restarting."
         )).secondary()
         info_label.setWordWrap(True)
         

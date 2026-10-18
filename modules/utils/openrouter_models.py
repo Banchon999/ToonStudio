@@ -24,6 +24,38 @@ CACHE_FILENAME = "openrouter_models.json"
 # refreshing on every settings open would spend a request on nothing.
 CACHE_MAX_AGE_SECONDS = 24 * 60 * 60
 
+#: The named models in the translator and OCR lists, reached through
+#: OpenRouter with the key in Settings > Advanced > OpenRouter. They used to
+#: run on the hosted account's credit; with that gone, each one had a direct
+#: engine (OpenAI, Anthropic, Google, DeepSeek) and no field to put that
+#: provider's key in, so picking one -- the default translator among them --
+#: could only fail. Ids checked against OpenRouter's catalogue.
+NAMED_MODELS = {
+    "GPT-4.1": "openai/gpt-4.1",
+    "GPT-4.1-mini": "openai/gpt-4.1-mini",
+    "Claude-4.6-Sonnet": "anthropic/claude-sonnet-4.6",
+    "Claude-4.5-Haiku": "anthropic/claude-haiku-4.5",
+    "Gemini-3.1-Flash-Lite": "google/gemini-3.1-flash-lite",
+    "Gemini-2.5-Flash-Lite": "google/gemini-2.5-flash-lite",
+    "Deepseek": "deepseek/deepseek-v4-flash",
+}
+
+#: Named models that take no image input; the page is not sent to them.
+TEXT_ONLY_MODELS = frozenset({"Deepseek"})
+
+
+def uses_openrouter(tool: str) -> bool:
+    """Whether a translator or OCR selection runs on the OpenRouter key."""
+    return tool == "OpenRouter" or tool in NAMED_MODELS
+
+
+def missing_key_message() -> str:
+    """What to tell someone whose request would go out without a key."""
+    return (
+        "No OpenRouter API key is set. Enter it in Settings > Advanced > "
+        "OpenRouter, and tick Save Keys to keep it after restarting."
+    )
+
 
 @dataclass(frozen=True)
 class OpenRouterModel:

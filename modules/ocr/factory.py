@@ -11,6 +11,7 @@ from .manga_ocr.mobile import MangaOCRMobileONNXEngine
 from .pororo.onnx_engine import PororoOCREngineONNX  
 from .gemini_ocr import GeminiOCR
 from .openrouter_ocr import OpenRouterOCR
+from modules.utils.openrouter_models import uses_openrouter
 
 
 class OCRFactory:
@@ -90,7 +91,7 @@ class OCRFactory:
         # Gather any dynamic bits we care about:
         extras = {}
 
-        creds = settings.get_credentials(ocr_key)
+        creds = settings.get_credentials("OpenRouter" if uses_openrouter(ocr_key) else ocr_key)
         device = resolve_device(settings.is_gpu_enabled(), effective_backend)
 
         if creds:
@@ -145,7 +146,8 @@ class OCRFactory:
             'Microsoft OCR': cls._create_microsoft_ocr,
             'Google Cloud Vision': cls._create_google_ocr,
             'GPT-4.1-mini': lambda s: cls._create_gpt_ocr(s, ocr_model),
-            'Gemini-2.5-Flash-Lite': lambda s: cls._create_gemini_ocr(s, ocr_model),
+            # Runs on the OpenRouter key, like the named translators.
+            'Gemini-2.5-Flash-Lite': lambda s: cls._create_openrouter_ocr(s, ocr_model),
             'OpenRouter': cls._create_openrouter_ocr,
         }
         
@@ -303,13 +305,7 @@ class OCRFactory:
         return engine
 
     @staticmethod
-    def _create_openrouter_ocr(settings) -> OCREngine:
+    def _create_openrouter_ocr(settings, model: str = '') -> OCREngine:
         engine = OpenRouterOCR()
-        engine.initialize(settings)
-        return engine
-
-    @staticmethod
-    def _create_gemini_ocr(settings, model) -> OCREngine:
-        engine = GeminiOCR()
         engine.initialize(settings, model)
         return engine
