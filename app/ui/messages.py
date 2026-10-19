@@ -19,6 +19,28 @@ class Messages:
         )
 
     @staticmethod
+    def show_smart_workflow_done(parent, summary: str, stopped: bool = False):
+        """The end of a Smart Workflow run: what ran, on how many pages."""
+        head = (
+            QCoreApplication.translate("Messages", "Smart Workflow stopped.")
+            if stopped else
+            QCoreApplication.translate("Messages", "Smart Workflow finished.")
+        )
+        show = MMessage.warning if stopped else MMessage.success
+        show(text=f"{head}\n{summary}", parent=parent, duration=None, closable=True)
+
+    @staticmethod
+    def show_smart_workflow_invalid(parent, problems: str):
+        MMessage.error(
+            text=QCoreApplication.translate(
+                "Messages", "The Smart Workflow steps are in an order that cannot run: {0}"
+            ).format(problems or QCoreApplication.translate("Messages", "no step is switched on")),
+            parent=parent,
+            duration=None,
+            closable=True,
+        )
+
+    @staticmethod
     def select_font_error(parent):
         MMessage.error(
             text=QCoreApplication.translate(

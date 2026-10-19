@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 import numpy as np
 from abc import abstractmethod
@@ -7,6 +8,14 @@ import imkit as imk
 from ..base import LLMTranslation
 from ...utils.textblock import TextBlock
 from ...utils.translator_utils import get_raw_text, set_texts_from_json
+from ...utils.thai_speech import targets_thai
+from ...utils.speaker_map import (
+    apply_speaker_map, build_speaker_prompt, parse_speaker_reply, speaker_map_block,
+)
+
+logger = logging.getLogger(__name__)
+
+SPEAKER_SYSTEM_PROMPT = "You identify who speaks in comics. Reply with JSON only."
 
 
 def build_user_prompt(raw_text: str, extra_context: str = "") -> str:
@@ -44,6 +53,9 @@ class BaseLLMTranslation(LLMTranslation):
         self.top_p = None
         self.max_tokens = None
         self.timeout = 30  
+        # Glossary characters with their gender (speaker_map.Character), set by
+        # Translator before each page; read by identify_speakers.
+        self.speaker_characters = []
     
     def initialize(self, settings: Any, source_lang: str, target_lang: str, **kwargs) -> None:
         """
@@ -77,12 +89,56 @@ class BaseLLMTranslation(LLMTranslation):
         """
         entire_raw_text = get_raw_text(blk_list)
         system_prompt = self.get_system_prompt(self.source_lang, self.target_lang)
-        user_prompt = build_user_prompt(entire_raw_text, extra_context)
+        # Into Thai, who speaks each block is decided first, in a request of
+        # its own: the model credits a bubble to the name inside it when it
+        # has to work that out while translating (see speaker_map).
+        speakers = self.identify_speakers(blk_list, image) if targets_thai(self.target_lang or "") else None
+        speaker_block = speaker_map_block(speakers)
+        context = "\n\n".join(p for p in (extra_context, speaker_block) if p and p.strip())
+        user_prompt = build_user_prompt(entire_raw_text, context)
         
         entire_translated_text = self._perform_translation(user_prompt, system_prompt, image)
         set_texts_from_json(blk_list, entire_translated_text)
+        fixed = apply_speaker_map(blk_list, speakers)
+        if fixed:
+            logger.info("Speaker map: fixed ครับ/ค่ะ in %d block(s)", fixed)
             
         return blk_list
+
+    def identify_speakers(self, blk_list: list[TextBlock], image: np.ndarray):
+        """Who speaks each block, asked on its own; None when that fails.
+
+        A failure here never stops the translation: it goes ahead without a
+        map, as it did before there was one.
+        """
+        texts = [blk.text or "" for blk in blk_list]
+        if not any(t.strip() for t in texts):
+            return None
+        page_text = " ".join(texts)
+        shown, seen = [], set()
+        for c in self.speaker_characters:
+            if c.source and c.source in page_text and (c.target, c.gender) not in seen:
+                shown.append(c)
+                seen.add((c.target, c.gender))
+        prompt = build_speaker_prompt(self.source_lang, texts, shown)
+        saved = self.temperature, self.img_as_llm_input
+        # Always with the page, whatever the translation's image setting
+        # (off by default): who speaks is read from the figure a bubble's tail
+        # points at. Without it the model guesses from the words — measured,
+        # 11-16% of Korean bubbles wrong against none with the figures seen,
+        # and an English reply with no name in it simply went to the male lead.
+        self.temperature, self.img_as_llm_input = 0, True
+        try:
+            reply = self._perform_translation(prompt, SPEAKER_SYSTEM_PROMPT, image)
+        except Exception as e:  # noqa: BLE001 - any failure means "no map"
+            logger.warning("Speaker identification failed, translating without it: %s", e)
+            return None
+        finally:
+            self.temperature, self.img_as_llm_input = saved
+        speakers = parse_speaker_reply(reply, len(blk_list), self.speaker_characters)
+        if speakers is None:
+            logger.warning("Speaker identification returned no readable JSON; translating without it")
+        return speakers
     
     @abstractmethod
     def _perform_translation(self, user_prompt: str, system_prompt: str, image: np.ndarray) -> str:
