@@ -46,6 +46,7 @@ class TestPrompt:
 
     def test_gender_words_follow_the_source_language(self):
         assert "누나" in build_speaker_prompt("Korean", ["x"], [])
+        assert "talked ABOUT" in build_speaker_prompt("Korean", ["x"], [])
         assert "누나" not in build_speaker_prompt("Chinese", ["x"], [])
         assert "本小姐" in build_speaker_prompt("Chinese", ["x"], [])
         assert "sir, ma'am" in build_speaker_prompt("English", ["x"], [])
@@ -101,6 +102,9 @@ class TestFixParticles:
         ("กระหม่อมเข้าใจพ่ะย่ะค่ะ", "male", "กระหม่อมเข้าใจพ่ะย่ะค่ะ"),
         ("หิวจะแย่แล้ว", "female", "หิวจะแย่แล้ว"),            # no particle is left alone
         ("ขอบคุณครับ", "unknown", "ขอบคุณครับ"),
+        ("ไปแล้วค่ะ/ครับ ขอบคุณค่ะ/ครับ", "unknown", "ไปแล้ว ขอบคุณ"),   # a hedge is never final text
+        ("ไปแล้วครับ/ค่ะ", "female", "ไปแล้วค่ะ"),
+        ("ไปไหนคะ / ครับ", "male", "ไปไหนครับ"),
     ])
     def test_swaps_only_what_contradicts_the_gender(self, text, gender, want):
         assert fix_particles(text, gender) == want

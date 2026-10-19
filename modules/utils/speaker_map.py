@@ -53,7 +53,9 @@ class Character:
 # a Chinese passage getting worse with Korean rules).
 _GENDER_WORDS = {
     "korean": "오빠/언니 said by a girl or woman, 형/누나 said by a boy or man; 할머니/아주머니/아가씨 "
-              "are women, 할아버지/아저씨/총각 men.",
+              "are women, 할아버지/아저씨/총각 men. A name with a particle attached (준이, 준이가, "
+              "미나는, 미나한테) is someone talked ABOUT — Korean speakers almost never call "
+              "themselves by name.",
     "chinese": "哥哥/姐姐 say nothing about the speaker; 本小姐/人家/奴家 are said by women, "
                "本少爷/老子/在下 mostly by men; 大婶/姑娘/婆婆 are women, 大叔/小伙子/公子 men.",
     "japanese": "俺/僕/ぜ/ぞ are male speech, あたし/わ/のよ female speech; 私 proves nothing.",
@@ -211,13 +213,31 @@ _HAIR = re.compile(
 )
 
 
+# "ครับ/ค่ะ": a model hedging when it cannot tell who speaks. Never final text.
+_HEDGE = re.compile(r"(ครับ|ค่ะ|คะ)\s*/\s*(ครับ|ค่ะ|คะ)")
+
+
+def _resolve_hedge(text: str, gender: str) -> str:
+    def pick(m):
+        a, b = m.group(1), m.group(2)
+        if gender == MALE:
+            return "ครับ"
+        if gender == FEMALE:
+            return a if a != "ครับ" else b
+        return ""
+    return _HEDGE.sub(pick, text)
+
+
 def fix_particles(text: str, gender: str) -> str:
     """text with its ครับ/ค่ะ and ผม/ดิฉัน made to agree with gender.
 
     Ported from NovelTrans's fixQuoteGender. พ่ะย่ะค่ะ is a man's word and
     ends in ค่ะ; ผม is also hair; คะแนน is not คะ.
     """
-    if gender not in (MALE, FEMALE) or not text:
+    if not text:
+        return text
+    text = _resolve_hedge(text, gender)
+    if gender not in (MALE, FEMALE):
         return text
     t = re.sub("พ่ะย่ะค่ะ|พะยะค่ะ", _ROYAL_M, text)
     if gender == FEMALE:
@@ -254,18 +274,20 @@ def apply_speaker_map(blk_list, speakers: list[Speaker] | None) -> int:
     A block the map knows takes the map's speaker and gender (the request
     that only asked who speaks is the reliable one) and has its wrong-gender
     words swapped. A block the map does not know keeps what the translation
-    said. Returns how many translations were changed.
+    said, except a hedged "ค่ะ/ครับ", which is dropped. Returns how many
+    translations were changed.
     """
     if not speakers:
         return 0
     changed = 0
     for blk, s in zip(blk_list, speakers):
-        if not s.known:
-            continue
-        blk.speaker = s.name or getattr(blk, "speaker", "")
-        blk.speaker_gender = s.gender
         before = getattr(blk, "translation", "") or ""
-        after = fix_particles(before, s.gender)
+        if s.known:
+            blk.speaker = s.name or getattr(blk, "speaker", "")
+            blk.speaker_gender = s.gender
+            after = fix_particles(before, s.gender)
+        else:
+            after = _resolve_hedge(before, UNKNOWN)   # only "ครับ/ค่ะ" is touched
         if after != before:
             blk.translation = after
             changed += 1
