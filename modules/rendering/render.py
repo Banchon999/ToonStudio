@@ -282,6 +282,176 @@ def _wrap_no_space_text_greedily(segmented_paragraphs: List[List[str]], measure_
 
     return "\n".join(wrapped_paragraphs)
 
+# --- Balanced wrapping -------------------------------------------------------
+#
+# The greedy wraps above fill each line as far as it goes, which in a speech
+# bubble leaves the last line holding one word ("…เข้าไปไม่ได้ / แน่") and,
+# for Thai, breaks wherever the tokenizer happened to cut — inside a name it
+# does not know ("ไค / รทอน"), between a word and its particle
+# ("อรุณสวัสดิ์ / ค่ะ"), or past a space a reader would have broken at. Seen on
+# real webtoon pages rendered by the app. The balanced wrap chooses all the
+# breaks of a paragraph together (least squared slack, so lines come out even)
+# and prices each break: a space is free, a word boundary costs a little, and
+# boundaries that should not be broken are glued before it starts.
+
+#: Thai sentence-final particles: they end what precedes them and never begin a line.
+_THAI_PARTICLES = frozenset(
+    ("ค่ะ", "คะ", "ครับ", "คับ", "ขา", "นะ", "น่ะ", "นะคะ", "นะครับ", "จ้ะ", "จ้า", "จ๊ะ",
+     "ล่ะ", "สิ", "ซิ", "เถอะ", "หรอก", "ฮะ", "เหรอ", "หรือเปล่า", "ๆ")
+)
+#: Words that open the clause after them, so a line may start with them but never end on one.
+_THAI_LEADERS = frozenset(("ก็", "และ", "แต่", "ซึ่ง", "หรือ"))
+#: A token this short and this rare is a piece of a word pythainlp did not
+#: know (a name: "ไครทอน" comes back as ไค|รท|อน), not a word of its own.
+_THAI_FRAGMENT_MAX_LEN = 2
+_THAI_FRAGMENT_MAX_FREQ = 3000
+#: Costs, in units of (slack / line width)². A space break is free.
+_BREAK_IN_WORDS = 0.1       # between two Thai words with no space
+_BREAK_IN_WORD = 1.0        # inside a word too long for any line
+_LINE_COST = 0.05           # each line, so a fit never uses more lines than it needs
+
+_thai_freqs: dict | None = None
+
+
+def _thai_word_freqs() -> dict:
+    global _thai_freqs
+    if _thai_freqs is None:
+        try:
+            from pythainlp.corpus import tnc
+            _thai_freqs = dict(tnc.word_freqs())
+        except Exception:
+            _thai_freqs = {}
+    return _thai_freqs
+
+
+def _is_thai_word(token: str) -> bool:
+    return bool(token) and all("฀" <= c <= "๿" for c in token)
+
+
+def _is_fragment(token: str) -> bool:
+    freqs = _thai_word_freqs()
+    return (
+        bool(freqs)
+        and _is_thai_word(token)
+        and len(token) <= _THAI_FRAGMENT_MAX_LEN
+        and freqs.get(token, 0) < _THAI_FRAGMENT_MAX_FREQ
+    )
+
+
+def _wrap_units(tokens: List[str]) -> List[tuple]:
+    """Tokens → (text, space_before) units no line may split.
+
+    Spaces become the flag. A particle joins the word before it, a clause
+    opener (ก็, และ…) the word after it, and a fragment the token after it —
+    so a name pythainlp cut into fragments (ไค|ร|ทาน) stays whole without
+    being glued to the real word in front of it.
+    """
+    units: List[list] = []
+    space = False
+    prev_token = ""
+    for token in tokens:
+        if token.isspace():
+            space = True
+            prev_token = token
+            continue
+        glue = (
+            units
+            and not space
+            and (
+                token.rstrip("".join(_CLOSING_PUNCTUATION)) in _THAI_PARTICLES
+                or prev_token in _THAI_LEADERS
+                or (_is_thai_word(token) and _is_fragment(prev_token))
+            )
+        )
+        if glue:
+            units[-1][0] += token
+        else:
+            units.append([token, space])
+        space = False
+        prev_token = token
+    return [(text, space) for text, space in units]
+
+
+def _balanced_lines(units: List[tuple], measure_side, max_side: float) -> List[str] | None:
+    """The least-cost breaking of one paragraph's units, or None if a unit is
+    wider than a line (the caller then falls back to its greedy wrap)."""
+    if not units:
+        return []
+    if max_side <= 0:
+        return None
+    n = len(units)
+    inf = float("inf")
+    best = [inf] * (n + 1)
+    back = [0] * (n + 1)
+    best[0] = 0.0
+    for i in range(n):
+        if best[i] == inf:
+            continue
+        text = ""
+        for j in range(i, n):
+            unit, space = units[j]
+            text = unit if j == i else (f"{text} {unit}" if space else text + unit)
+            width = measure_side(text)
+            if width > max_side:
+                if j == i:
+                    return None
+                break
+            slack = (max_side - width) / max_side
+            cost = slack * slack + _LINE_COST
+            if j + 1 < n and not units[j + 1][1]:
+                cost += _BREAK_IN_WORDS
+            if best[i] + cost < best[j + 1]:
+                best[j + 1] = best[i] + cost
+                back[j + 1] = i
+    if best[n] == inf:
+        return None
+    lines: List[str] = []
+    j = n
+    while j > 0:
+        i = back[j]
+        text = ""
+        for k in range(i, j):
+            unit, space = units[k]
+            text = unit if k == i else (f"{text} {unit}" if space else text + unit)
+        lines.append(text)
+        j = i
+    return lines[::-1]
+
+
+def _wrap_no_space_text_balanced(segmented_paragraphs: List[List[str]], measure_side, max_side: float,
+                                 strict: bool = False) -> str | None:
+    """Balanced wrap for Thai (and other no-space text). When one of a
+    paragraph's units cannot fit a line, strict returns None — the size is
+    too big — and otherwise that paragraph is wrapped greedily."""
+    out: List[str] = []
+    for tokens in segmented_paragraphs:
+        units = _wrap_units(tokens)
+        lines = _balanced_lines(units, measure_side, max_side)
+        if lines is None:
+            if strict:
+                return None
+            lines = [_wrap_no_space_text_greedily([tokens], measure_side, max_side)]
+        out.append("\n".join(lines))
+    return "\n".join(out)
+
+
+def _wrap_text_balanced(text: str, measure_side, max_side: float, strict: bool = False) -> str | None:
+    """Balanced wrap for spaced languages. A paragraph holding a word longer
+    than a line makes strict return None; otherwise the greedy hyphen-aware
+    wrap takes that paragraph."""
+    out: List[str] = []
+    for paragraph in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        units = [(word, True) for word in paragraph.split()]
+        lines = _balanced_lines(units, measure_side, max_side)
+        if lines is None:
+            if strict:
+                return None
+            out.append(_wrap_text_greedily(paragraph, measure_side, max_side))
+        else:
+            out.append("\n".join(lines))
+    return "\n".join(out)
+
+
 def pil_word_wrap(image: Image, tbbox_top_left: Tuple, font_pth: str, text: str, 
                   roi_width, roi_height, align: str, spacing, init_font_size: int, min_font_size: int = 10):
     """Break long text to multiple lines, and reduce point size
@@ -394,6 +564,80 @@ def get_best_render_area(blk_list: List[TextBlock], img, inpainted_img=None):
     return blk_list
 
 
+#: Inset per side of the largest rectangle inside an ellipse: (1 - 1/√2) / 2.
+BUBBLE_TEXT_INSET = 0.146
+
+
+def _bubble_is_shared(blk, blk_list) -> bool:
+    """True when another block's text sits inside this block's bubble."""
+    bx1, by1, bx2, by2 = blk.bubble_xyxy
+    for other in blk_list or []:
+        if other is blk:
+            continue
+        ox1, oy1, ox2, oy2 = other.xyxy
+        cx, cy = (ox1 + ox2) / 2, (oy1 + oy2) / 2
+        if bx1 <= cx <= bx2 and by1 <= cy <= by2:
+            return True
+    return False
+
+
+def render_area(blk, blk_list=None) -> Tuple[float, float, float, float]:
+    """Where a block's translation is fitted: x1, y1, x2, y2.
+
+    The detected box is the source lettering's own outline, tight around text
+    that is usually shorter than its translation — Thai fitted into the box of
+    "안녕하세요, 공녀님!" came out at half the size, crammed into a corner of an
+    empty bubble. A speech bubble the block has to itself lends it the
+    rectangle inscribed in the bubble (or the box, where that is larger).
+    Free text, and bubbles holding more than one block, keep the box.
+    """
+    x1, y1, x2, y2 = (float(v) for v in blk.xyxy)
+    bubble = getattr(blk, "bubble_xyxy", None)
+    if (
+        getattr(blk, "text_class", "") != "text_bubble"
+        or bubble is None
+        or getattr(blk, "direction", "") == "vertical"
+        or abs(float(getattr(blk, "angle", 0) or 0)) > 1
+        or _bubble_is_shared(blk, blk_list)
+    ):
+        return x1, y1, x2, y2
+    bx1, by1, bx2, by2 = (float(v) for v in bubble)
+    dx, dy = (bx2 - bx1) * BUBBLE_TEXT_INSET, (by2 - by1) * BUBBLE_TEXT_INSET
+    ix1, iy1, ix2, iy2 = bx1 + dx, by1 + dy, bx2 - dx, by2 - dy
+    if ix2 <= ix1 or iy2 <= iy1:
+        return x1, y1, x2, y2
+    # The union, kept inside the bubble.
+    return (max(bx1, min(x1, ix1)), max(by1, min(y1, iy1)),
+            min(bx2, max(x2, ix2)), min(by2, max(y2, iy2)))
+
+
+def place_in_area(area, width: float, height: float, alignment) -> Tuple[float, float]:
+    """Top-left of a width × height text box in `area`: centred vertically,
+    and horizontally as the text is aligned.
+
+    The box used to be pinned to the area's top-left corner, so every
+    translation shorter than its source sat high and to the left of where the
+    lettering had been.
+    """
+    x1, y1, x2, y2 = area
+    y = y1 + max(0.0, (y2 - y1) - height) / 2
+    if alignment == Alignment.Left:
+        x = x1
+    elif alignment == Alignment.Right:
+        x = x2 - width
+    else:
+        x = x1 + max(0.0, (x2 - x1) - width) / 2
+    return x, y
+
+
+def text_position(blk, area, width: float, height: float, alignment, vertical: bool = False) -> Tuple[float, float]:
+    """Where the rendered text box goes. Rotated and vertical text keep the
+    box's corner, which their rotation origin and column layout assume."""
+    if vertical or abs(float(getattr(blk, "angle", 0) or 0)) > 1:
+        return float(blk.xyxy[0]), float(blk.xyxy[1])
+    return place_in_area(area, width, height, alignment)
+
+
 def pyside_word_wrap(
     text: str, 
     font_input: str, 
@@ -459,44 +703,52 @@ def pyside_word_wrap(
     # tries, instead of re-tokenizing the same text on each attempt.
     segmented_paragraphs = _segment_no_space_text(text) if no_space_language else None
 
-    def wrap_and_size(font_size):
+    def wrap_and_size(font_size, strict=False):
         def measure_side(candidate: str) -> float:
             w, h = eval_metrics(candidate, font_size, vertical)
             return h if vertical else w
 
         if no_space_language:
-            wrapped = _wrap_no_space_text_greedily(
+            wrapped = _wrap_no_space_text_balanced(
                 segmented_paragraphs=segmented_paragraphs,
                 measure_side=measure_side,
                 max_side=roi_height if vertical else roi_width,
+                strict=strict,
             )
         else:
-            wrapped = _wrap_text_greedily(
+            wrapped = _wrap_text_balanced(
                 text=text,
                 measure_side=measure_side,
                 max_side=roi_height if vertical else roi_width,
+                strict=strict,
             )
+        if wrapped is None:
+            return None, float("inf"), float("inf")
         # measure wrapped block
         w, h = eval_metrics(wrapped, font_size, vertical)
         return wrapped, w, h
-    
-    # Initialize
-    best_text, best_size = text, init_font_size
-    found_fit = False
 
-    lo, hi = min_font_size, init_font_size
-    while lo <= hi:
-        mid = (lo + hi) // 2
-        wrapped, w, h = wrap_and_size(mid)
-        if w <= roi_width and h <= roi_height:
-            found_fit = True
-            best_text, best_size = wrapped, mid
-            lo = mid + 1
-        else:
-            hi = mid - 1
+    def search(strict):
+        found = None
+        lo, hi = min_font_size, init_font_size
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            wrapped, w, h = wrap_and_size(mid, strict)
+            if w <= roi_width and h <= roi_height:
+                found = (wrapped, mid)
+                lo = mid + 1
+            else:
+                hi = mid - 1
+        return found
 
-    # if nothing ever fit, force a wrap at the minimum size
-    if not found_fit:
+    # A size at which some word or name would have to be cut to fit a line
+    # does not fit: first look for the largest size where nothing is cut, and
+    # only if there is none let the wrap cut words.
+    found = search(strict=True) or search(strict=False)
+    if found is not None:
+        best_text, best_size = found
+    else:
+        # if nothing ever fit, force a wrap at the minimum size
         best_text, w, h = wrap_and_size(min_font_size)
         best_size = min_font_size
 
@@ -528,7 +780,8 @@ def manual_wrap(
     render_settings = main_page.render_settings()
 
     for blk in blk_list:
-        x1, y1, width, height = blk.xywh
+        x1, y1, x2, y2 = render_area(blk, main_page.blk_list)
+        width, height = x2 - x1, y2 - y1
 
         translation = blk.translation
         if not translation or len(translation) == 1:

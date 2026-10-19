@@ -24,7 +24,7 @@ from modules.utils.image_utils import generate_mask, get_smart_text_color
 from modules.utils.text_segmentation import segment_page
 from modules.utils.language_utils import get_language_code, is_no_space_lang
 from modules.utils.translator_utils import get_raw_translation, get_raw_text, format_translations, is_renderable_translation
-from modules.rendering.render import get_best_render_area, pyside_word_wrap, is_vertical_block, font_family_for_block, default_preset_for
+from modules.rendering.render import get_best_render_area, pyside_word_wrap, is_vertical_block, font_family_for_block, default_preset_for, render_area, text_position
 from modules.utils.text_presets import apply_to_state as apply_text_preset
 from modules.utils.device import resolve_device
 from modules.utils.glossary import collect_source_text, issue_rows
@@ -549,7 +549,8 @@ class BatchProcessor:
                 
             text_items_state = []
             for blk in blk_list:
-                x1, y1, block_width, block_height = blk.xywh
+                area = render_area(blk, blk_list)
+                block_width, block_height = area[2] - area[0], area[3] - area[1]
 
                 translation = blk.translation
                 if not is_renderable_translation(translation):
@@ -578,6 +579,8 @@ class BatchProcessor:
                     return_metrics=True
                 )
                 
+                x1, y1 = text_position(blk, area, rendered_width, rendered_height, alignment, vertical)
+
                 # Display text if on current page  
                 if image_path == file_on_display:
                     self.main_page.blk_rendered.emit(translation, font_size, blk, image_path)

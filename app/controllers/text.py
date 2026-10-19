@@ -17,7 +17,8 @@ from modules.utils.text_presets import LOOK_FIELDS
 from app.ui.canvas.text.text_item_properties import TextItemProperties
 
 from modules.utils.textblock import TextBlock
-from modules.rendering.render import TextRenderingSettings, manual_wrap, is_vertical_block, pyside_word_wrap, font_family_for_block, default_preset_for
+from modules.rendering.render import TextRenderingSettings, manual_wrap, is_vertical_block, pyside_word_wrap, font_family_for_block, default_preset_for, render_area, text_position
+from modules.utils.text_presets import apply_to_state as apply_text_preset
 from app.validation import font_selected
 from app.ui.qt_values import to_qt_layout_direction
 from modules.utils.language_utils import get_language_code, get_layout_direction, is_no_space_lang
@@ -148,6 +149,7 @@ class TextController:
         vertical = is_vertical_block(blk, trg_lng_cd)
 
         properties = TextItemProperties(
+            object_id=getattr(blk, "object_id", "") or "",
             text=text,
             font_family=font_family,
             font_size=font_size,
@@ -167,6 +169,11 @@ class TextController:
         
         text_item = self.main.image_viewer.add_text_item(properties)
         text_item.set_plain_text(text)
+        # Centred in the area the text was fitted to, as the batch and
+        # multi-page renderers place it.
+        rect = text_item.text_rect() if hasattr(text_item, "text_rect") else text_item.boundingRect()
+        area = render_area(blk, self.main.blk_list)
+        text_item.setPos(*text_position(blk, area, rect.width(), rect.height(), alignment, vertical))
         preset = default_preset_for(render_settings, blk)
         if preset is not None:
             apply_preset_to_item(text_item, preset, LOOK_FIELDS)
@@ -1212,13 +1219,18 @@ class TextController:
                         for item in existing_text_items
                     }
 
+                    # A rendered item carries its block's object_id; text no
+                    # longer starts at the block's corner, so the position key
+                    # only still recognises items rendered before that.
+                    existing_ids = {item.get("object_id") for item in existing_text_items if item.get("object_id")}
                     new_text_items_state = []
                     for blk in blk_list:
                         blk_key = (int(blk.xyxy[0]), int(blk.xyxy[1]), float(blk.angle))
-                        if blk_key in existing_keys:
+                        if blk_key in existing_keys or getattr(blk, "object_id", "") in existing_ids:
                             continue
 
-                        x1, y1, block_width, block_height = blk.xywh
+                        area = render_area(blk, blk_list)
+                        block_width, block_height = area[2] - area[0], area[3] - area[1]
                         translation = blk.translation
                         if not is_renderable_translation(translation):
                             continue
@@ -1244,8 +1256,10 @@ class TextController:
                             return_metrics=True,
                         )
 
+                        x1, y1 = text_position(blk, area, rendered_width, rendered_height, alignment, vertical)
                         font_color = QColor(get_smart_text_color(blk.font_color, setting_font_color))
                         text_props = TextItemProperties(
+                            object_id=getattr(blk, "object_id", "") or "",
                             text=wrapped,
                             font_family=blk_font_family,
                             font_size=font_size,
@@ -1266,7 +1280,10 @@ class TextController:
                             height=rendered_height,
                             vertical=vertical,
                         )
-                        new_text_items_state.append(text_props.to_dict())
+                        # The default style for the block's text class, as
+                        # batch mode and the single-page Render apply it.
+                        new_text_items_state.append(
+                            apply_text_preset(text_props.to_dict(), default_preset_for(render_settings, blk)))
 
                     if new_text_items_state:
                         viewer_state["text_items_state"] = existing_text_items + new_text_items_state
@@ -1319,10 +1336,14 @@ class TextController:
             # Create a dictionary to map text items to their positions and rotations
             existing_text_items = {item: (int(item.pos().x()), int(item.pos().y()), item.rotation()) for item in self.main.image_viewer.text_items}
 
-            # Identify new blocks based on position and rotation
+            # Identify new blocks: a rendered item carries its block's
+            # object_id; position and rotation recognise items rendered when
+            # text still started at the block's corner.
+            existing_ids = {getattr(item, "object_id", "") for item in self.main.image_viewer.text_items} - {""}
             new_blocks = [
                 blk for blk in self.main.blk_list
                 if (int(blk.xyxy[0]), int(blk.xyxy[1]), blk.angle) not in existing_text_items.values()
+                and getattr(blk, "object_id", "") not in existing_ids
             ]
 
             self.main.image_viewer.clear_rectangles()

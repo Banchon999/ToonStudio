@@ -254,3 +254,54 @@ def test_a_missing_font_is_caught_before_anything_runs(window, qapp, monkeypatch
     assert win.smart_ctrl.start(order)
     assert _pump_until(qapp, lambda: not win.smart_ctrl.running)
     assert steps == ["detect"]
+
+
+def test_rendered_text_is_centred_where_the_lettering_was(window, qapp):
+    # The multi-page Render pinned each text box to the top-left corner of
+    # the detected box, so a translation shorter than its source sat high
+    # and to the left on every page Smart Workflow rendered.
+    win, paths, _, _ = window
+    _run(win, qapp)
+    x1, y1, x2, y2 = 20, 20, 140, 60          # FakeDetector's box
+    for path in (paths[0], paths[2]):
+        item = win.image_states.get_page_state(path)["viewer_state"]["text_items_state"][0]
+        x, y = (float(v) for v in item["position"])
+        assert x + item["width"] / 2 == pytest.approx((x1 + x2) / 2, abs=1)
+        assert y + item["height"] / 2 == pytest.approx((y1 + y2) / 2, abs=1)
+
+
+def test_the_single_page_render_centres_text_in_its_bubble(window, qapp):
+    # The Render button (one page) goes through on_blk_rendered, which placed
+    # the item at the detected box's corner.
+    win, paths, _, _ = window
+    blk = TextBlock(text_bbox=np.array([120, 90, 180, 110]), bubble_bbox=np.array([60, 40, 260, 180]),
+                    text_class="text_bubble")
+    blk.translation = "สวัสดี"
+    win.blk_list = [blk]
+    win.text_ctrl.on_blk_rendered("สวัสดี", 20, blk, win.image_files[win.curr_img_idx])
+    item = win.image_viewer.text_items[-1]
+    rect = item.text_rect()
+    assert item.pos().x() + rect.width() / 2 == pytest.approx(160, abs=1)
+    assert item.pos().y() + rect.height() / 2 == pytest.approx(110, abs=1)
+
+
+def test_rendering_a_page_again_does_not_draw_its_text_twice(window, qapp):
+    # Render skips blocks that already have text by matching an item to its
+    # block. It matched by position, which centring moved off the block's
+    # corner — so it now matches by the block's object_id.
+    win, paths, _, _ = window
+    _run(win, qapp)
+    state = win.image_states.get_page_state(paths[2])["viewer_state"]
+    assert len(state["text_items_state"]) == 1
+    done = []
+    win.text_ctrl.render_text(paths=[paths[2]], on_done=done.append)
+    assert _pump_until(qapp, lambda: done)
+    assert len(state["text_items_state"]) == 1
+
+    win.image_ctrl.display_image(0) if win.curr_img_idx != 0 else None
+    assert _pump_until(qapp, lambda: win.curr_img_idx == 0 and win.blk_list)
+    before = len(win.image_viewer.text_items)
+    assert before == 1
+    win.text_ctrl.render_text()
+    _pump_until(qapp, lambda: False, timeout_ms=1500)
+    assert len(win.image_viewer.text_items) == before
