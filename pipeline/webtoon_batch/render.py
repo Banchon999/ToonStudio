@@ -10,7 +10,7 @@ import imkit as imk
 from core.path_materialization import ensure_path_materialized
 from core.text_style import build_text_item_state
 from core.layers import merge_preserving_locked
-from modules.rendering.render import get_best_render_area, is_vertical_block, pyside_word_wrap, font_family_for_block, default_preset_for
+from modules.rendering.render import get_best_render_area, is_vertical_block, pyside_word_wrap, font_family_for_block, default_preset_for, render_area, text_position
 from modules.utils.text_presets import apply_to_state as apply_text_preset
 from modules.utils.image_utils import get_smart_text_color
 from modules.utils.language_utils import get_language_code, is_no_space_lang
@@ -102,9 +102,9 @@ class RenderMixin:
         page_scene_offset = self._get_page_scene_offset(page_index)
 
         for block in blocks:
-            x1, y1, x2, y2 = [float(v) for v in block.xyxy]
-            width = max(1.0, x2 - x1)
-            height = max(1.0, y2 - y1)
+            area = render_area(block, blocks)
+            width = max(1.0, area[2] - area[0])
+            height = max(1.0, area[3] - area[1])
 
             translation = block.translation
             if not is_renderable_translation(translation):
@@ -138,6 +138,7 @@ class RenderMixin:
                 return_metrics=True,
             )
 
+            x1, y1 = text_position(block, area, rendered_width, rendered_height, alignment, vertical)
             font_color = get_smart_text_color(block.font_color, base_font_color)
             if should_emit_live:
                 render_block = block.deep_copy()

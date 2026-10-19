@@ -167,6 +167,9 @@ def speech_particle_rules(source_lang: str = "") -> str:
         "• If the speaker or their gender is unclear, do NOT guess: use a gender-neutral ending "
         "(นะ, จ้ะ, or no particle) instead.",
         "• Narration boxes, captions and sound effects take no polite particle.",
+        "• Inner thoughts, a character's monologue boxes and talking to oneself are addressed to "
+        "no one: no polite particle (ครับ/ค่ะ), and the self-pronoun is ฉัน or เรา (ข้า in a "
+        "historical setting) — never ผม/ดิฉัน, which are polite forms for speaking to someone.",
         f"• Forms of address follow the gender of the person ADDRESSED ({address}); never call "
         "a male character คุณหนู or a female one คุณชาย.",
         "• Third-person pronouns follow each character's gender: male → เขา · female → เธอ/นาง "

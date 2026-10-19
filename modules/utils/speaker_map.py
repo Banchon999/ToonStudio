@@ -27,6 +27,7 @@ from dataclasses import dataclass
 
 
 MALE, FEMALE, UNKNOWN = "male", "female", "unknown"
+SPEECH, THOUGHT = "speech", "thought"
 
 
 @dataclass
@@ -34,10 +35,15 @@ class Speaker:
     name: str = ""
     gender: str = UNKNOWN   # male | female | unknown
     evidence: str = ""
+    mode: str = SPEECH      # speech (said to someone) | thought (to no one)
 
     @property
     def known(self) -> bool:
         return self.gender in (MALE, FEMALE)
+
+    @property
+    def thought(self) -> bool:
+        return self.mode == THOUGHT
 
 
 @dataclass
@@ -94,11 +100,18 @@ def build_speaker_prompt(source_lang: str, texts: list[str], characters: list[Ch
         "a character is almost never spoken by that character.",
         *([f"• {words}"] if words else []),
         '• gender: "male" | "female" | "unknown" — "unknown" when nothing on the page shows it.',
-        '• Caption boxes are "narration", sound effects "sfx" (both gender "unknown").',
+        '• mode: "speech" when the block is said aloud TO someone; "thought" when it is addressed to '
+        "no one — a thought bubble (cloud outline, a trail of small circles), a character's "
+        "first-person inner monologue in a box beside or about them, or talking to oneself. A "
+        "normal speech bubble is \"thought\" too when its character is alone in the panel and "
+        "the line addresses no one (\"Phew… I have to win.\", \"No, I can't give up!\"): decide "
+        "by who it is said to, not by the bubble's shape. Its speaker is still the character.",
+        '• Caption boxes that narrate in the third person are "narration", sound effects "sfx" '
+        '(both gender "unknown", mode "speech").',
         "",
         f"Return ONLY JSON, exactly {len(texts)} items, in order:",
         '{"blocks":[{"q":1,"evidence":"<what shows who speaks>","speaker":"<name or short description>",'
-        '"gender":"male|female|unknown"}]}',
+        '"gender":"male|female|unknown","mode":"speech|thought"}]}',
         "",
         "BLOCKS:",
         blocks,
@@ -171,7 +184,8 @@ def parse_speaker_reply(raw: str, count: int, characters: list[Character]) -> li
         char = _character_for(name, characters) if gender != UNKNOWN or name else None
         if char is not None and char.gender in (MALE, FEMALE):
             gender = char.gender
-        speakers.append(Speaker(name, gender, " ".join(str(item.get("evidence") or "").split())))
+        mode = THOUGHT if str(item.get("mode") or "").strip().lower() == THOUGHT else SPEECH
+        speakers.append(Speaker(name, gender, " ".join(str(item.get("evidence") or "").split()), mode))
     return speakers
 
 
@@ -181,15 +195,23 @@ def speaker_map_block(speakers: list[Speaker]) -> str:
     The source text is deliberately not repeated: NovelTrans measured a
     model leaving lines untranslated when the map quoted them.
     """
-    if not speakers or not any(s.known for s in speakers):
+    if not speakers or not any(s.known or s.thought for s in speakers):
         return ""
     lines = []
     for i, s in enumerate(speakers):
         who = s.name or "unknown"
-        if s.gender == MALE:
-            rule = "male → ครับ/นะครับ, self ผม — never ค่ะ/คะ/ดิฉัน"
+        if s.thought:
+            rule = (f"{s.gender + ', ' if s.known else ''}inner thought / talking to oneself → no "
+                    "ครับ/ค่ะ at all, self ฉัน or เรา — never ผม/ดิฉัน")
+        # The map settles whose gender a particle follows, not whether the
+        # line takes one: "male → ครับ, self ผม" for every block put ครับ on
+        # casual lines and on a character muttering to himself.
+        elif s.gender == MALE:
+            rule = ("male → if the line takes a polite particle it is ครับ, never ค่ะ/คะ/ดิฉัน; "
+                    "casual speech takes none")
         elif s.gender == FEMALE:
-            rule = "female → ค่ะ/คะ/นะคะ, self ฉัน/ดิฉัน — never ครับ/ผม"
+            rule = ("female → if the line takes a polite particle it is ค่ะ/คะ, never ครับ/ผม; "
+                    "casual speech takes none")
         else:
             rule = "speaker's gender unknown → no ครับ/ค่ะ"
         lines.append(f"block_{i}: {who} ({rule})")
@@ -268,21 +290,58 @@ def fix_particles(text: str, gender: str) -> str:
     return t
 
 
+def strip_polite(text: str) -> str:
+    """A thought as Thai writes one: no polite particle, no polite self-pronoun.
+
+    ครับ/ค่ะ and ผม/ดิฉัน are how a speaker addresses someone; a character
+    thinking or talking to themself addresses no one, and Thai comics write
+    those lines with ฉัน/เรา and no particle. Since the speaker map (3.1.0)
+    told the translation "male → ครับ, self ผม" for every block a character
+    was credited with, monologue boxes came back ending in ครับ — 11 of 50 on
+    the test pages, against 0 of 50 in 3.0.3. คะแนน is not คะ; hair stays ผม.
+    """
+    if not text:
+        return text
+    t = _resolve_hedge(text, UNKNOWN)
+    t = t.replace("ครับผม", "")
+    t = re.sub("นะ(?:ครับ|คะ|ค่ะ)", "นะ", t)
+    t = re.sub("(?:ขอรับ|เจ้าค่ะ|ครับ|ค่ะ)" + _P_END, "", t)
+    t = re.sub("คะ" + _P_END, "", t)
+    hair: list[str] = []
+
+    def keep(m):
+        hair.append(m.group(0))
+        return f"\u0002{len(hair) - 1}\u0002"
+
+    t = _HAIR.sub(keep, t)
+    t = re.sub("กระผม|ดิฉัน|อิฉัน", "ฉัน", t)
+    t = re.sub(r"(^|[\s“\"「…,])ผม", r"\1ฉัน", t)
+    t = re.sub("\u0002(\\d+)\u0002", lambda m: hair[int(m.group(1))], t)
+    t = re.sub(r"[ \t]+([!?.…,~])", r"\1", t)
+    return re.sub(r"[ \t]{2,}", " ", t).strip()
+
+
 def apply_speaker_map(blk_list, speakers: list[Speaker] | None) -> int:
     """Put the map's speakers on the blocks and fix their particles.
 
     A block the map knows takes the map's speaker and gender (the request
     that only asked who speaks is the reliable one) and has its wrong-gender
-    words swapped. A block the map does not know keeps what the translation
-    said, except a hedged "ค่ะ/ครับ", which is dropped. Returns how many
-    translations were changed.
+    words swapped. A thought loses its polite particles and pronouns
+    whatever the gender. A block the map does not know keeps what the
+    translation said, except a hedged "ค่ะ/ครับ", which is dropped. Returns
+    how many translations were changed.
     """
     if not speakers:
         return 0
     changed = 0
     for blk, s in zip(blk_list, speakers):
         before = getattr(blk, "translation", "") or ""
-        if s.known:
+        if s.thought:
+            if s.known:
+                blk.speaker = s.name or getattr(blk, "speaker", "")
+                blk.speaker_gender = s.gender
+            after = strip_polite(before)
+        elif s.known:
             blk.speaker = s.name or getattr(blk, "speaker", "")
             blk.speaker_gender = s.gender
             after = fix_particles(before, s.gender)
