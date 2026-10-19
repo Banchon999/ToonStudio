@@ -128,6 +128,7 @@ class FakeEngine(BaseLLMTranslation):
         super().__init__()
         self.replies = [speaker_reply, translation_reply]
         self.calls = []
+        self.image_seen = []
         self.source_lang, self.target_lang = "Korean", "Thai"
         self.temperature = 1.0
 
@@ -136,6 +137,7 @@ class FakeEngine(BaseLLMTranslation):
 
     def _perform_translation(self, user_prompt, system_prompt, image):
         self.calls.append((user_prompt, system_prompt, self.temperature))
+        self.image_seen.append(self.img_as_llm_input)
         reply = self.replies.pop(0)
         if isinstance(reply, Exception):
             raise reply
@@ -160,6 +162,15 @@ class TestEngine:
         assert user_prompt.index("GLOSSARY") < user_prompt.index("SPEAKER MAP") < user_prompt.index("Translate this")
         assert blocks[1].translation == "ขอโทษค่ะแม่"
         assert blocks[1].speaker_gender == "female"
+
+    def test_the_speaker_request_sees_the_page_even_with_image_input_off(self):
+        # Image input is off by default; in a real run the speaker step then
+        # never saw the woman the bubble pointed at and gave her line to Jun.
+        engine = FakeEngine(self.SPEAKERS, self.TRANSLATION)
+        engine.img_as_llm_input = False
+        engine.translate([block("a"), block("b")], np.zeros((8, 8, 3), np.uint8), "")
+        assert engine.image_seen == [True, False]     # speakers with it, translation as set
+        assert engine.img_as_llm_input is False
 
     def test_a_failed_speaker_request_still_translates(self):
         engine = FakeEngine(RuntimeError("rate limited"), self.TRANSLATION)
