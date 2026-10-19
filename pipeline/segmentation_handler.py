@@ -1,4 +1,5 @@
 import logging
+from modules.utils.text_segmentation import segment_page
 from .webtoon_utils import (
     filter_and_convert_visible_blocks, 
     restore_original_block_coordinates
@@ -36,9 +37,19 @@ class SegmentationHandler:
             logger.info("No blocks found in visible area for segmentation")
             return []
         
-        # Restore original coordinates immediately as we only need the blocks themselves
+        # Strokes are built while the blocks are in the visible image's
+        # coordinates, from the text model's prediction for that image, then
+        # placed back in the scene. Thresholding each box instead (what this
+        # used to leave to the GUI thread) painted artwork with the lettering.
+        page_text_mask = segment_page(visible_image, self.main_page.settings_page)
+        offset = (0, mappings[0]['scene_y_start'])
+        build_stroke = self.main_page.image_viewer.drawing_manager.make_segmentation_stroke_data
+        strokes = [
+            build_stroke(blk, visible_image, page_text_mask=page_text_mask, scene_offset=offset)
+            for blk in visible_blocks
+        ]
         restore_original_block_coordinates(visible_blocks)
         
         logger.info(f"Segmentation completed for {len(visible_blocks)} blocks in visible area")
         
-        return visible_blocks
+        return list(zip(visible_blocks, strokes))

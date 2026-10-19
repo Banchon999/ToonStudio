@@ -984,7 +984,20 @@ class DrawingManager:
         # Ensure the rectangles are visible
         self.viewer._scene.update()
 
-    def make_segmentation_stroke_data(self, text_bbox, image=None):
+    def make_segmentation_stroke_data(self, text_bbox, image=None, page_text_mask=None, scene_offset=None):
+        """The red Segment stroke for one block, or None.
+
+        page_text_mask is the page's text-model prediction for `image`. Pass
+        it from a worker (`segment_page`): without it this falls back to what
+        is already cached, which before Clean has run is nothing, and then to
+        thresholding — which marks whatever is dark or light inside the box as
+        lettering. On real pages that painted box frames, smoke and SFX red,
+        and the user erased it by hand.
+
+        scene_offset (x, y) says the block's coordinates are in `image`'s
+        space (the visible slice in webtoon mode) and where that image sits in
+        the scene.
+        """
         blk = text_bbox if hasattr(text_bbox, "xyxy") else None
         bbox = blk.xyxy if blk is not None else text_bbox
         if bbox is None or len(bbox) < 4:
@@ -1024,17 +1037,21 @@ class DrawingManager:
         cx1, cy1 = 0, 0
         if image is not None:
             try:
-                if blk is not None and not self.viewer.webtoon_mode:
+                if blk is not None and (not self.viewer.webtoon_mode or scene_offset is not None):
+                    if page_text_mask is None:
+                        page_text_mask = peek_page_mask(image, self._settings_page())
                     crop_mask, bounds = build_block_mask_data(
                         image,
                         blk,
                         default_padding=5,
                         require_text_or_translation=False,
                         clip_to_bubble=True,
-                        page_text_mask=peek_page_mask(image, self._settings_page()),
+                        page_text_mask=page_text_mask,
                     )
                     if crop_mask is not None and bounds is not None:
                         cx1, cy1, _cx2, _cy2 = [int(v) for v in bounds]
+                    if scene_offset is not None:
+                        visible_scene_left, visible_scene_top = scene_offset
                 else:
                     if self.viewer.webtoon_mode:
                         crop_bbox = [img_min_x, img_min_y, img_max_x, img_max_y]
@@ -1069,10 +1086,16 @@ class DrawingManager:
                 for x, y in pts[1:]:
                     path.lineTo(x + offset_x, y + offset_y)
                 path.closeSubpath()
+        elif page_text_mask is not None:
+            # The text model looked at this block and found no lettering (on
+            # real pages: artwork the detector took for text). Clean leaves
+            # such a block alone; a rectangle here painted the artwork red.
+            return None
         else:
             # Fallback to block bounding box if crop mask generation fails
             path = QtGui.QPainterPath()
-            path.addRect(min_x, min_y, w, h)
+            path.addRect(min_x + visible_scene_left if scene_offset is not None else min_x,
+                         min_y + visible_scene_top if scene_offset is not None else min_y, w, h)
 
         if path.isEmpty():
             return None

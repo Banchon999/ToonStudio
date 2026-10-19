@@ -17,6 +17,7 @@ from modules.utils.language_utils import to_canonical_language_name
 from app.ui.messages import Messages
 from app.validation import validate_ocr, validate_translator
 from modules.utils.textblock import sort_blk_list
+from modules.utils.text_segmentation import segment_page
 from modules.utils.translator_utils import is_there_text, format_translations, set_upper_case
 from pipeline.webtoon_utils import get_visible_text_items, get_first_visible_block
 
@@ -136,14 +137,29 @@ class ManualWorkflowController:
 
     def _serialize_segmentation_strokes(self, blk_list: list[TextBlock], image=None) -> list[dict]:
         strokes: list[dict] = []
-        build_stroke = self.main.image_viewer.drawing_manager.make_segmentation_stroke_data
-        for blk in blk_list:
-            if blk.xyxy is None or len(blk.xyxy) < 4:
-                continue
-            stroke = build_stroke(blk, image)
+        for _blk, stroke in self._segmentation_strokes(blk_list, image):
             if stroke is not None:
                 strokes.append(stroke)
         return strokes
+
+    def _segmentation_strokes(self, blk_list: list[TextBlock], image=None) -> list[tuple[TextBlock, Any]]:
+        """(block, stroke) for each block of one page. Run on a worker.
+
+        The page's text-model prediction is computed here (`segment_page`,
+        cached, so the Clean that follows reuses it). Without it the strokes
+        came from thresholding each box, and on real pages that painted box
+        frames, smoke and SFX red along with the lettering.
+        """
+        if image is None:
+            image = self.main.image_viewer.get_image_array()
+        page_text_mask = segment_page(image, self.main.settings_page) if image is not None else None
+        build_stroke = self.main.image_viewer.drawing_manager.make_segmentation_stroke_data
+        results = []
+        for blk in blk_list:
+            if blk.xyxy is None or len(blk.xyxy) < 4:
+                continue
+            results.append((blk, build_stroke(blk, image, page_text_mask=page_text_mask)))
+        return results
 
     def block_detect(self, load_rects: bool = True) -> None:
         selected_paths = self._selected_page_paths()
@@ -647,18 +663,27 @@ class ManualWorkflowController:
         result: tuple[list[TextBlock], bool] | tuple[list[TextBlock], bool, Any]
     ) -> None:
         
-        if len(result) == 3:
-            blk_list, load_rects, _ = result
-        else:
-            blk_list, load_rects = result
+        detected, strokes = result
+        blk_list = detected[0]
         self.main.blk_list = blk_list
         self.main.undo_group.activeStack().beginMacro("draw_segmentation_boxes")
-        image = self.main.image_viewer.get_image_array()
-        for blk in self.main.blk_list:
-            if blk.xyxy is not None:
-                stroke = self.main.image_viewer.drawing_manager.make_segmentation_stroke_data(blk, image)
+        for blk, stroke in strokes:
+            if stroke is not None:
                 self.main.image_viewer.draw_segmentation_lines(blk.xyxy, stroke=stroke)
         self.main.undo_group.activeStack().endMacro()
+
+    def _detect_and_segment(self):
+        """Detect blocks, then their strokes, on the worker (Segment with no blocks yet)."""
+        detected = self.main.pipeline.detect_blocks()
+        if not detected:
+            return ([], True, None), []
+        blk_list = detected[0] or []
+        if self.main.webtoon_mode:
+            self.main.blk_list = blk_list
+            strokes = self.main.pipeline.segment_webtoon_visible_area()
+        else:
+            strokes = self._segmentation_strokes(blk_list)
+        return detected, strokes
 
     def load_segmentation_points(self) -> None:
         if self.main.image_viewer.hasPhoto():
@@ -745,16 +770,8 @@ class ManualWorkflowController:
                     )
                 else:
 
-                    def compute_all_strokes() -> list[tuple[TextBlock, Any]]:
-                        image = self.main.image_viewer.get_image_array()
-                        results = []
-                        for blk in self.main.blk_list:
-                            stroke = self.main.image_viewer.drawing_manager.make_segmentation_stroke_data(blk, image)
-                            results.append((blk, stroke))
-                        return results
-
                     self.main.run_threaded(
-                        compute_all_strokes,
+                        lambda: self._segmentation_strokes(self.main.blk_list),
                         self._on_segmentation_bboxes_ready,
                         self.main.default_error_handler,
                         self.main.on_manual_finished,
@@ -762,7 +779,7 @@ class ManualWorkflowController:
 
             else:
                 self.main.run_threaded(
-                    self.main.pipeline.detect_blocks,
+                    self._detect_and_segment,
                     self.blk_detect_segment,
                     self.main.default_error_handler,
                     self.main.on_manual_finished,
@@ -772,13 +789,7 @@ class ManualWorkflowController:
         self, 
         results: Sequence[tuple[TextBlock, Any] | TextBlock]
     ) -> None:
-        if self.main.webtoon_mode:
-            for blk in results:
-                if blk.xyxy is not None:
-                    stroke = self.main.image_viewer.drawing_manager.make_segmentation_stroke_data(blk)
-                    self.main.image_viewer.draw_segmentation_lines(blk.xyxy, stroke=stroke)
-        else:
-            for blk, stroke in results:
-                if stroke is not None:
-                    self.main.image_viewer.draw_segmentation_lines(blk.xyxy, stroke=stroke)
+        for blk, stroke in results:
+            if stroke is not None:
+                self.main.image_viewer.draw_segmentation_lines(blk.xyxy, stroke=stroke)
         self.main.undo_group.activeStack().endMacro()
