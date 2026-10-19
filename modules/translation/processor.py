@@ -4,6 +4,7 @@ import numpy as np
 
 from ..utils.textblock import TextBlock
 from ..utils.thai_speech import check_speech, targets_thai
+from ..utils.speaker_map import Character
 from ..utils.translator_utils import join_translation_line_breaks
 from .base import LLMTranslation
 from .factory import TranslationFactory
@@ -103,6 +104,7 @@ class Translator:
         """
         if self.is_llm_engine:
             # LLM translators need image and extra context
+            self.engine.speaker_characters = self._speaker_characters()
             result = self.engine.translate(blk_list, image, extra_context)
         else:
             # Text-based translators only need the text blocks
@@ -111,6 +113,33 @@ class Translator:
         # running text, which it wraps to the bubble itself.
         join_translation_line_breaks(result if result is not None else blk_list)
         return result
+
+    def _speaker_characters(self) -> list:
+        """The glossary's characters with a gender, under every name they go by.
+
+        Their gender overrides whatever the speaker request guesses. Each
+        alias and Korean given name is listed as its own form, so a speaker
+        reported as "미나" is matched to 서미나.
+        """
+        try:
+            manager = self.settings.ui.glossary_page.manager
+        except AttributeError:
+            return []
+        if manager is None or not getattr(manager, "enabled", True):
+            return []
+        chars = [
+            Character(e.source, e.target, e.gender)
+            for e in manager.entries
+            if e.type == "character" and e.gender in ("male", "female")
+        ]
+        try:
+            aliases = manager.alias_entries()
+        except Exception:  # noqa: BLE001 - names are a bonus, never a failure
+            aliases = []
+        for stand_in, owner, own_target in aliases:
+            if owner.type == "character" and owner.gender in ("male", "female"):
+                chars.append(Character(stand_in.source, own_target or owner.target, owner.gender))
+        return chars
 
     def check_glossary(self, blk_list: list[TextBlock]) -> list:
         """What is wrong with the translation of blk_list, as warnings.
