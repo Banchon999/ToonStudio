@@ -68,6 +68,17 @@ class WorkspaceMixin:
         self.automatic_radio.setChecked(True)
         self.automatic_radio.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
 
+        # Smart Workflow: every step across all pages in the user's order,
+        # skipping what a page already has (app/controllers/smart_workflow.py).
+        self.smart_radio = MRadioButton(self.tr("Smart"))
+        self.smart_radio.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+        self.smart_radio.setToolTip(self.tr(
+            "Run each step on every page, in the order you set, and skip the steps "
+            "a page already has — your edits are never redone."))
+        self.smart_settings_button = MToolButton().svg("smart-workflow.svg").icon_only()
+        self.smart_settings_button.setToolTip(self.tr("Choose the Smart Workflow steps and their order"))
+        self.smart_settings_button.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+
         self.webtoon_toggle = MToolButton()
         self.webtoon_toggle.set_dayu_svg("webtoon-toggle.svg")
         self.webtoon_toggle.huge()
@@ -111,6 +122,8 @@ class WorkspaceMixin:
         mode_layout.setSpacing(10)
         mode_layout.addWidget(self.manual_radio)
         mode_layout.addWidget(self.automatic_radio)
+        mode_layout.addWidget(self.smart_radio)
+        mode_layout.addWidget(self.smart_settings_button)
 
         header_layout.setContentsMargins(12, 6, 12, 6)
         header_layout.setSpacing(8)

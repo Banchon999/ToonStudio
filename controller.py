@@ -41,6 +41,7 @@ from core.layers import DocumentLayers
 from app.controllers.layers import LayerController
 from app.controllers.selection import SelectionController
 from app.controllers.paint import PaintController
+from app.controllers.smart_workflow import SmartWorkflowController
 
 
 # Ensure any pre-declared mandatory models
@@ -143,6 +144,7 @@ class ComicTranslate(ComicTranslateUI):
         self.layer_ctrl = LayerController(self)
         self.selection_ctrl = SelectionController(self)
         self.paint_ctrl = PaintController(self)
+        self.smart_ctrl = SmartWorkflowController(self)
         self.layers_panel.bind(self.layer_ctrl)
         self.layers_button.toggled.connect(self.show_layers_tab)
         self.editor_status_bar.bind(self)
@@ -210,6 +212,8 @@ class ComicTranslate(ComicTranslateUI):
        
         self.manual_radio.clicked.connect(self.manual_mode_selected)
         self.automatic_radio.clicked.connect(self.batch_mode_selected)
+        self.smart_radio.clicked.connect(self.smart_mode_selected)
+        self.smart_settings_button.clicked.connect(self.open_smart_workflow_settings)
         
         # Webtoon mode toggle
         self.webtoon_toggle.clicked.connect(self.webtoon_ctrl.toggle_webtoon_mode)
@@ -230,14 +234,15 @@ class ComicTranslate(ComicTranslateUI):
         self.hbutton_group.get_button_group().buttons()[2].clicked.connect(self.translate_image)
         self.hbutton_group.get_button_group().buttons()[3].clicked.connect(self.load_segmentation_points)
         self.hbutton_group.get_button_group().buttons()[4].clicked.connect(self.inpaint_and_set)
-        self.hbutton_group.get_button_group().buttons()[5].clicked.connect(self.text_ctrl.render_text)
+        # Through a lambda: clicked passes `checked`, which would land in `paths`.
+        self.hbutton_group.get_button_group().buttons()[5].clicked.connect(lambda: self.text_ctrl.render_text())
 
         self.undo_tool_group.get_button_group().buttons()[0].clicked.connect(self.undo_group.undo)
         self.undo_tool_group.get_button_group().buttons()[1].clicked.connect(self.undo_group.redo)
 
         # Connect other buttons and widgets
-        self.translate_button.clicked.connect(self.start_batch_process)
-        self.cancel_button.clicked.connect(self.cancel_current_task)
+        self.translate_button.clicked.connect(self.start_run)
+        self.cancel_button.clicked.connect(self.cancel_run)
         self.batch_report_button.clicked.connect(self.show_latest_batch_report)
         self.set_all_button.clicked.connect(self.text_ctrl.set_src_trg_all)
         self.clear_rectangles_button.clicked.connect(self.image_viewer.clear_rectangles)
@@ -742,11 +747,36 @@ class ComicTranslate(ComicTranslateUI):
         self.disable_hbutton_group()
         self.translate_button.setEnabled(True)
         self.cancel_button.setEnabled(True)
+        self.translate_button.setText(self.tr("Translate All"))
+
+    def smart_mode_selected(self):
+        self.disable_hbutton_group()
+        self.translate_button.setEnabled(True)
+        self.cancel_button.setEnabled(True)
+        self.translate_button.setText(self.tr("Run Workflow"))
+
+    def start_run(self):
+        """The accent run button: Smart Workflow or the batch, by the mode chosen."""
+        if self.smart_radio.isChecked():
+            self.smart_ctrl.start()
+        else:
+            self.start_batch_process()
+
+    def cancel_run(self):
+        if self.smart_ctrl.running:
+            self.smart_ctrl.cancel()
+        else:
+            self.cancel_current_task()
+
+    def open_smart_workflow_settings(self):
+        from app.ui.smart_workflow_dialog import SmartWorkflowDialog
+        SmartWorkflowDialog(self).exec()
 
     def manual_mode_selected(self):
         self.enable_hbutton_group()
         self.translate_button.setEnabled(False)
         self.cancel_button.setEnabled(False)
+        self.translate_button.setText(self.tr("Translate All"))
 
     def on_manual_finished(self):
         self.loading.setVisible(False)

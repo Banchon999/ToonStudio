@@ -172,6 +172,16 @@ class EditorStatusBar(QtWidgets.QWidget):
             label.setObjectName("toonStatusText")
             layout.addWidget(label)
         layout.addStretch(1)
+        # Smart Workflow progress, with a way to stop it, while one runs.
+        self.workflow_label = QtWidgets.QLabel()
+        self.workflow_label.setObjectName("toonStatusText")
+        self.workflow_stop = QtWidgets.QPushButton(self.tr("Stop"))
+        self.workflow_stop.setFlat(True)
+        self.workflow_stop.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
+        self.workflow_stop.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+        for widget in (self.workflow_label, self.workflow_stop):
+            widget.setVisible(False)
+            layout.addWidget(widget)
         self.setFixedHeight(26)
         self._main = None
         self._timer = QtCore.QTimer(self)
@@ -180,8 +190,14 @@ class EditorStatusBar(QtWidgets.QWidget):
 
     def bind(self, main) -> None:
         self._main = main
+        self.workflow_stop.clicked.connect(lambda: main.smart_ctrl.cancel())
         self.refresh()
         self._timer.start()
+
+    def set_workflow_status(self, text: str, running: bool = False) -> None:
+        self.workflow_label.setText(text)
+        self.workflow_label.setVisible(bool(text))
+        self.workflow_stop.setVisible(bool(text) and running)
 
     def refresh(self) -> None:
         main = self._main

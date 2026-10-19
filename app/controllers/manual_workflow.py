@@ -39,6 +39,33 @@ class ManualWorkflowController:
     def _selected_page_paths(self) -> list[str]:
         return self.main.get_selected_page_paths()
 
+    def _cancelled(self) -> bool:
+        """Smart Workflow asked to stop; multi-page loops check it between pages."""
+        smart = getattr(self.main, "smart_ctrl", None)
+        return bool(smart is not None and smart.cancel_requested)
+
+    def _step_callbacks(self, on_done, finished, error=None):
+        """(error, finished) callbacks that also tell on_done(ok) how the step went.
+
+        `paths`/`on_done` are how Smart Workflow runs a step on pages of its
+        choosing; without on_done these are the step's usual callbacks.
+        """
+        error = error or self.main.default_error_handler
+        if on_done is None:
+            return error, finished
+        failed: list = []
+
+        def on_error(error_tuple):
+            failed.append(error_tuple)
+            error(error_tuple)
+
+        def on_finished():
+            if finished is not None:
+                finished()
+            on_done(not failed)
+
+        return on_error, on_finished
+
     def _load_page_image(self, file_path: str):
         img = self.main.image_data.get(file_path)
         if img is None:
@@ -161,9 +188,9 @@ class ManualWorkflowController:
             results.append((blk, build_stroke(blk, image, page_text_mask=page_text_mask)))
         return results
 
-    def block_detect(self, load_rects: bool = True) -> None:
-        selected_paths = self._selected_page_paths()
-        if len(selected_paths) > 1:
+    def block_detect(self, load_rects: bool = True, paths: list[str] | None = None, on_done=None) -> None:
+        selected_paths = paths if paths is not None else self._selected_page_paths()
+        if paths is not None or len(selected_paths) > 1:
             self.main.loading.setVisible(True)
             self.main.disable_hbutton_group()
             context = self._prepare_multi_page_context(selected_paths)
@@ -178,6 +205,8 @@ class ManualWorkflowController:
                 detector = self.main.pipeline.block_detection.block_detector_cache
                 results: dict[str, list[TextBlock]] = {}
                 for file_path in selected_paths:
+                    if self._cancelled():
+                        break
                     image = self._load_page_image(file_path)
                     if image is None:
                         continue
@@ -217,11 +246,12 @@ class ManualWorkflowController:
                 if results:
                     self.main.mark_project_dirty()
 
+            error_cb, finished_cb = self._step_callbacks(on_done, self.main.on_manual_finished)
             self.main.run_threaded(
                 detect_selected_pages,
                 on_detect_ready,
-                self.main.default_error_handler,
-                self.main.on_manual_finished,
+                error_cb,
+                finished_cb,
             )
             return
 
@@ -253,11 +283,13 @@ class ManualWorkflowController:
         self.main.set_tool("box")
         self.main.on_manual_finished()
 
-    def ocr(self, single_block: bool = False) -> None:
+    def ocr(self, single_block: bool = False, paths: list[str] | None = None, on_done=None) -> None:
         if not validate_ocr(self.main):
+            if on_done is not None:
+                on_done(False)
             return
-        selected_paths = self._selected_page_paths()
-        if len(selected_paths) > 1 and not single_block:
+        selected_paths = paths if paths is not None else self._selected_page_paths()
+        if (paths is not None or len(selected_paths) > 1) and not single_block:
             self.main.loading.setVisible(True)
             self.main.disable_hbutton_group()
             context = self._prepare_multi_page_context(selected_paths)
@@ -273,6 +305,8 @@ class ManualWorkflowController:
                 device = resolve_device(self.main.settings_page.is_gpu_enabled())
                 results: dict[str, list[TextBlock]] = {}
                 for file_path in selected_paths:
+                    if self._cancelled():
+                        break
                     state = self.main.image_states.get_page_state(file_path, {})
                     blk_list = state.get("blk_list", [])
                     if not blk_list:
@@ -307,11 +341,12 @@ class ManualWorkflowController:
                 if results:
                     self.main.mark_project_dirty()
 
+            error_cb, finished_cb = self._step_callbacks(on_done, lambda: self.finish_ocr_translate(single_block))
             self.main.run_threaded(
                 ocr_selected_pages,
                 on_ocr_ready,
-                self.main.default_error_handler,
-                lambda: self.finish_ocr_translate(single_block),
+                error_cb,
+                finished_cb,
             )
             return
 
@@ -333,9 +368,9 @@ class ManualWorkflowController:
                 lambda: self.finish_ocr_translate(single_block),
             )
 
-    def translate_image(self, single_block: bool = False) -> None:
-        selected_paths = self._selected_page_paths()
-        if len(selected_paths) > 1 and not single_block:
+    def translate_image(self, single_block: bool = False, paths: list[str] | None = None, on_done=None) -> None:
+        selected_paths = paths if paths is not None else self._selected_page_paths()
+        if (paths is not None or len(selected_paths) > 1) and not single_block:
             has_any_text = False
             for file_path in selected_paths:
                 blk_list = self.main.image_states.blk_list(file_path)
@@ -343,6 +378,8 @@ class ManualWorkflowController:
                     has_any_text = True
                     break
             if not has_any_text:
+                if on_done is not None:
+                    on_done(True)
                 return
             for file_path in selected_paths:
                 target_lang = self.main.image_states.get_page_state(file_path, {}).get(
@@ -353,6 +390,8 @@ class ManualWorkflowController:
                     ),
                 )
                 if not validate_translator(self.main, target_lang):
+                    if on_done is not None:
+                        on_done(False)
                     return
 
             self.main.loading.setVisible(True)
@@ -376,6 +415,8 @@ class ManualWorkflowController:
                 cache_manager = self.main.pipeline.cache_manager
                 results: dict[str, list[TextBlock]] = {}
                 for file_path in selected_paths:
+                    if self._cancelled():
+                        break
                     state = self.main.image_states.get_page_state(file_path, {})
                     blk_list = state.get("blk_list", [])
                     if not blk_list:
@@ -426,11 +467,13 @@ class ManualWorkflowController:
                     self.main.mark_project_dirty()
                 self.report_glossary_issues(glossary_issues)
 
+            error_cb, finished_cb = self._step_callbacks(
+                on_done, lambda: self.update_translated_text_items(single_block))
             self.main.run_threaded(
                 translate_selected_pages,
                 on_translation_ready,
-                self.main.default_error_handler,
-                lambda: self.update_translated_text_items(single_block),
+                error_cb,
+                finished_cb,
             )
             return
 
@@ -552,12 +595,14 @@ class ManualWorkflowController:
             on_format_finished,
         )
 
-    def inpaint_and_set(self) -> None:
+    def inpaint_and_set(self, paths: list[str] | None = None, on_done=None) -> None:
         if not self.main.image_viewer.hasPhoto():
+            if on_done is not None:
+                on_done(False)
             return
 
-        selected_paths = self._selected_page_paths()
-        if len(selected_paths) > 1:
+        selected_paths = paths if paths is not None else self._selected_page_paths()
+        if paths is not None or len(selected_paths) > 1:
             self.main.text_ctrl.clear_text_edits()
             self.main.loading.setVisible(True)
             self.main.disable_hbutton_group()
@@ -568,6 +613,8 @@ class ManualWorkflowController:
                 path_to_index = {p: i for i, p in enumerate(self.main.image_files)}
 
                 for file_path in selected_paths:
+                    if self._cancelled():
+                        break
                     state = self.main.image_states.get_page_state(file_path, {})
                     strokes = state.get("brush_strokes", [])
                     if not strokes:
@@ -629,11 +676,12 @@ class ManualWorkflowController:
                 if processed_any:
                     self.main.mark_project_dirty()
 
+            error_cb, finished_cb = self._step_callbacks(on_done, self.main.on_manual_finished)
             self.main.run_threaded(
                 inpaint_selected_pages,
                 on_selected_inpaint_ready,
-                self.main.default_error_handler,
-                self.main.on_manual_finished,
+                error_cb,
+                finished_cb,
             )
             return
 
@@ -685,25 +733,33 @@ class ManualWorkflowController:
             strokes = self._segmentation_strokes(blk_list)
         return detected, strokes
 
-    def load_segmentation_points(self) -> None:
+    def load_segmentation_points(self, paths: list[str] | None = None, on_done=None) -> None:
+        if not self.main.image_viewer.hasPhoto() and on_done is not None:
+            on_done(False)
         if self.main.image_viewer.hasPhoto():
             self.main.text_ctrl.clear_text_edits()
-            self.main.set_tool("brush")
             self.main.disable_hbutton_group()
-            self.main.image_viewer.clear_rectangles()
-            self.main.image_viewer.clear_text_items()
+            if paths is None:
+                # The button: make way for the strokes on the page in view.
+                # Smart Workflow leaves the canvas alone — a page it skips
+                # keeps its boxes and rendered text.
+                self.main.set_tool("brush")
+                self.main.image_viewer.clear_rectangles()
+                self.main.image_viewer.clear_text_items()
 
             self.main.loading.setVisible(True)
             self.main.disable_hbutton_group()
 
-            selected_paths = self._selected_page_paths()
-            if len(selected_paths) > 1:
+            selected_paths = paths if paths is not None else self._selected_page_paths()
+            if paths is not None or len(selected_paths) > 1:
                 self.main.undo_group.activeStack().beginMacro("draw_segmentation_boxes")
                 context = self._prepare_multi_page_context(selected_paths)
 
                 def compute_selected_bboxes() -> dict[str, tuple[list[TextBlock], list[dict]]]:
                     results = {}
                     for file_path in selected_paths:
+                        if self._cancelled():
+                            break
                         state = self.main.image_states.get_page_state(file_path, {})
                         blk_list = state.get("blk_list", [])
                         if not blk_list:
@@ -750,11 +806,13 @@ class ManualWorkflowController:
                         pass
                     self.main.default_error_handler(error_tuple)
 
+                error_cb, finished_cb = self._step_callbacks(
+                    on_done, self.main.on_manual_finished, error=on_selected_bboxes_error)
                 self.main.run_threaded(
                     compute_selected_bboxes,
                     on_selected_bboxes_ready,
-                    on_selected_bboxes_error,
-                    self.main.on_manual_finished,
+                    error_cb,
+                    finished_cb,
                 )
                 return
 

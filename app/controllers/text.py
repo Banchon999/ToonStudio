@@ -1149,11 +1149,13 @@ class TextController:
         self._end_render_macro()
         self.main.default_error_handler(error_tuple)
 
-    def render_text(self):
-        selected_paths = self.main.get_selected_page_paths()
-        if self.main.image_viewer.hasPhoto() and len(selected_paths) > 1:
+    def render_text(self, paths: list[str] | None = None, on_done=None):
+        selected_paths = paths if paths is not None else self.main.get_selected_page_paths()
+        if self.main.image_viewer.hasPhoto() and (paths is not None or len(selected_paths) > 1):
             self.main.set_tool(None)
             if not font_selected(self.main):
+                if on_done is not None:
+                    on_done(False)
                 return
             self.clear_text_edits()
             self.main.loading.setVisible(True)
@@ -1184,6 +1186,8 @@ class TextController:
                 updated_paths: set[str] = set()
                 target_lang_fallback = self.main.t_combo.currentText()
                 for file_path in selected_paths:
+                    if self.main.manual_workflow_ctrl._cancelled():
+                        break
                     # This block needs the whole live page state: it reads the
                     # target language and mutates viewer_state below, so fetch
                     # the page once rather than through per-field accessors.
@@ -1289,11 +1293,13 @@ class TextController:
 
                 self.main.mark_project_dirty()
 
+            error_cb, finished_cb = self.main.manual_workflow_ctrl._step_callbacks(
+                on_done, self.main.on_manual_finished)
             self.main.run_threaded(
                 render_selected_pages,
                 on_selected_render_ready,
-                self.main.default_error_handler,
-                self.main.on_manual_finished,
+                error_cb,
+                finished_cb,
             )
             return
 
