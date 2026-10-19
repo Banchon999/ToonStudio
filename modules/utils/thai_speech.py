@@ -199,12 +199,18 @@ def speaker_output_rules() -> str:
         "• speaker: the character's name as written in the glossary when they are in it, "
         'otherwise a short description ("the guard", "Lena\'s mother"); "narration" for a '
         'caption box, "sfx" for a sound effect, "unknown" when you cannot tell who speaks.',
-        "• Decide the speaker before translating, from the whole page: the bubble's tail in "
-        "the image, the order of turns in the conversation, who is addressed, the glossary "
-        "gender. The same character keeps the same name in every block.",
+        "• Decide the speaker before translating, from the whole page: follow the bubble's tail "
+        "in the image to the figure it points at, then the order of turns in the conversation "
+        "and the glossary gender. The same character keeps the same name in every block.",
+        "• A name or form of address inside a bubble (\"Hana!\", \"Dad, wait\", \"Yes, "
+        "my lord\") is the person spoken TO, not the speaker: a bubble that says a character's name "
+        "is almost never spoken by that character.",
         "• gender is the SPEAKER's gender, and the particle and self-pronoun in translation "
-        'must agree with it. "unknown" when you cannot tell — then use a gender-neutral '
-        "ending. Narration and sound effects are always \"unknown\".",
+        "must agree with it. Give a gender only when something shows it — the figure the tail "
+        "points at, the glossary, or words only one gender uses. Otherwise gender is "
+        '"unknown" and the translation takes no ครับ/ค่ะ: a missing particle reads fine, a '
+        "wrong one does not. Never assume a speaker is male. Narration and sound effects are "
+        'always "unknown".',
         "• translation holds only the Thai text: no speaker names, notes or brackets in it.",
     ])
 
