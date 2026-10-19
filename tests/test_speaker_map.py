@@ -22,6 +22,7 @@ from modules.utils.speaker_map import (
     fix_particles,
     parse_speaker_reply,
     speaker_map_block,
+    strip_polite,
 )
 from modules.utils.textblock import TextBlock
 
@@ -82,13 +83,63 @@ class TestReply:
 class TestMapBlock:
     def test_it_names_the_particle_per_block_without_repeating_the_source(self):
         text = speaker_map_block([Speaker("Mina", "female"), Speaker("guard", "male"), Speaker("", "unknown")])
-        assert "block_0: Mina (female → ค่ะ/คะ" in text
-        assert "block_1: guard (male → ครับ" in text
+        assert "block_0: Mina (female → if the line takes a polite particle it is ค่ะ/คะ" in text
+        assert "block_1: guard (male → if the line takes a polite particle it is ครับ" in text
         assert "block_2: unknown (speaker's gender unknown → no ครับ/ค่ะ)" in text
+
+    def test_it_does_not_put_a_particle_on_every_line(self):
+        # "male → ครับ/นะครับ, self ผม" for every block put ครับ on casual
+        # lines and on a character muttering to himself.
+        text = speaker_map_block([Speaker("Jun", "male")])
+        assert "casual speech takes none" in text and "self ผม" not in text
 
     def test_nothing_known_sends_nothing(self):
         assert speaker_map_block([Speaker("?", "unknown")]) == ""
         assert speaker_map_block(None) == ""
+
+
+class TestThoughts:
+    """A character thinking or talking to themself addresses no one, so the
+    line takes no ครับ/ค่ะ and no ผม/ดิฉัน. Measured on pages of thought
+    clouds, self-talk and manhwa monologue boxes (gemini-3.1-flash-lite, 5
+    runs, Korean and English): 3.1.0 put ครับ/ค่ะ on 11 of 50 monologue boxes
+    (3.0.3: 0) and ผม on a fifth of them; with the mode, 0 of 220."""
+
+    def test_the_speaker_request_asks_whether_a_block_is_said_to_anyone(self):
+        p = build_speaker_prompt("Korean", ["x"], [])
+        assert '"mode":"speech|thought"' in p
+        assert "not by the bubble's shape" in p
+
+    def test_the_reply_carries_the_mode(self):
+        got = parse_speaker_reply('{"blocks":[{"q":1,"speaker":"Jun","gender":"male","mode":"thought"},'
+                                  '{"q":2,"speaker":"Jun","gender":"male"}]}', 2, CHARS)
+        assert [s.mode for s in got] == ["thought", "speech"]
+
+    def test_a_thought_is_mapped_without_particles_whatever_the_gender(self):
+        text = speaker_map_block([Speaker("Jun", "male", mode="thought"), Speaker("", "unknown", mode="thought")])
+        assert "block_0: Jun (male, inner thought / talking to oneself → no ครับ/ค่ะ at all" in text
+        assert "block_1: unknown (inner thought" in text
+        assert "never ผม/ดิฉัน" in text
+
+    @pytest.mark.parametrize("text, want", [
+        ("สุดท้ายแล้ว ผมก็พูดอะไรออกไปไม่ได้อีกตามเคยครับ", "สุดท้ายแล้ว ฉันก็พูดอะไรออกไปไม่ได้อีกตามเคย"),
+        ("ฉันเหนื่อยที่จะต้องรอแล้วล่ะค่ะ", "ฉันเหนื่อยที่จะต้องรอแล้วล่ะ"),
+        ("ไม่ได้การละ ผมจะยอมแพ้ที่นี่ไม่ได้ครับ!", "ไม่ได้การละ ฉันจะยอมแพ้ที่นี่ไม่ได้!"),
+        ("ทำไมกันคะ?", "ทำไมกัน?"),
+        ("ดิฉันคิดผิดไปเหรอ", "ฉันคิดผิดไปเหรอ"),
+        ("ได้คะแนนดีนะคะ", "ได้คะแนนดีนะ"),       # คะแนน is not คะ
+        ("ผมยาวจังครับ", "ผมยาวจัง"),            # hair stays hair
+        ("ไปกันเถอะ", "ไปกันเถอะ"),               # nothing to take out
+    ])
+    def test_strip_polite(self, text, want):
+        assert strip_polite(text) == want
+
+    def test_apply_strips_a_thought_and_keeps_its_speaker(self):
+        blocks = [block("a", "ผมต้องชนะให้ได้ครับ"), block("b", "ขอบคุณครับ")]
+        changed = apply_speaker_map(blocks, [Speaker("Jun", "male", mode="thought"), Speaker("Jun", "male")])
+        assert changed == 1
+        assert blocks[0].translation == "ฉันต้องชนะให้ได้" and blocks[0].speaker_gender == "male"
+        assert blocks[1].translation == "ขอบคุณครับ"
 
 
 class TestFixParticles:
