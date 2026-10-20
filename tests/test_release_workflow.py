@@ -89,3 +89,19 @@ def test_the_dmg_is_signed_after_its_plist_is_edited_and_tested_as_shipped():
     assert 'ln -s /Applications "$stage/Applications"' in text
     # The release attaches the DMG; an older release gets it by hand.
     assert "gh release upload \"$TAG\" dist/ToonStudio-macOS-arm64.dmg" in text
+
+
+def test_a_release_goes_out_without_the_dmg_when_only_macos_failed():
+    # 3.1.1: the macOS job was cancelled twice after 15 minutes in the queue
+    # with no runner, and the release that waited on all three builds was
+    # skipped although Windows and Linux had passed.
+    release = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
+    publish = release.split("\n  publish:\n", 1)[1]
+    condition = publish.split("runs-on:", 1)[0]
+    assert "always()" in condition
+    for job in ("check", "tests", "windows", "linux"):
+        assert f"needs.{job}.result == 'success'" in condition
+    assert "needs.macos.result ==" not in condition
+    # Windows and Linux are still required files; only the DMG is optional.
+    assert "ls dist/ToonStudio-Windows-x86_64.zip dist/ToonStudio-Linux-x86_64.tar.gz" in publish
+    assert "fail_on_unmatched_files: true" in publish

@@ -76,8 +76,17 @@ jobs:
     needs: tests
     uses: ./.github/workflows/build-macos-dmg.yml
 
+  # The DMG is the one download that may be missing. Twice in a row (3.1.1)
+  # the macOS job was cancelled after 15 minutes in the queue without ever
+  # getting a runner, while every other job had passed — and the release,
+  # which waited on all three, was skipped. A release now goes out once the
+  # tests and the Windows and Linux builds pass; a DMG that did not build is
+  # added later by build-macos-dmg.yml with attach_to: vX.Y.Z.
   publish:
-    needs: [check, windows, linux, macos]
+    needs: [check, tests, windows, linux, macos]
+    if: >-
+      ${{ always() && needs.check.result == 'success' && needs.tests.result == 'success'
+      && needs.windows.result == 'success' && needs.linux.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -89,6 +98,24 @@ jobs:
           path: dist
           merge-multiple: true
 
+      - name: List the downloads
+        id: files
+        run: |
+          # Windows and Linux must be there; ls fails the job if either is not.
+          ls dist/ToonStudio-Windows-x86_64.zip dist/ToonStudio-Linux-x86_64.tar.gz
+          dmg=dist/ToonStudio-macOS-arm64.dmg
+          if [ ! -f "$dmg" ]; then
+            echo "::warning::no macOS DMG (macos job: ${{ needs.macos.result }}) - add it later with build-macos-dmg.yml, attach_to: ${{ needs.check.outputs.tag }}"
+            dmg=""
+          fi
+          {
+            echo "list<<EOF"
+            echo dist/ToonStudio-Windows-x86_64.zip
+            echo dist/ToonStudio-Linux-x86_64.tar.gz
+            [ -n "$dmg" ] && echo "$dmg"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
       - name: Publish the release
         uses: softprops/action-gh-release@v2
         with:
@@ -98,8 +125,5 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: Toon Studio ${{ needs.check.outputs.tag }}
           body_path: .github/release-notes/${{ needs.check.outputs.tag }}.md
-          files: |
-            dist/ToonStudio-Windows-x86_64.zip
-            dist/ToonStudio-Linux-x86_64.tar.gz
-            dist/ToonStudio-macOS-arm64.dmg
+          files: ${{ steps.files.outputs.list }}
           fail_on_unmatched_files: true
