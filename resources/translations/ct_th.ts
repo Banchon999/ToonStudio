@@ -1249,115 +1249,125 @@ Where both terms appear, only the longer one is sent to the translator. ⚠ pair
 <context>
     <name>LayersPanel</name>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="62"/>
-        <location filename="../../app/ui/layers_panel.py" line="220"/>
+        <location filename="../../app/ui/layers_panel.py" line="65"/>
+        <location filename="../../app/ui/layers_panel.py" line="251"/>
         <source>Opacity</source>
         <translation>ความทึบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="72"/>
+        <location filename="../../app/ui/layers_panel.py" line="75"/>
         <source>Move the selected layer up within its group</source>
         <translation>เลื่อนเลเยอร์ที่เลือกขึ้นภายในกลุ่มเดียวกัน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="75"/>
+        <location filename="../../app/ui/layers_panel.py" line="78"/>
         <source>Move the selected layer down within its group</source>
         <translation>เลื่อนเลเยอร์ที่เลือกลงภายในกลุ่มเดียวกัน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="77"/>
+        <location filename="../../app/ui/layers_panel.py" line="81"/>
+        <source>Delete the selected layers (Delete)</source>
+        <translation>ลบเลเยอร์ที่เลือก (Delete)</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/layers_panel.py" line="83"/>
         <source>Layers</source>
         <translation>เลเยอร์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="131"/>
+        <location filename="../../app/ui/layers_panel.py" line="162"/>
         <source>Editable Text</source>
         <translation>ข้อความที่แก้ไขได้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="132"/>
+        <location filename="../../app/ui/layers_panel.py" line="163"/>
         <source>Boxes</source>
         <translation>กล่อง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="133"/>
+        <location filename="../../app/ui/layers_panel.py" line="164"/>
         <source>Brush Strokes</source>
         <translation>เส้นแปรง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="134"/>
+        <location filename="../../app/ui/layers_panel.py" line="165"/>
         <source>Inpaint Patches</source>
         <translation>แผ่นปะลบข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="135"/>
+        <location filename="../../app/ui/layers_panel.py" line="166"/>
         <source>Raw Image</source>
         <translation>ภาพต้นฉบับ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="144"/>
+        <location filename="../../app/ui/layers_panel.py" line="175"/>
         <source>Text</source>
         <translation>ข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="146"/>
+        <location filename="../../app/ui/layers_panel.py" line="177"/>
         <source>Box</source>
         <translation>กล่อง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="147"/>
+        <location filename="../../app/ui/layers_panel.py" line="178"/>
         <source>Stroke</source>
         <translation>เส้นแปรง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="148"/>
+        <location filename="../../app/ui/layers_panel.py" line="179"/>
         <source>Patch</source>
         <translation>แผ่นปะ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="149"/>
+        <location filename="../../app/ui/layers_panel.py" line="180"/>
         <source>Layer</source>
         <translation>เลเยอร์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="164"/>
+        <location filename="../../app/ui/layers_panel.py" line="195"/>
         <source>Hide</source>
         <translation>ซ่อน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="164"/>
+        <location filename="../../app/ui/layers_panel.py" line="195"/>
         <source>Show</source>
         <translation>แสดง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="167"/>
+        <location filename="../../app/ui/layers_panel.py" line="198"/>
         <source>Unlock</source>
         <translation>ปลดล็อก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="167"/>
+        <location filename="../../app/ui/layers_panel.py" line="198"/>
         <source>Lock</source>
         <translation>ล็อก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="256"/>
+        <location filename="../../app/ui/layers_panel.py" line="287"/>
         <source>Toggle layer visibility</source>
         <translation>สลับการแสดงเลเยอร์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="259"/>
+        <location filename="../../app/ui/layers_panel.py" line="290"/>
         <source>Toggle layer lock</source>
         <translation>สลับการล็อกเลเยอร์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="269"/>
+        <location filename="../../app/ui/layers_panel.py" line="300"/>
         <source>Rename layer</source>
         <translation>เปลี่ยนชื่อเลเยอร์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/layers_panel.py" line="313"/>
+        <location filename="../../app/ui/layers_panel.py" line="349"/>
         <source>Change layer opacity</source>
         <translation>เปลี่ยนความทึบของเลเยอร์</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/layers_panel.py" line="372"/>
+        <source>Delete layers</source>
+        <translation>ลบเลเยอร์</translation>
     </message>
 </context>
 <context>
@@ -1600,7 +1610,7 @@ Where both terms appear, only the longer one is sent to the translator. ⚠ pair
 <context>
     <name>Messages</name>
     <message>
-        <location filename="../../app/controllers/image.py" line="1326"/>
+        <location filename="../../app/controllers/image.py" line="1328"/>
         <source>Skipping:</source>
         <translation>กำลังข้าม:</translation>
     </message>
@@ -3049,22 +3059,22 @@ Restart now?</source>
         <translation>แสดงผล</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/smart_workflow.py" line="117"/>
+        <location filename="../../app/controllers/smart_workflow.py" line="138"/>
         <source>Smart Workflow: stopping after this page…</source>
         <translation>Smart Workflow: จะหยุดหลังหน้านี้…</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/smart_workflow.py" line="130"/>
+        <location filename="../../app/controllers/smart_workflow.py" line="151"/>
         <source>Smart Workflow: step {0}/{1} · {2} · {3} page(s)</source>
         <translation>Smart Workflow: ขั้นที่ {0}/{1} · {2} · {3} หน้า</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/smart_workflow.py" line="201"/>
+        <location filename="../../app/controllers/smart_workflow.py" line="222"/>
         <source>{0}: {1} page(s)</source>
         <translation>{0}: {1} หน้า</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/smart_workflow.py" line="202"/>
+        <location filename="../../app/controllers/smart_workflow.py" line="223"/>
         <source>every page already had every step</source>
         <translation>ทุกหน้าทำครบทุกขั้นแล้ว</translation>
     </message>
@@ -5120,60 +5130,60 @@ It may have been moved, renamed, or deleted.
         <translation>อังกฤษ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="741"/>
+        <location filename="../../app/controllers/text.py" line="748"/>
         <source>+ Strokes</source>
         <translation>+ เส้นขอบ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="741"/>
+        <location filename="../../app/controllers/text.py" line="748"/>
         <source>Strokes: {0}</source>
         <translation>เส้นขอบ: {0} ชั้น</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="761"/>
+        <location filename="../../app/controllers/text.py" line="768"/>
         <source>Choose a style…</source>
         <translation>เลือกสไตล์…</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="788"/>
+        <location filename="../../app/controllers/text.py" line="795"/>
         <source>Apply style {0}</source>
         <translation>ใช้สไตล์ {0}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="806"/>
-        <location filename="../../app/controllers/text.py" line="815"/>
-        <location filename="../../app/controllers/text.py" line="821"/>
+        <location filename="../../app/controllers/text.py" line="813"/>
+        <location filename="../../app/controllers/text.py" line="822"/>
+        <location filename="../../app/controllers/text.py" line="828"/>
         <source>Save Style</source>
         <translation>บันทึกสไตล์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="806"/>
+        <location filename="../../app/controllers/text.py" line="813"/>
         <source>Name for this style:</source>
         <translation>ชื่อสไตล์นี้:</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="816"/>
+        <location filename="../../app/controllers/text.py" line="823"/>
         <source>&quot;{0}&quot; is the name of a built-in style. Choose another name.</source>
         <translation>&quot;{0}&quot; เป็นชื่อของสไตล์ในตัว โปรดตั้งชื่ออื่น</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="822"/>
+        <location filename="../../app/controllers/text.py" line="829"/>
         <source>Replace the style &quot;{0}&quot;?</source>
         <translation>แทนที่สไตล์ &quot;{0}&quot; หรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="840"/>
-        <location filename="../../app/controllers/text.py" line="844"/>
+        <location filename="../../app/controllers/text.py" line="847"/>
+        <location filename="../../app/controllers/text.py" line="851"/>
         <source>Delete Style</source>
         <translation>ลบสไตล์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="840"/>
+        <location filename="../../app/controllers/text.py" line="847"/>
         <source>Built-in styles cannot be deleted.</source>
         <translation>สไตล์ในตัวลบไม่ได้</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="844"/>
+        <location filename="../../app/controllers/text.py" line="851"/>
         <source>Delete the style &quot;{0}&quot;?</source>
         <translation>ลบสไตล์ &quot;{0}&quot; หรือไม่?</translation>
     </message>
@@ -5181,28 +5191,28 @@ It may have been moved, renamed, or deleted.
 <context>
     <name>self.settings.ui</name>
     <message>
-        <location filename="../../modules/ocr/processor.py" line="169"/>
+        <location filename="../../modules/ocr/processor.py" line="173"/>
         <location filename="../../modules/translation/processor.py" line="69"/>
         <source>GPT-4.1-mini</source>
         <translation>GPT-4.1-mini</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/processor.py" line="170"/>
+        <location filename="../../modules/ocr/processor.py" line="174"/>
         <source>Microsoft OCR</source>
         <translation>Microsoft OCR</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/processor.py" line="171"/>
+        <location filename="../../modules/ocr/processor.py" line="175"/>
         <source>Google Cloud Vision</source>
         <translation>Google Cloud Vision</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/processor.py" line="172"/>
+        <location filename="../../modules/ocr/processor.py" line="176"/>
         <source>Gemini-2.5-Flash-Lite</source>
         <translation>Gemini-2.5-Flash-Lite</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/processor.py" line="173"/>
+        <location filename="../../modules/ocr/processor.py" line="177"/>
         <source>Default</source>
         <translation>ค่าเริ่มต้น</translation>
     </message>

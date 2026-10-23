@@ -78,3 +78,128 @@ class SetLayerPropsCommand(QUndoCommand):
 
     def undo(self):
         self._apply(False)
+
+
+# --- deleting a layer ----------------------------------------------------------
+#
+# The Layers panel's Delete takes one object off its page, whatever its kind.
+# Each is the inverse of the command that put such an object there, so undo
+# brings back the same object (same id, same layer props), and a patch is
+# removed from ``image_patches`` too — that list is what a webtoon page reloads
+# from and what the project saves.
+
+
+class RemovePatchCommand(QUndoCommand):
+    """One inpaint patch off the page: PatchInsertCommand run backwards."""
+
+    def __init__(self, main, entry: dict, file_path: str, item=None):
+        super().__init__("Delete patch")
+        from app.ui.commands.inpaint import PatchInsertCommand
+
+        insert = PatchInsertCommand.__new__(PatchInsertCommand)
+        QUndoCommand.__init__(insert, "Insert patches")
+        insert.ct = main
+        insert.viewer = main.image_viewer
+        insert.scene = insert.viewer._scene
+        insert.file_path = file_path
+        insert.display = True
+        prop = dict(entry)
+        prop.pop("image", None)
+        if item is not None and getattr(insert.viewer, "webtoon_mode", False):
+            # Where it is drawn now; a stored scene position can be stale.
+            prop["scene_pos"] = [item.pos().x(), item.pos().y()]
+        insert.properties_list = [prop]
+        self._insert = insert
+
+    def redo(self):
+        self._insert.undo()
+        self._insert.ct.image_viewer.refresh_layers()
+
+    def undo(self):
+        self._insert.redo()
+        self._insert.ct.image_viewer.refresh_layers()
+
+
+class RemoveStrokeCommand(QUndoCommand):
+    """One brush or segmentation stroke off the page."""
+
+    def __init__(self, viewer, item):
+        super().__init__("Delete stroke")
+        from app.ui.commands.base import PathCommandBase
+
+        self._base = PathCommandBase
+        self.viewer = viewer
+        self.scene = viewer._scene
+        self.properties = PathCommandBase.save_path_properties(item)
+
+    def redo(self):
+        item = self._base.find_matching_item(self.scene, self.properties)
+        if item is not None:
+            self.scene.removeItem(item)
+            self.scene.update()
+
+    def undo(self):
+        if self._base.find_matching_item(self.scene, self.properties) is None:
+            self.scene.addItem(self._base.create_path_item(self.properties))
+            self.viewer.refresh_layers()
+
+
+class RemoveTextItemCommand(QUndoCommand):
+    """One rendered text item off the page. Its block (the detected box, the
+    OCR text and the translation) stays, so Render can draw it again."""
+
+    def __init__(self, main, item):
+        super().__init__("Delete text")
+        from app.ui.commands.base import RectCommandBase
+
+        self._base = RectCommandBase
+        self.main = main
+        self.viewer = main.image_viewer
+        self.scene = self.viewer._scene
+        self.properties = RectCommandBase.save_txt_item_properties(item)
+
+    def redo(self):
+        item = self._base.find_matching_txt_item(self.scene, self.properties)
+        if item is None:
+            return
+        if getattr(self.main, "curr_tblock_item", None) is item:
+            self.main.curr_tblock_item = None
+        self.scene.removeItem(item)
+        if item in self.viewer.text_items:
+            self.viewer.text_items.remove(item)
+        self.scene.update()
+
+    def undo(self):
+        if self._base.find_matching_txt_item(self.scene, self.properties) is None:
+            self._base.create_new_txt_item(self.properties, self.viewer)
+            self.viewer.refresh_layers()
+
+
+class RemoveBoxCommand(QUndoCommand):
+    """A box with no block behind it (one with a block goes through
+    DeleteBoxesCommand, which takes the block with it)."""
+
+    def __init__(self, main, item):
+        super().__init__("Delete box")
+        from app.ui.commands.base import RectCommandBase
+
+        self._base = RectCommandBase
+        self.viewer = main.image_viewer
+        self.scene = self.viewer._scene
+        self.properties = RectCommandBase.save_rect_properties(item)
+
+    def redo(self):
+        item = self._base.find_matching_rect(self.scene, self.properties)
+        if item is None:
+            return
+        self.scene.removeItem(item)
+        if item in self.viewer.rectangles:
+            self.viewer.rectangles.remove(item)
+        if self.viewer.selected_rect is item:
+            self.viewer.selected_rect = None
+        self.scene.update()
+
+    def undo(self):
+        if self._base.find_matching_rect(self.scene, self.properties) is None:
+            self._base.create_rect_item(self.properties, self.viewer)
+            self.viewer.refresh_layers()

@@ -417,10 +417,41 @@ class ImageViewer(QGraphicsView):
         self.clear_scene()
         self.setPhoto(pixmap, fit=fit)
 
+    def show_layer_highlight(self, item) -> None:
+        """Frame `item` (a patch or stroke picked in the Layers panel)."""
+        from app.ui.canvas.layer_highlight import LayerHighlight
+
+        from shiboken6 import isValid
+
+        rect = item.sceneBoundingRect()
+        highlight = getattr(self, "_layer_highlight", None)
+        if highlight is None or not isValid(highlight):
+            highlight = LayerHighlight(rect)
+            self._scene.addItem(highlight)
+            self._layer_highlight = highlight
+        else:
+            highlight.set_rect(rect)
+        highlight.show()
+        self.ensureVisible(rect)
+
+    def hide_layer_highlight(self) -> None:
+        from shiboken6 import isValid
+
+        highlight = getattr(self, "_layer_highlight", None)
+        if highlight is not None and isValid(highlight):
+            highlight.hide()
+
     def clear_scene(self):
         # The selection belongs to the page being cleared away; drop it (and
         # its overlay) before the scene deletes the overlay out from under it.
         self.selection.forget()
+        highlight = getattr(self, "_layer_highlight", None)
+        if highlight is not None:
+            from shiboken6 import isValid
+
+            if isValid(highlight):
+                self._scene.removeItem(highlight)
+            self._layer_highlight = None
         self.drawing_manager.pixel_cancel()
         self.drawing_manager.forget_clone_source()
         self.webtoon_manager.clear() 
