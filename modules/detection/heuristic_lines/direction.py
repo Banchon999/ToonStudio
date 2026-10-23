@@ -53,6 +53,18 @@ def _fallback_direction(box: list[int], source_language: str) -> str:
         return "vertical" if height >= width * 0.9 else "horizontal"
     return aspect_direction
 
+def writes_vertically(source_language: str) -> bool | None:
+    """Whether comics in this language set text in columns.
+
+    True for Japanese and Chinese, False for every other named language
+    (Korean, English and the other Latin, Cyrillic… sources), None when the
+    language is not known yet — detection splits lines before anyone has said
+    what the page is written in.
+    """
+    if not (source_language or "").strip():
+        return None
+    return _normalize_source_language(source_language) in {"ja", "zh"}
+
 def _normalize_source_language(source_language: str) -> str:
     value = (source_language or "").strip().lower()
     if value in {"ja", "japanese"}:

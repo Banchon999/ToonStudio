@@ -564,6 +564,50 @@ def _join_split_line_halves(lines: list[list[int]]) -> list[list[int]]:
 SPLIT_HALF_MAX = 0.6
 
 
+#: Two boxes overlapping by this much of the shorter one's height are on one row.
+SAME_ROW_MIN_OVERLAP = 0.5
+#: ...and are pieces of one line when the gap between them is at most this many
+#: line heights (widely spaced lettering, an ellipsis between two words).
+SAME_ROW_MAX_GAP = 1.5
+
+
+def _join_same_row_pieces(lines: list[list[int]]) -> list[list[int]]:
+    """Join boxes that sit side by side on one row into one line.
+
+    Widely spaced lettering is found as several boxes on the same row: a
+    real "BUT...!" came out as "BUT", "..." and "!", and since lines are read
+    top to bottom, "!" (a pixel higher) was read first — "1 BUT. ••••". Lines
+    of one block are stacked, never side by side, so boxes that share most of
+    their height and are close along the row are one line. Columns of text
+    side by side are split off before this runs (`mask_was_split`), and
+    slanted (polygon) lines are left alone.
+    """
+    from .geometry import _is_polygon_line
+
+    axis = [list(line) for line in lines if not _is_polygon_line(line)]
+    others = [line for line in lines if _is_polygon_line(line)]
+    if len(axis) <= 1:
+        return lines
+    merged = True
+    while merged:
+        merged = False
+        for i in range(len(axis)):
+            for j in range(i + 1, len(axis)):
+                a, b = axis[i], axis[j]
+                shorter = max(1, min(a[3] - a[1], b[3] - b[1]))
+                taller = max(1, max(a[3] - a[1], b[3] - b[1]))
+                overlap = min(a[3], b[3]) - max(a[1], b[1])
+                gap = max(a[0], b[0]) - min(a[2], b[2])
+                if overlap >= shorter * SAME_ROW_MIN_OVERLAP and gap <= taller * SAME_ROW_MAX_GAP:
+                    axis[i] = [min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3])]
+                    del axis[j]
+                    merged = True
+                    break
+            if merged:
+                break
+    return axis + others
+
+
 #: How much of a fragment's height must overlap its line to be folded in.
 #: Glyph pieces measured on a real page overlapped by 31%; two separate lines
 #: of tightly set text overlap by a pixel or two, far below this.

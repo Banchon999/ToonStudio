@@ -539,6 +539,22 @@ def _check_alignment(lines_a, lines_b):
                 
     return aligned_count
 
+def _close_narrow_column_gaps(mask: np.ndarray, columns: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Join column runs separated by less than half the median letter height."""
+    if len(columns) <= 1:
+        return columns
+    cc = _compute_connected_components(mask)
+    heights = [int(cc.stats[label][3]) for label in range(1, cc.num_labels) if int(cc.stats[label][4]) >= 8]
+    min_gap = max(3, int(round(0.5 * float(np.median(heights))))) if heights else 3
+    joined = [columns[0]]
+    for cx1, cx2 in columns[1:]:
+        if cx1 - joined[-1][1] < min_gap:
+            joined[-1] = (joined[-1][0], cx2)
+        else:
+            joined.append((cx1, cx2))
+    return joined
+
+
 def _split_mask_by_tall_vertical_columns(mask: np.ndarray) -> list[np.ndarray]:
     h, w = mask.shape[:2]
     x_sum = mask.sum(axis=0)
@@ -557,6 +573,13 @@ def _split_mask_by_tall_vertical_columns(mask: np.ndarray) -> list[np.ndarray]:
     if start_x != -1:
         raw_columns.append((start_x, w))
         
+    # A gap between two columns of text is wide; between the letters of a
+    # paragraph it is a pixel or two, and in capitals those gaps can line up
+    # across every line by chance — which split "THIS CHAPTER IS TRANSLATED…"
+    # into three "columns" and cut the first and last letters off each line.
+    # Gaps narrower than half a letter are closed before looking for columns.
+    raw_columns = _close_narrow_column_gaps(mask, raw_columns)
+
     # 2. Filter out extremely minor columns (noise)
     columns = []
     min_pixels = max(12, int(mask.sum() * 0.005))
