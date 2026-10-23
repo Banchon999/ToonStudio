@@ -1,17 +1,17 @@
-"""Free text that glows is cleaned with its glow.
+"""Lettering that glows is cleaned with its glow.
 
-Found when tall webtoon pages started being segmented in page-shaped windows:
-the sharper prediction hugs white lettering, and over a dark, textured panel
+Found on real webtoon pages. Free text: over a dark, textured panel
 `fit_mask_growth` (which grows only while the border stays on flat pixels)
-found every candidate border busy and kept the mask at the letters' edge — so
+found every candidate border busy and kept the mask at the letters' edge, so
 the inpainter rebuilt the glow as a grey ghost of the words ("ABSOLUTELY
-CANNOT", a "LUACOMIC.ORG" watermark). Ordinary pages were always segmented
-that sharply. Bubbles are not affected: they are dilated a fixed amount inside
-their outline.
+CANNOT", a "LUACOMIC.ORG" watermark). Glowing captions with no outline are
+classed as bubbles, and their fixed dilation stopped halfway through the glow:
+what was left framed the cleaned area as a halo the shape of the mask, and
+the inpainter filled the inside with the glow's colour — a soft blob where
+"SO HE EVEN WENT AHEAD…" had been.
 """
 
 import numpy as np
-import pytest
 from PIL import Image, ImageFilter
 
 from modules.utils import image_utils
@@ -45,13 +45,13 @@ def glowing_caption(glow_sigma=4.0, glow=True, letter=(252, 252, 250), back=(40,
     return np.clip(page, 0, 255).astype(np.uint8), mask
 
 
-def outer_glow(page, mask, back=(40, 26, 24), letter=(252, 252, 250)):
-    """The glow's faint outer part: 8-30% of the way from the panel to the
-    letters' colour. Its bright inner part reads as lettering and was always
-    cleaned; this is what was left as a ghost."""
+def outer_glow(page, mask, low=0.08, back=(40, 26, 24), letter=(252, 252, 250)):
+    """The glow's faint outer part: from `low` to 30% of the way from the panel
+    to the letters' colour. Its bright inner part reads as lettering and was
+    always cleaned; this is what was left behind."""
     axis = np.array(letter, float) - back
     t = ((page.astype(float) - back) @ axis) / (axis @ axis)
-    return (t >= 0.08) & (t < 0.3) & ~mask
+    return (t >= low) & (t < 0.3) & ~mask
 
 
 def free_block():
@@ -127,15 +127,39 @@ class TestCleanMask:
         assert with_glow[1] == without[1]
         assert np.array_equal(with_glow[0], without[0])
 
-    def test_bubbles_are_not_measured_for_a_glow(self, monkeypatch):
-        def refuse(*a, **k):
-            pytest.fail("a bubble's mask is bounded by its outline, not grown over a glow")
-
-        monkeypatch.setattr(image_utils, "glow_reach", refuse)
-        page, mask = glowing_caption()
+    def glowing_bubble_mask(self, page, mask):
         blk = free_block()
         blk.text_class = "text_bubble"
-        blk.bubble_xyxy = np.array([40, 60, 360, 170])
-        crop_mask, _ = build_block_mask_data(page, blk, clip_to_bubble=True,
-                                             page_text_mask=(mask * 255).astype(np.uint8))
-        assert crop_mask is not None
+        blk.bubble_xyxy = np.array([40, 50, 360, 180])
+        crop_mask, (x1, y1, x2, y2) = build_block_mask_data(
+            page, blk, clip_to_bubble=True, page_text_mask=(mask * 255).astype(np.uint8))
+        full = np.zeros(page.shape[:2], bool)
+        full[y1:y2, x1:x2] = crop_mask > 0
+        return full
+
+    def test_a_glowing_caption_with_no_outline_is_cleaned_with_its_glow(self):
+        # A wide glow whose faint tail (5-30%) runs past the bubble path's
+        # fixed dilation, as around the real captions.
+        page, mask = glowing_caption(glow_sigma=7.0)
+        full = self.glowing_bubble_mask(page, mask)
+        assert full[outer_glow(page, mask, low=0.05)].mean() >= 0.95
+
+    def test_the_fixed_dilation_alone_stopped_halfway(self, monkeypatch):
+        monkeypatch.setattr(image_utils, "glow_reach", lambda *a, **k: 0)
+        page, mask = glowing_caption(glow_sigma=7.0)
+        full = self.glowing_bubble_mask(page, mask)
+        assert full[outer_glow(page, mask, low=0.05)].mean() < 0.5
+
+    def test_a_white_bubble_with_dark_lettering_is_unchanged(self, monkeypatch):
+        page, mask = glowing_caption(glow=False, letter=(30, 30, 30), back=(250, 250, 250))
+        page[56:60, 36:364] = 0  # an outline above and below
+        page[166:170, 36:364] = 0
+        blk = free_block()
+        blk.text_class = "text_bubble"
+        blk.bubble_xyxy = np.array([36, 56, 364, 170])
+        prediction = (mask * 255).astype(np.uint8)
+        with_glow = build_block_mask_data(page, blk, clip_to_bubble=True, page_text_mask=prediction)
+        monkeypatch.setattr(image_utils, "glow_reach", lambda *a, **k: 0)
+        without = build_block_mask_data(page, blk, clip_to_bubble=True, page_text_mask=prediction)
+        assert with_glow[1] == without[1]
+        assert np.array_equal(with_glow[0], without[0])

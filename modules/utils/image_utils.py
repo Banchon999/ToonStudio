@@ -213,6 +213,7 @@ def clip_mask_components_to_bubble(
     seed_bbox=None,
     dilate_kernel_size: int = 0,
     dilate_iterations: int = 1,
+    grow_into_glow: bool = False,
 ) -> np.ndarray:
     """
     Clips a mask to a speech bubble by filtering connected components.
@@ -222,6 +223,7 @@ def clip_mask_components_to_bubble(
     3. Keeps only components that overlap with the bubble clip mask (fully preserving their pixels).
     4. If dilate_kernel_size > 0, dilates the kept components and clips the dilated area to the bubble clip mask
        while unioning/preserving the original undilated kept components.
+    5. If grow_into_glow, widens the result over a glow still around it (`glow_reach`), inside the clip.
     """
     bubble_clip = build_bubble_clip_mask(
         mask.shape[:2],
@@ -251,9 +253,21 @@ def clip_mask_components_to_bubble(
         dil_kernel = np.ones((dilate_kernel_size, dilate_kernel_size), np.uint8)
         dilated = imk.dilate(kept_mask_clipped.astype(np.uint8) * 255, dil_kernel, iterations=dilate_iterations)
         final_mask = np.where(bubble_clip, dilated, 0).astype(np.uint8)
-        return np.bitwise_or(final_mask, (kept_mask_clipped * 255).astype(np.uint8)).astype(mask.dtype, copy=False)
+        final_mask = np.bitwise_or(final_mask, (kept_mask_clipped * 255).astype(np.uint8))
     else:
-        return (kept_mask_clipped * 255).astype(mask.dtype, copy=False)
+        final_mask = (kept_mask_clipped * 255).astype(np.uint8)
+
+    if grow_into_glow and image is not None:
+        # A glowing caption with no outline is a "bubble" too, and the fixed
+        # dilation above stops halfway through its glow: the rest was left
+        # around the cleaned area as a halo the shape of the mask, and the
+        # inpainter filled the inside with the glow's colour.
+        x1, y1, x2, y2 = (int(v) for v in bounds)
+        reach = glow_reach(image[y1:y2, x1:x2], final_mask > 0)
+        if reach:
+            halo = imk.dilate(final_mask, np.ones((3, 3), np.uint8), iterations=reach)
+            final_mask = np.where(bubble_clip & (halo > 0), 255, final_mask).astype(np.uint8)
+    return final_mask.astype(mask.dtype, copy=False)
 
 def rgba2hex(rgba_list):
     r,g,b,a = [int(num) for num in rgba_list]
@@ -449,6 +463,7 @@ def build_block_mask_data(
             seed_bbox=blk.xyxy,
             dilate_kernel_size=kernel_size,
             dilate_iterations=dilate_iterations,
+            grow_into_glow=True,
         )
     else:
         # Free text has no bubble to clip against, so a fixed dilation is bounded
@@ -466,12 +481,12 @@ def build_block_mask_data(
 
 
 #: glow_reach: a ring around the lettering still belongs to its glow while its
-#: median colour is at least this share of the way from the background to the
-#: letters' colour...
-GLOW_MIN_SHARE = 0.06
-#: ...and no brighter than the ring inside it by more than this (a glow fades
-#: outward; artwork next to the letters does not).
-GLOW_FADE_TOLERANCE = 0.02
+#: median colour stands at least this many grey levels out from the background
+#: towards the letters' colour...
+GLOW_MIN_LEVEL = 4.0
+#: ...and is no brighter than the ring inside it by more than this many (a
+#: glow fades outward; artwork next to the letters does not).
+GLOW_FADE_LEVELS = 3.0
 #: The farthest a glow is followed, in pixels.
 GLOW_MAX_REACH = 12
 #: Letters this close in colour to their background have no glow to speak of.
@@ -481,14 +496,15 @@ GLOW_MIN_CONTRAST = 60.0
 def glow_reach(window: np.ndarray, letters: np.ndarray, max_reach: int = GLOW_MAX_REACH) -> int:
     """How many pixels a glow or halo around `letters` reaches; 0 for none.
 
-    Rings one pixel wide are stepped outward from the letters. Each ring's
-    median colour is placed on the line from the background's colour (the
+    Rings one pixel wide are stepped outward from the letters, and each ring's
+    median colour is measured along the line from the background's colour (the
     median of the rings just past `max_reach`) to the letters' (the median
-    under the letters' core): 1 is letter, 0 is background. A glow is a run of
-    rings that starts next to the letters and fades towards 0. Measured on a
-    real white caption glowing over a dark panel: 0.35, 0.33, 0.28, 0.22,
-    0.14, 0.10, 0.07, 0.05, 0.02 — while dark lettering on paper reads 0.05
-    in its first ring and nothing after.
+    under the letters' core), in grey levels. A glow is a run of rings that
+    starts next to the letters and fades towards the background. Its tail
+    matters: on a flat dark panel a ring 6 levels brighter than the background
+    still shows, as a halo the shape of the mask once the inside is cleaned.
+    Measured around real glowing captions: 15, 9, 7, 6, 6, 6, 6, 3 levels.
+    Dark lettering on paper stands out in its first ring and not after.
     """
     binary = np.where(letters, 255, 0).astype(np.uint8)
     if np.count_nonzero(binary) < 20:
@@ -514,19 +530,20 @@ def glow_reach(window: np.ndarray, letters: np.ndarray, max_reach: int = GLOW_MA
     letter = np.median(pixels[core], axis=0)
     back = np.median(pixels[outer], axis=0)
     axis = letter - back
-    span = float(axis @ axis)
-    if span < GLOW_MIN_CONTRAST ** 2:
+    contrast = float(np.sqrt(axis @ axis))
+    if contrast < GLOW_MIN_CONTRAST:
         return 0
+    unit = axis / contrast
 
     reach = 0
     previous = None
     for k, ring in enumerate(rings[:max_reach], start=1):
         if not ring.any():
             break
-        share = float(np.median((pixels[ring] - back) @ axis / span))
-        if share < GLOW_MIN_SHARE or (previous is not None and share > previous + GLOW_FADE_TOLERANCE):
+        level = float(np.median((pixels[ring] - back) @ unit))
+        if level < GLOW_MIN_LEVEL or (previous is not None and level > previous + GLOW_FADE_LEVELS):
             break
-        reach, previous = k, share
+        reach, previous = k, level
     return reach
 
 
