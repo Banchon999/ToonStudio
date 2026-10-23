@@ -22,7 +22,11 @@ class OCRHandler:
             self.main_page.lang_mapping,
         )
         if self.main_page.image_viewer.hasPhoto() and self.main_page.image_viewer.rectangles:
-            image = self.main_page.image_viewer.get_image_array()
+            # The page as drawn, without the cleaning patches on it: OCR run
+            # again after Clean read the cleaned bubbles and came back empty
+            # ("DEPUTY DIRECTOR!" -> "A"). Multi-page OCR reads image_data,
+            # the same original page.
+            image = self.main_page.image_viewer.get_image_array(include_patches=False)
             ocr_model = self.main_page.settings_page.get_tool_selection('ocr')
             device = resolve_device(
                 self.main_page.settings_page.is_gpu_enabled()
@@ -106,7 +110,7 @@ class OCRHandler:
             return
         
         # Get the visible area image and mapping data
-        visible_image, mappings = self.main_page.image_viewer.get_visible_area_image()
+        visible_image, mappings = self.main_page.image_viewer.get_visible_area_image(include_patches=False)
         if visible_image is None or not mappings:
             logger.warning("No visible area found for OCR")
             return

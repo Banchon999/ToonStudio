@@ -25,6 +25,16 @@ spend five minutes here. Any OpenVINO failure, at load or at run time, falls
 back to ONNX Runtime for good, and ``CT_TEXT_SEG_BACKEND=onnxruntime`` forces
 the old path. A GPU the user enabled (CUDA, TensorRT, ...) still goes through
 ONNX Runtime, where ConvTranspose is fast.
+
+**A page taller than twice its width is also read in windows** (`tile_rows`).
+The network sees a fixed 1024x1024 input, so a whole 800x5000 webtoon page went
+in at a fifth of its size and came back blurred: Clean left the first and last
+letters of each line of a red caption over a dark panel, and lettering cut by
+the page's edge was never touched. Windows 1.5 page-widths tall, the
+proportions of the pages the network was trained on, overlap by a fifth (more
+than a line of text, so every line lies whole inside one window) and are added
+to the whole-page pass, the higher probability winning. Anything up to twice
+as tall as it is wide still goes in whole, unchanged.
 """
 
 from __future__ import annotations
@@ -41,6 +51,18 @@ from modules.utils.download import ModelDownloader, ModelID
 from modules.utils.onnx import make_session
 
 INPUT_SIZE = 1024
+
+#: Pages taller than this many widths are segmented in windows...
+TILE_MIN_ASPECT = 2.0
+#: ...each this many widths tall (a page's proportions, so the lettering is
+#: shrunk no more than on an ordinary page)...
+TILE_ASPECT = 1.5
+#: ...overlapping their neighbours by this fraction of a window.
+TILE_OVERLAP = 0.2
+#: On ONNX Runtime's CPU kernels a call costs ~40 s rather than ~0.5 s (see
+#: above), so windows there are twice as tall: three for an 800x5000 page
+#: instead of five, and a 2400 px webtoon chunk stays one call.
+SLOW_TILE_ASPECT = 3.0
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +172,10 @@ class ComicTextSegmenter:
     def backend(self) -> str | None:
         return getattr(self.session, "backend", None)
 
+    def _slow(self) -> bool:
+        """ONNX Runtime on the CPU, where every call costs tens of seconds."""
+        return self.backend == "onnxruntime" and str(self._device or "cpu").lower() not in _ORT_ACCELERATORS
+
     @staticmethod
     def _letterbox(image: np.ndarray) -> tuple[np.ndarray, int, int]:
         """Scale to fit 1024x1024 and pad the bottom and right with black.
@@ -177,6 +203,23 @@ class ComicTextSegmenter:
         if image.ndim == 2:
             image = np.repeat(image[..., None], 3, axis=2)
 
+        height, width = image.shape[:2]
+        windows = tile_rows(height, width, SLOW_TILE_ASPECT if self._slow() else TILE_ASPECT)
+        seg = self._segment_whole(image)
+        if len(windows) == 1:
+            return seg
+        # The windows are added to the whole-page pass, not put in its place:
+        # its broad, blurred prediction is what makes the mask refinement take
+        # in the glow around white lettering in a bubble. With the sharp
+        # windows alone, five glowing captions on real pages were cleaned to
+        # readable grey ghosts of their words.
+        seg = np.array(seg)
+        for top, bottom in windows:
+            band = seg[top:bottom]
+            np.maximum(band, self._segment_whole(image[top:bottom]), out=band)
+        return seg
+
+    def _segment_whole(self, image: np.ndarray) -> np.ndarray:
         canvas, pad_w, pad_h = self._letterbox(image)
 
         # The network was trained on BGR-ordered arrays; this project carries
@@ -214,6 +257,21 @@ class ComicTextSegmenter:
             self._cache_key = key
             self._cache_value = value
         return value
+
+
+def tile_rows(height: int, width: int, aspect: float = TILE_ASPECT) -> list[tuple[int, int]]:
+    """The row ranges a page is segmented in: the whole page, or overlapping
+    windows `aspect` widths tall down a strip, the last one ending on the
+    page's last row."""
+    # A floor, so a strip a few dozen pixels wide is not cut into hundreds.
+    window = max(int(round(aspect * width)), INPUT_SIZE // 2)
+    if height <= TILE_MIN_ASPECT * width or height <= window:
+        return [(0, height)]
+    step = max(1, int(window * (1.0 - TILE_OVERLAP)))
+    tops = list(range(0, height - window + 1, step))
+    if tops[-1] + window < height:
+        tops.append(height - window)
+    return [(top, top + window) for top in tops]
 
 
 def _quick_hash(image: np.ndarray) -> int:

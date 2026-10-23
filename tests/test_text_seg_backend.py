@@ -65,7 +65,9 @@ def test_cpu_segmentation_uses_openvino(tiny_model):
 
 
 def test_openvino_and_onnxruntime_give_the_same_mask(tiny_model, monkeypatch):
-    page = _page()
+    # A page neither backend reads in windows: a tall one is cut into fewer
+    # windows on ONNX Runtime's CPU kernels, on purpose (test_text_seg_tiling).
+    page = _page()[:1300]
     fast = ComicTextSegmenter(); fast.initialize("cpu")
     monkeypatch.setenv("CT_TEXT_SEG_BACKEND", "onnxruntime")
     slow = ComicTextSegmenter(); slow.initialize("cpu")

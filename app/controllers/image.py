@@ -1066,6 +1066,8 @@ class ImageStateController:
                 PatchCommandBase.create_patch_item(prop, self.main.image_viewer)
 
     def save_current_image(self, file_path: str):
+        # This renders the whole scene; the Layers panel's frame is not page.
+        self.main.image_viewer.hide_layer_highlight()
         if self.main.webtoon_mode:
             # In webtoon mode, get the visible area image which combines all visible pages
             final_rgb, _ = self.main.image_viewer.get_visible_area_image(paint_all=True)

@@ -4,12 +4,13 @@ import numpy as np
 from modules.utils.textblock import TextBlock
 from .geometry import _clamp_box, _expand_box, _to_box, _offset_line, _pad_line_boxes, _union_box, _line_axis_box
 from .mask import _compute_mask_stats, _prepare_text_mask
-from .direction import _fallback_direction, _sort_lines
+from .direction import _fallback_direction, _sort_lines, writes_vertically
 from .skew import _detect_horizontal_lines_skew_aware, _filter_noise_lines
 from .clustering import (
     _detect_lines_from_mask,
     _filter_marginal_horizontal_artifacts,
     _absorb_glyph_fragments,
+    _join_same_row_pieces,
     _join_split_line_halves,
     _merge_small_horizontal_fragments,
     _trim_marginal_vertical_noise_from_horizontal_lines,
@@ -66,6 +67,21 @@ def annotate_blocks_with_heuristic_lines(
         block.direction = direction
 
     return blocks
+
+def relayout_for_language(image: np.ndarray, blocks: list[TextBlock]) -> list[TextBlock]:
+    """Redo the lines of blocks split into columns in a language that has none.
+
+    Detection splits lines before the source language is known; OCR knows it
+    (`blk.source_lang`). Returns the blocks whose lines were redone.
+    """
+    redo = [
+        block for block in blocks
+        if getattr(block, "direction", "") == "vertical"
+        and writes_vertically(getattr(block, "source_lang", "")) is False
+    ]
+    if redo:
+        annotate_blocks_with_heuristic_lines(image, redo)
+    return redo
 
 def _detect_lines_in_crop(image: np.ndarray, direction_hint: str | None) -> list[list[int]]:
     if direction_hint in {"horizontal", "vertical"}:
@@ -129,6 +145,13 @@ def _detect_lines_and_direction_in_crop(
     else:
         direction = "vertical" if vertical_score > horizontal_score else "horizontal"
 
+    # A language never set in columns is read as rows whatever the shapes
+    # suggest: widely spaced letters ("B U T . . . !") or a few short lines
+    # score as columns, and OCR then read each "column" rotated and right to
+    # left — "BUT...!" came back as "! • • IT.. BU BL" on a real page.
+    if direction == "vertical" and writes_vertically(source_language) is False:
+        direction = "horizontal"
+
     mask_was_split = False
     if direction == "horizontal":
         from .geometry import _is_polygon_line
@@ -180,6 +203,9 @@ def _detect_lines_and_direction_in_crop(
         # padded, under the threshold before).
         lines = _absorb_glyph_fragments(lines)
         lines = _join_split_line_halves(lines)
+        if not mask_was_split:
+            lines = _join_same_row_pieces(lines)
+            lines = _absorb_glyph_fragments(lines)
     if direction == "vertical":
         lines = _widen_skinny_vertical_lines_by_spacing(lines, width, mask_stats)
         lines = _split_tall_vertical_lines_on_valleys(lines, text_mask, mask_stats)

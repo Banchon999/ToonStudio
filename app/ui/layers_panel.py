@@ -9,7 +9,10 @@ Each row has an eye (visible), a lock and a name. Clicking the eye or lock of a
 group row changes that group across the whole document; on an object row it
 changes that object only, as an undo step. Double-click an object's name to
 rename it. The slider sets opacity for the selected rows, and the arrows move
-the selected object up or down within its group.
+the selected object up or down within its group. Picking a text or box row
+selects it on the canvas; a patch or stroke row is framed there. The trash
+button (or Delete) takes the selected objects off the page as one undo step —
+one patch of a Clean, say, without undoing the rest.
 
 The panel owns no state. It is rebuilt from the scene whenever layers, the undo
 stack or the page change (coalesced into one rebuild per event-loop turn, and
@@ -73,6 +76,9 @@ class LayersPanel(QtWidgets.QWidget):
         self.down_button = QtWidgets.QToolButton()
         self.down_button.setIcon(MIcon("down_line.svg"))
         self.down_button.setToolTip(self.tr("Move the selected layer down within its group"))
+        self.delete_button = QtWidgets.QToolButton()
+        self.delete_button.setIcon(MIcon("trash_line.svg"))
+        self.delete_button.setToolTip(self.tr("Delete the selected layers (Delete)"))
 
         title = QtWidgets.QLabel(self.tr("Layers"))
         title.setStyleSheet("font-weight: bold;")
@@ -83,6 +89,7 @@ class LayersPanel(QtWidgets.QWidget):
         bottom.addWidget(self.opacity_value)
         bottom.addWidget(self.up_button)
         bottom.addWidget(self.down_button)
+        bottom.addWidget(self.delete_button)
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 4, 0, 0)
@@ -102,6 +109,8 @@ class LayersPanel(QtWidgets.QWidget):
         self.opacity_slider.sliderMoved.connect(lambda v: self.opacity_value.setText(f"{v}%"))
         self.up_button.clicked.connect(lambda: self._move_selected(+1))
         self.down_button.clicked.connect(lambda: self._move_selected(-1))
+        self.delete_button.clicked.connect(self._delete_selected)
+        self.tree.installEventFilter(self)
         self._update_controls()
 
     # --- wiring ------------------------------------------------------------------
@@ -121,6 +130,28 @@ class LayersPanel(QtWidgets.QWidget):
     def showEvent(self, event):
         super().showEvent(event)
         self.schedule_refresh()
+
+    _DELETE_KEYS = (Qt.Key.Key_Delete, Qt.Key.Key_Backspace)
+
+    def eventFilter(self, obj, event):
+        # Delete in the tree deletes layers. The window's own Delete shortcut
+        # (delete the selected box) would claim the same key, and two matches
+        # fire neither, so the tree takes it first — except while a name is
+        # being edited, where the key deletes letters.
+        if obj is self.tree and event.type() in (QtCore.QEvent.Type.ShortcutOverride,
+                                                 QtCore.QEvent.Type.KeyPress):
+            if (event.key() in self._DELETE_KEYS and not event.modifiers()
+                    and self.tree.state() != QtWidgets.QAbstractItemView.State.EditingState):
+                event.accept()
+                if event.type() == QtCore.QEvent.Type.KeyPress:
+                    self._delete_selected()
+                return True
+        return super().eventFilter(obj, event)
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        if self._ctrl is not None:
+            self._ctrl.clear_highlight()
 
     # --- building ----------------------------------------------------------------
 
@@ -276,8 +307,12 @@ class LayersPanel(QtWidgets.QWidget):
             return
         self._update_controls()
         targets = self._selected_targets()
-        if self._ctrl is not None and len(targets) == 1 and targets[0][0]:
+        if self._ctrl is None:
+            return
+        if len(targets) == 1 and targets[0][0]:
             self._ctrl.select_on_canvas(targets[0][0])
+        else:
+            self._ctrl.clear_highlight()
 
     def _update_controls(self):
         targets = self._selected_targets() if self._ctrl is not None else []
@@ -286,6 +321,7 @@ class LayersPanel(QtWidgets.QWidget):
         one_object = len(targets) == 1 and targets[0][0] is not None
         self.up_button.setEnabled(one_object)
         self.down_button.setEnabled(one_object)
+        self.delete_button.setEnabled(any(oid for oid, _group in targets))
         if not has:
             return
         oid, group = targets[0]
@@ -327,3 +363,10 @@ class LayersPanel(QtWidgets.QWidget):
             return
         ids_top_first[i], ids_top_first[j] = ids_top_first[j], ids_top_first[i]
         self._ctrl.reorder(list(reversed(ids_top_first)))
+
+    def _delete_selected(self):
+        if self._ctrl is None:
+            return
+        object_ids = [oid for oid, _group in self._selected_targets() if oid]
+        if object_ids:
+            self._ctrl.delete_objects(object_ids, text=self.tr("Delete layers"))

@@ -5,6 +5,7 @@ from modules.utils.textblock import TextBlock
 from modules.utils.language_utils import language_codes, \
     get_lang_code_for_script, get_ocr_bucket_for_script, \
     get_dominant_page_script, is_supported_script, normalize_script
+from modules.detection.heuristic_lines import relayout_for_language
 from .factory import OCRFactory
 _MANGA_OCR_CLASS_NAMES = {"MangaOCRMobileONNXEngine", "MangaOCREngine", "MangaOCREngineONNX"}
 
@@ -60,6 +61,9 @@ class OCRProcessor:
         """
 
         self._set_source_language(blk_list)
+        # Lines were split at detection, before the language was known; a
+        # block split into columns in a language that has none is redone.
+        relayout_for_language(img, blk_list)
 
         if self.source_lang_english == 'Auto':
             result = self._process_auto(img, blk_list)

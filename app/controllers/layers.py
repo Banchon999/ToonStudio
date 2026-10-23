@@ -68,18 +68,26 @@ class LayerController(QObject):
         return out
 
     def select_on_canvas(self, object_id: str) -> None:
-        """Make an object the canvas selection, as clicking it would. Only text
-        and boxes are selectable; locked or hidden objects are left alone."""
+        """Make an object the canvas selection, as clicking it would. Text and
+        boxes are selected; a patch or a stroke, which cannot be, is framed so
+        the row can be told from the others. Locked or hidden objects are left
+        alone."""
         from app.ui.canvas.layer_apply import is_hidden, is_locked
 
         viewer = self.viewer
+        viewer.hide_layer_highlight()
         item = find_by_id(viewer._scene, object_id, viewer=viewer)
         if item is None:
             return
         doc = self.document()
+        kind = kind_of(item)
+        if kind in (LayerGroup.PATCHES, LayerGroup.STROKES):
+            if not is_hidden(item, doc):
+                viewer.deselect_all()
+                viewer.show_layer_highlight(item)
+            return
         if is_locked(item, doc) or is_hidden(item, doc):
             return
-        kind = kind_of(item)
         if kind is LayerGroup.TEXT:
             if not getattr(item, "selected", False):
                 viewer.deselect_all()
@@ -93,6 +101,79 @@ class LayerController(QObject):
         else:
             return
         viewer.ensureVisible(item)
+
+    def clear_highlight(self) -> None:
+        self.viewer.hide_layer_highlight()
+
+    # --- deleting objects (undoable) -----------------------------------------------
+
+    def delete_objects(self, object_ids: Iterable[str], text: str = "Delete layers") -> int:
+        """Take these objects off their pages as one undo step; returns how many.
+
+        Any kind: a patch (the way to take back one part of a Clean — the face
+        it wiped — without undoing the rest), a stroke, a text item (its block
+        stays, so Render can draw it again) or a box (with its block, as the
+        canvas's Delete does). Locked objects are kept, as in an image editor.
+        """
+        from app.ui.canvas.layer_apply import is_locked
+        from app.ui.commands.box import DeleteBoxesCommand
+        from app.ui.commands.layers import (
+            RemoveBoxCommand,
+            RemovePatchCommand,
+            RemoveStrokeCommand,
+            RemoveTextItemCommand,
+        )
+
+        viewer = self.viewer
+        doc = self.document()
+        commands = []
+        for oid in dict.fromkeys(object_ids):
+            item = find_by_id(viewer._scene, oid, viewer=viewer)
+            if item is None or is_locked(item, doc):
+                continue
+            kind = kind_of(item)
+            if kind is LayerGroup.PATCHES:
+                file_path, entry = self._patch_entry(oid)
+                if entry is not None:
+                    commands.append(RemovePatchCommand(self.main, entry, file_path, item))
+            elif kind is LayerGroup.STROKES:
+                commands.append(RemoveStrokeCommand(viewer, item))
+            elif kind is LayerGroup.TEXT:
+                commands.append(RemoveTextItemCommand(self.main, item))
+            elif kind is LayerGroup.BOXES:
+                coords = item.mapRectToScene(item.rect()).getCoords()
+                blk = self.main.rect_item_ctrl.find_corresponding_text_block(coords, 0.5)
+                if blk is not None:
+                    commands.append(DeleteBoxesCommand(self.main, item, None, blk, self.main.blk_list))
+                else:
+                    commands.append(RemoveBoxCommand(self.main, item))
+        if not commands:
+            return 0
+        viewer.hide_layer_highlight()
+        stack = self.main.undo_group.activeStack()
+        if stack is None:
+            for cmd in commands:
+                cmd.redo()
+        elif len(commands) == 1:
+            stack.push(commands[0])
+        else:
+            stack.beginMacro(text)
+            try:
+                for cmd in commands:
+                    stack.push(cmd)
+            finally:
+                stack.endMacro()
+        self.main.mark_project_dirty()
+        self.layers_changed.emit()
+        return len(commands)
+
+    def _patch_entry(self, object_id: str):
+        """(page file, stored entry) of a patch: what its insert registered."""
+        for file_path, entries in getattr(self.main, "image_patches", {}).items():
+            for entry in entries:
+                if entry.get("object_id") == object_id:
+                    return file_path, entry
+        return None, None
 
     # --- object props (undoable) -------------------------------------------------
 
