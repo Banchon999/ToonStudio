@@ -72,7 +72,10 @@ class ManualWorkflowController:
         # page of a Smart Workflow run in memory (6 MB a page at 1200x1800, all
         # of them, past max_images_in_memory) and wrote the GUI thread's dict
         # from a worker.
-        return self.main.image_ctrl.load_image(file_path)
+        img = self.main.image_data.get(file_path)
+        if img is None:
+            img = self.main.image_ctrl.load_image(file_path)
+        return img
 
     def _prepare_multi_page_context(self, selected_paths: list[str]) -> dict[str, Any]:
         current_file = self._current_file_path()
