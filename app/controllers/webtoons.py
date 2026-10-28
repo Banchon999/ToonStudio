@@ -154,7 +154,9 @@ class WebtoonController:
         for page_idx, img_array in manager.image_data.items():
             if page_idx < len(self.image_files):
                 file_path = self.image_files[page_idx]
-                self.main.image_data[file_path] = img_array
+                # Through the regular view's cache, so these pages leave memory
+                # again; set directly, each switch back added pages for good.
+                self.main.image_ctrl.remember_page_image(file_path, img_array)
         
         # Save all currently visible scene items to their appropriate page states
         # This is crucial to ensure items from multiple pages are saved correctly

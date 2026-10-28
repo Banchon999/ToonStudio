@@ -67,12 +67,12 @@ class ManualWorkflowController:
         return on_error, on_finished
 
     def _load_page_image(self, file_path: str):
-        img = self.main.image_data.get(file_path)
-        if img is None:
-            img = self.main.image_ctrl.load_image(file_path)
-            if img is not None:
-                self.main.image_data[file_path] = img
-        return img
+        # Read, not kept: every caller is a loop over pages on a worker thread
+        # that uses the image and moves on. Storing it in image_data held every
+        # page of a Smart Workflow run in memory (6 MB a page at 1200x1800, all
+        # of them, past max_images_in_memory) and wrote the GUI thread's dict
+        # from a worker.
+        return self.main.image_ctrl.load_image(file_path)
 
     def _prepare_multi_page_context(self, selected_paths: list[str]) -> dict[str, Any]:
         current_file = self._current_file_path()

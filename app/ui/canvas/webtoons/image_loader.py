@@ -322,6 +322,15 @@ class LazyImageLoader:
         # Remove image data from memory only after scene items were serialized
         if page_idx in self.image_data:
             del self.image_data[page_idx]
+        # Loading put the page in the main window's image_data too; leaving it
+        # there kept every page scrolled past (40 pages of 800x5000: 458 MB),
+        # whatever max_loaded_pages said. A page the regular view's own cache
+        # holds (loaded_images) is that cache's to drop.
+        main = self.main_controller
+        if main is not None and 0 <= page_idx < len(self.image_file_paths):
+            file_path = self.image_file_paths[page_idx]
+            if file_path not in getattr(main, "loaded_images", ()):
+                getattr(main, "image_data", {}).pop(file_path, None)
 
         self._ensure_placeholder(page_idx)
         self.loaded_pages.remove(page_idx)
