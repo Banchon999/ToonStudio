@@ -48,6 +48,7 @@ Toon Studio ทำงานเป็นขั้นตอนเดียวก�
 **คลังคำศัพท์ต่อเรื่อง / A glossary per series**
 - ชื่อตัวละคร สถานที่ สกิล ถูกส่งให้ AI ทุกครั้งที่ปรากฏในหน้า จับได้แม้ OCR เว้นวรรคผิดหรืออ่านผิดหนึ่งตัวอักษร · Names, places and skills are sent whenever they appear, even when OCR splits a name or misreads one letter.
 - เตือนเมื่อคำแปลไม่ได้ใช้คำในคลัง, เตือนคำที่ซ้อนกันแล้วแปลขัดกัน, สกัดคำศัพท์ใหม่จากหน้าที่อ่านแล้วด้วย AI · Warns when a translation ignores the glossary, flags overlapping terms that disagree, and can extract new terms from what was read.
+- แชร์คลังกับทีมผ่าน Google Sheet: คำที่ตรงกันรวมให้เอง คำเดียวกันที่แปลต่างกันให้ AI ตัดสิน ([วิธีตั้งค่า](docs/glossary-sync.md)) · Share it with a team through a Google Sheet: matching terms merge, the same term translated differently is settled by the AI ([setup](docs/glossary-sync.md)).
 
 **เว็บตูน / Webtoons**
 - แปลทั้งแถบในคำขอเดียว AI เห็นบทสนทนาทั้งตอน — ทดสอบกับ AI จริง ระบุคนพูดถูก 14/14 (เดิมแปลทีละช่วงได้ 6–8) · A whole strip is translated in one request, so the model follows the conversation: 14 of 14 speakers right on a test strip, against 6–8 chunk by chunk.
