@@ -118,7 +118,10 @@ class BatchProcessor:
             x1, y1, x2, y2 = [float(v) for v in box[:4]]
             y1 = min(max(y1 - dy, 0.0), float(page_height))
             y2 = min(max(y2 - dy, 0.0), float(page_height))
-            return np.array([x1, y1, x2, y2])
+            # Integers, as the detector gave them: a float box reached the
+            # Clean mask, which slices the page with it, and the batch died
+            # with "slice indices must be integers".
+            return np.array([round(x1), round(y1), round(x2), round(y2)], dtype=int)
 
         blk.xyxy = shift_box(blk.xyxy)
         if getattr(blk, 'bubble_xyxy', None) is not None:

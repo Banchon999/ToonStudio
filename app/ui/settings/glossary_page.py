@@ -212,6 +212,137 @@ def _html(text: str) -> str:
     return (text or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+class GlossarySyncSetupDialog(QtWidgets.QDialog):
+    """Where the team's sheet is, and the token its script checks."""
+
+    def __init__(self, manager: GlossaryManager, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(self.tr("Team Glossary"))
+        self.resize(560, 0)
+        layout = QtWidgets.QVBoxLayout(self)
+
+        steps = MLabel(self.tr(
+            "Share a series glossary with your team through a Google Sheet.\n"
+            "One person sets it up once:\n"
+            "1. Create a Google Sheet and open Extensions > Apps Script.\n"
+            "2. Replace the code with the script (Copy Script below) and set TOKEN in it.\n"
+            "3. Deploy > New deployment > Web app, Execute as: Me, Who has access: Anyone.\n"
+            "4. Send the team the web app URL (ending in /exec) and the token.\n"
+            "Each series is a tab of the sheet, named after the series."
+        )).secondary()
+        steps.setWordWrap(True)
+        layout.addWidget(steps)
+
+        form = QtWidgets.QFormLayout()
+        self.url_input = MLineEdit()
+        self.url_input.setPlaceholderText("https://script.google.com/macros/s/…/exec")
+        self.url_input.setText(manager.sync_url)
+        self.token_input = MLineEdit()
+        self.token_input.setEchoMode(QtWidgets.QLineEdit.EchoMode.Password)
+        self.token_input.setText(manager.sync_token)
+        self.name_input = MLineEdit()
+        self.name_input.setPlaceholderText(self.tr("Shown in the sheet beside the terms you change"))
+        self.name_input.setText(manager.sync_name)
+        form.addRow(self.tr("Web app URL:"), self.url_input)
+        form.addRow(self.tr("Token:"), self.token_input)
+        form.addRow(self.tr("Your name:"), self.name_input)
+        layout.addLayout(form)
+
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+        )
+        copy_button = MPushButton(self.tr("Copy Script")).small()
+        copy_button.clicked.connect(self.copy_script)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        bottom = QtWidgets.QHBoxLayout()
+        bottom.addWidget(copy_button)
+        bottom.addStretch(1)
+        bottom.addWidget(buttons)
+        layout.addLayout(bottom)
+
+    def copy_script(self):
+        from modules.utils.glossary_sync import APPS_SCRIPT_PATH
+
+        try:
+            with open(APPS_SCRIPT_PATH, "r", encoding="utf-8") as f:
+                script = f.read()
+        except OSError as e:
+            QtWidgets.QMessageBox.warning(self, self.tr("Team Glossary"), str(e))
+            return
+        QtWidgets.QApplication.clipboard().setText(script)
+        QtWidgets.QMessageBox.information(
+            self, self.tr("Team Glossary"),
+            self.tr("The script is on the clipboard. Paste it into the sheet's Apps Script editor."),
+        )
+
+    def values(self) -> tuple[str, str, str]:
+        return (
+            self.url_input.text().strip(),
+            self.token_input.text().strip(),
+            self.name_input.text().strip(),
+        )
+
+
+class GlossaryConflictDialog(QtWidgets.QDialog):
+    """Terms only a person can settle: which of the two versions the team keeps."""
+
+    def __init__(self, conflicts, parent=None):
+        super().__init__(parent)
+        self.conflicts = list(conflicts)
+        self.setWindowTitle(self.tr("Team Glossary Conflicts"))
+        self.resize(680, 380)
+        layout = QtWidgets.QVBoxLayout(self)
+        intro = MLabel(self.tr(
+            "You and the team changed these terms differently, and they could not be\n"
+            "merged on their own. Choose the version everyone will use."
+        )).secondary()
+        intro.setWordWrap(True)
+        layout.addWidget(intro)
+
+        self.table = QtWidgets.QTableWidget(len(self.conflicts), 4)
+        self.table.setHorizontalHeaderLabels([
+            self.tr("Original"), self.tr("This computer"), self.tr("Team"), self.tr("Keep"),
+        ])
+        self.table.verticalHeader().setVisible(False)
+        self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        self.choices: list[QtWidgets.QComboBox] = []
+        for row, conflict in enumerate(self.conflicts):
+            self.table.setItem(row, 0, QtWidgets.QTableWidgetItem(conflict.local.source))
+            self.table.setItem(row, 1, QtWidgets.QTableWidgetItem(self._describe(conflict.local)))
+            self.table.setItem(row, 2, QtWidgets.QTableWidgetItem(self._describe(conflict.remote)))
+            choice = QtWidgets.QComboBox()
+            choice.addItems([self.tr("This computer"), self.tr("Team")])
+            self.table.setCellWidget(row, 3, choice)
+            self.choices.append(choice)
+        layout.addWidget(self.table, 1)
+
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.StandardButton.Ok | QtWidgets.QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.button(QtWidgets.QDialogButtonBox.StandardButton.Ok).setText(self.tr("Use These and Sync"))
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def _describe(self, entry: GlossaryEntry) -> str:
+        return f"{entry.target} ({entry.gender})" if entry.gender else entry.target
+
+    def chosen(self) -> dict:
+        """The entry to keep for each term, by key."""
+        from modules.utils.glossary_sync import combine
+
+        result = {}
+        for conflict, choice in zip(self.conflicts, self.choices):
+            keep, other = (
+                (conflict.local, conflict.remote) if choice.currentIndex() == 0
+                else (conflict.remote, conflict.local)
+            )
+            result[conflict.key] = combine(keep, other)
+        return result
+
+
 class GlossaryPage(QtWidgets.QWidget):
     """Settings tab for managing the translation glossary."""
 
@@ -255,6 +386,29 @@ class GlossaryPage(QtWidgets.QWidget):
             profile_layout.addWidget(b)
         profile_layout.addStretch(1)
         layout.addLayout(profile_layout)
+
+        # Team sync (a Google Sheet shared by the team; see glossary_sync)
+        sync_layout = QtWidgets.QHBoxLayout()
+        sync_layout.addWidget(MLabel(self.tr("Team:")).strong())
+        self.sync_button = MPushButton(self.tr("Sync with Team")).small()
+        self.sync_button.setToolTip(self.tr(
+            "Merge this series' glossary with the team's Google Sheet.\n"
+            "Terms only one side changed are taken as they are; the same term\n"
+            "translated differently is settled by the AI translator."
+        ))
+        self.sync_button.clicked.connect(lambda: self.sync_with_team())
+        sync_setup_button = MPushButton(self.tr("Set Up…")).small()
+        sync_setup_button.clicked.connect(self.setup_sync)
+        self.sync_status_label = MLabel("").secondary()
+        sync_layout.addWidget(self.sync_button)
+        sync_layout.addWidget(sync_setup_button)
+        sync_layout.addWidget(self.sync_status_label)
+        sync_layout.addStretch(1)
+        layout.addLayout(sync_layout)
+        self._sync_running = False
+        self._sync_context = None  # (profile, url, snapshot) of the sync in flight
+        self._last_sync: dict[str, str] = {}
+        self._sync_profile_buttons = (new_profile_button, rename_profile_button, delete_profile_button)
 
         # Options
         self.enabled_checkbox = MCheckBox(self.tr("Use Glossary during AI Translation"))
@@ -405,6 +559,7 @@ class GlossaryPage(QtWidgets.QWidget):
         self._refresh_type_filter()
         self.refresh_table()
         self._refresh_log_status()
+        self._refresh_sync_status()
         self.profile_combo.currentTextChanged.connect(self._on_profile_selected)
 
     # Profiles
@@ -423,6 +578,7 @@ class GlossaryPage(QtWidgets.QWidget):
         self._refresh_type_filter()
         self.refresh_table()
         self._refresh_log_status()
+        self._refresh_sync_status()
 
     def _ask_profile_name(self, title: str, initial: str = "") -> str:
         name, ok = QtWidgets.QInputDialog.getText(
@@ -667,6 +823,133 @@ class GlossaryPage(QtWidgets.QWidget):
         QtWidgets.QMessageBox.warning(
             self, self.tr("Glossary"),
             self.tr("Glossary extraction failed:\n{0}").format(str(value)),
+        )
+
+    # Team sync
+
+    def _refresh_sync_status(self):
+        if self._sync_running:
+            text = self.tr("Syncing…")
+        elif not (self.manager.sync_url and self.manager.sync_token):
+            text = self.tr("Not set up")
+        else:
+            text = self._last_sync.get(self.manager.active_profile, "")
+        self.sync_status_label.setText(text)
+
+    def setup_sync(self) -> bool:
+        dialog = GlossarySyncSetupDialog(self.manager, self)
+        if dialog.exec() != QtWidgets.QDialog.DialogCode.Accepted:
+            return False
+        self.manager.sync_url, self.manager.sync_token, self.manager.sync_name = dialog.values()
+        self.manager.save()
+        self._refresh_sync_status()
+        return bool(self.manager.sync_url and self.manager.sync_token)
+
+    def _set_sync_running(self, running: bool):
+        self._sync_running = running
+        self.sync_button.setEnabled(not running)
+        # The result is written to the profile it was made from; switching
+        # away mid-sync would hand it to the wrong series.
+        self.profile_combo.setEnabled(not running)
+        for button in self._sync_profile_buttons:
+            button.setEnabled(not running)
+        self._refresh_sync_status()
+
+    def sync_with_team(self, manual: dict | None = None):
+        if self._sync_running:
+            return
+        if not (self.manager.sync_url and self.manager.sync_token) and not self.setup_sync():
+            return
+
+        import copy
+        from functools import partial
+        from modules.utils.glossary_sync import (
+            GlossarySyncClient, load_base, resolve_conflicts_with_ai, sync_profile,
+        )
+
+        profile = self.manager.active_profile
+        url, token = self.manager.sync_url, self.manager.sync_token
+        snapshot = copy.deepcopy(self.manager.entries)
+        base = load_base(self.manager.sync_base_path(profile), url)
+        main_page = self._main_window()
+        resolver = partial(resolve_conflicts_with_ai, main_page) if main_page is not None else None
+
+        def run():
+            client = GlossarySyncClient(url, token)
+            return sync_profile(
+                client, profile, copy.deepcopy(snapshot), base,
+                self.manager.sync_name, resolver=resolver, manual=manual,
+            )
+
+        self._set_sync_running(True)
+        self._sync_context = (profile, url, snapshot)
+        worker = GenericWorker(run)
+        worker.signals.result.connect(self._on_sync_done)
+        worker.signals.error.connect(self._on_sync_error)
+        QThreadPool.globalInstance().start(worker)
+
+    def _on_sync_done(self, outcome):
+        from modules.utils.glossary_sync import reconcile_after_sync, save_base
+
+        profile, url, snapshot = self._sync_context
+        self._sync_context = None
+        self._set_sync_running(False)
+        if self.manager.active_profile != profile:
+            # A workspace switched the series meanwhile. The sheet has the
+            # merge; the next sync of that series brings it here.
+            QtWidgets.QMessageBox.information(
+                self, self.tr("Team Glossary"),
+                self.tr("The series changed during the sync. Sync \"{0}\" again to finish.").format(profile),
+            )
+            return
+        self.manager.entries = reconcile_after_sync(snapshot, self.manager.entries, outcome.entries)
+        self.manager.save()
+        try:
+            save_base(self.manager.sync_base_path(profile), url, outcome.rev, outcome.base)
+        except OSError as e:
+            logger.error("Failed to save the team glossary sync state: %s", e)
+        self._refresh_type_filter()
+        self.refresh_table()
+        self._last_sync[profile] = self.tr("Synced at {0}").format(
+            QtCore.QTime.currentTime().toString("HH:mm")
+        )
+        self._refresh_sync_status()
+
+        plan = outcome.plan
+        lines = [self.tr("Synced \"{0}\" with the team.").format(profile)]
+        lines.append(self.tr("Received {0}, sent {1}, combined {2}.").format(
+            plan.pulled, plan.pushed, plan.combined
+        ))
+        if plan.deleted_here or plan.deleted_there:
+            lines.append(self.tr("Removed here {0}, removed from the sheet {1}.").format(
+                plan.deleted_here, plan.deleted_there
+            ))
+        if outcome.resolved:
+            lines.append("")
+            lines.append(self.tr("The AI settled {0} term(s) translated differently:").format(
+                len(outcome.resolved)
+            ))
+            for item in outcome.resolved[:12]:
+                lines.append(f"• {item.source}: {item.mine} / {item.team} → {item.chosen}")
+            if len(outcome.resolved) > 12:
+                lines.append("…")
+        if outcome.ai_error:
+            lines.append("")
+            lines.append(self.tr("The AI could not settle the conflicts: {0}").format(outcome.ai_error))
+        QtWidgets.QMessageBox.information(self, self.tr("Team Glossary"), "\n".join(lines))
+
+        if outcome.held:
+            dialog = GlossaryConflictDialog(outcome.held, self)
+            if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+                self.sync_with_team(manual=dialog.chosen())
+
+    def _on_sync_error(self, error_info):
+        self._sync_context = None
+        self._set_sync_running(False)
+        _, value, _ = error_info
+        QtWidgets.QMessageBox.warning(
+            self, self.tr("Team Glossary"),
+            self.tr("Syncing with the team failed:\n{0}").format(str(value)),
         )
 
     # Table

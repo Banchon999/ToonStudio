@@ -470,6 +470,11 @@ class GlossaryManager:
         # Extract terms from each page as soon as it is recognised, so the
         # glossary fills in while you work instead of only at the end.
         self.auto_extract: bool = False
+        # Team sync through a Google Sheet (see glossary_sync): the web app's
+        # URL, the token its script checks, and the name stamped on our edits.
+        self.sync_url: str = ""
+        self.sync_token: str = ""
+        self.sync_name: str = ""
         self.active_profile: str = self.DEFAULT_PROFILE
         self.entries: list[GlossaryEntry] = []
         self._load_meta_and_migrate()
@@ -492,6 +497,22 @@ class GlossaryManager:
 
     def _profile_path(self, name: str) -> str:
         return os.path.join(self.base_dir, f"{self._safe_filename(name)}.json")
+
+    def sync_base_path(self, name: str | None = None) -> str:
+        """Where the state last agreed with the team sheet is kept for a profile.
+
+        Not a .json, or list_profiles would offer it as a glossary.
+        """
+        return os.path.join(
+            self.base_dir, f"{self._safe_filename(name or self.active_profile)}.syncbase"
+        )
+
+    def _forget_sync_base(self, name: str) -> None:
+        try:
+            if os.path.exists(self.sync_base_path(name)):
+                os.remove(self.sync_base_path(name))
+        except OSError as e:
+            logger.error(f"Failed to remove glossary sync state for {name}: {e}")
 
     def list_profiles(self) -> list[str]:
         names = set()
@@ -527,6 +548,9 @@ class GlossaryManager:
         old_path, new_path = self.file_path, self._profile_path(new_name)
         if os.path.exists(old_path) and not os.path.exists(new_path):
             os.rename(old_path, new_path)
+        # The team tab is named after the profile, so a renamed profile syncs
+        # with a different tab: what was agreed with the old one says nothing.
+        self._forget_sync_base(self.active_profile)
         self.active_profile = new_name
         self.save()
 
@@ -536,6 +560,7 @@ class GlossaryManager:
                 os.remove(self.file_path)
         except OSError as e:
             logger.error(f"Failed to delete glossary profile {self.active_profile}: {e}")
+        self._forget_sync_base(self.active_profile)
         remaining = [p for p in self.list_profiles() if p != self.active_profile]
         self.active_profile = remaining[0] if remaining else self.DEFAULT_PROFILE
         self._save_meta()
@@ -554,6 +579,9 @@ class GlossaryManager:
                 self.log_ocr = bool(meta.get("log_ocr", True))
                 self.batch_extract = bool(meta.get("batch_extract", False))
                 self.auto_extract = bool(meta.get("auto_extract", False))
+                self.sync_url = str(meta.get("sync_url", "") or "").strip()
+                self.sync_token = str(meta.get("sync_token", "") or "").strip()
+                self.sync_name = str(meta.get("sync_name", "") or "").strip()
                 self.active_profile = self._safe_filename(
                     str(meta.get("active_profile", self.DEFAULT_PROFILE))
                 )
@@ -588,6 +616,9 @@ class GlossaryManager:
                         "log_ocr": self.log_ocr,
                         "batch_extract": self.batch_extract,
                         "auto_extract": self.auto_extract,
+                        "sync_url": self.sync_url,
+                        "sync_token": self.sync_token,
+                        "sync_name": self.sync_name,
                         "active_profile": self.active_profile,
                     },
                     f, ensure_ascii=False, indent=2,

@@ -65,7 +65,26 @@ def test_a_manual_release_takes_its_tag_from_the_version_and_never_reuses_one():
     assert "git ls-remote --exit-code --tags origin" in release, "an existing tag must be refused"
     assert "tag_name: ${{ needs.check.outputs.tag }}" in release
     assert "target_commitish: ${{ github.sha }}" in release
-    assert "body_path: .github/release-notes/${{ needs.check.outputs.tag }}.md" in release
+    assert 'notes=".github/release-notes/${tag}.md"' in release
+    assert "body_path: ${{ needs.check.outputs.notes }}" in release
+
+
+def test_a_test_build_is_a_pre_release_nobody_is_offered_as_an_update():
+    """Run by hand on any branch with "prerelease" ticked: a fresh tag per run,
+    its own notes, marked pre-release and never latest. The update checker asks
+    /releases/latest, which GitHub answers with the newest non-pre-release."""
+    release = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
+    on_block = release[release.index("\non:"):release.index("\npermissions:")]
+    assert "prerelease:" in on_block and "default: false" in on_block
+    assert 'tag="v${version}-beta.${GITHUB_RUN_NUMBER}"' in release
+    assert 'notes=".github/release-notes/beta.md"' in release
+    assert (ROOT / ".github" / "release-notes" / "beta.md").read_text(encoding="utf-8").strip()
+    check = release[release.index('if [ "${PRERELEASE}" = "true" ]'):release.index('elif [ "${GITHUB_EVENT_NAME}" = "push" ]')]
+    assert "main" not in check, "a test build may come from any branch"
+    assert "prerelease: ${{ needs.check.outputs.prerelease == 'true' }}" in release
+    assert "make_latest: ${{ needs.check.outputs.prerelease == 'true' && 'false' || 'true' }}" in release
+    checker = (ROOT / "app" / "update_checker.py").read_text(encoding="utf-8")
+    assert "/releases/latest" in checker
 
 
 def test_a_release_does_not_share_main_ci_concurrency_group():
