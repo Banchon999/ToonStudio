@@ -12,6 +12,7 @@ from ..dayu_widgets.push_button import MPushButton
 from ..dayu_widgets.combo_box import MComboBox
 from ..dayu_widgets.text_edit import MTextEdit
 
+from modules.utils.thai_speech import SETTINGS, normalise_setting
 from modules.utils.glossary import (
     GlossaryManager, GlossaryEntry, GLOSSARY_PRESET_TYPES, GLOSSARY_GENDERS,
     collect_source_text, parse_alias, parse_aliases,
@@ -384,6 +385,21 @@ class GlossaryPage(QtWidgets.QWidget):
         delete_profile_button.clicked.connect(self.delete_profile)
         for b in (new_profile_button, rename_profile_button, delete_profile_button):
             profile_layout.addWidget(b)
+        # The series' setting decides the Thai register (ผม…ครับ or
+        # ข้า…ขอรับ); stored with the profile, in thai_speech.SETTINGS order.
+        profile_layout.addSpacing(12)
+        profile_layout.addWidget(MLabel(self.tr("Setting:")).strong())
+        self.setting_combo = MComboBox().small()
+        self.setting_combo.addItems([
+            self.tr("Auto"), self.tr("Present day"), self.tr("Historical / martial arts"),
+        ])
+        self.setting_combo.setToolTip(self.tr(
+            "When this series takes place. Into Thai it decides the register:\n"
+            "Present day → ผม / ฉัน, ครับ / ค่ะ\n"
+            "Historical → ข้า, ขอรับ / เจ้าค่ะ\n"
+            "Auto leaves it to the AI, page by page."
+        ))
+        profile_layout.addWidget(self.setting_combo)
         profile_layout.addStretch(1)
         layout.addLayout(profile_layout)
 
@@ -561,8 +577,18 @@ class GlossaryPage(QtWidgets.QWidget):
         self._refresh_log_status()
         self._refresh_sync_status()
         self.profile_combo.currentTextChanged.connect(self._on_profile_selected)
+        self.setting_combo.currentIndexChanged.connect(self._on_setting_selected)
 
     # Profiles
+
+    def _refresh_setting(self):
+        self.setting_combo.blockSignals(True)
+        self.setting_combo.setCurrentIndex(SETTINGS.index(normalise_setting(self.manager.setting)))
+        self.setting_combo.blockSignals(False)
+
+    def _on_setting_selected(self, index: int):
+        if 0 <= index < len(SETTINGS):
+            self.manager.set_setting(SETTINGS[index])
 
     def _refresh_profiles(self):
         self.profile_combo.blockSignals(True)
@@ -570,11 +596,13 @@ class GlossaryPage(QtWidgets.QWidget):
         self.profile_combo.addItems(self.manager.list_profiles())
         self.profile_combo.setCurrentText(self.manager.active_profile)
         self.profile_combo.blockSignals(False)
+        self._refresh_setting()
 
     def _on_profile_selected(self, name: str):
         if not name or name == self.manager.active_profile:
             return
         self.manager.switch_profile(name)
+        self._refresh_setting()
         self._refresh_type_filter()
         self.refresh_table()
         self._refresh_log_status()

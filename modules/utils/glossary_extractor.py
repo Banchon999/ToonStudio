@@ -3,6 +3,7 @@ import logging
 from typing import Callable
 
 from .glossary import GlossaryEntry, term_key
+from .naming_rules import extraction_naming_rules, rules_language
 from .thai_speech import extraction_gender_rules
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,9 @@ suffixes and inflection from the source term, so a Korean name written 홍길동
 term twice, and never report a term that only differs from another by a
 particle, spacing or an attached suffix.
 
-Translate/romanize each term the way a professional {target_lang} localization would, and keep it consistent.
+{naming_rules}
+
+Keep every term consistent: the same name is always written the same way.
 
 {gender_rules}
 
@@ -122,10 +125,19 @@ def extract_glossary_terms(
     # No page image involved in extraction.
     engine.img_as_llm_input = False
 
+    # Rules for the language the text is actually in: the setting may say
+    # Auto, or the wrong series may be open.
+    rules_lang, mismatch = rules_language(translator.source_lang_en or "", log_text)
+    if mismatch:
+        logger.warning(
+            "Glossary extraction: the source language is set to %r but the text is %s; "
+            "using %s naming rules", translator.source_lang_en, mismatch, mismatch,
+        )
     system_prompt = EXTRACTION_SYSTEM_PROMPT.format(
-        source_lang=translator.source_lang_en or "the source language",
+        source_lang=rules_lang or "the source language",
         target_lang=translator.target_lang_en or "the target language",
-        gender_rules=extraction_gender_rules(translator.source_lang_en),
+        gender_rules=extraction_gender_rules(rules_lang),
+        naming_rules=extraction_naming_rules(rules_lang, translator.target_lang_en or ""),
     )
 
     chunks = split_into_chunks(log_text)

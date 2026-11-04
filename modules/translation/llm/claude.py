@@ -4,6 +4,7 @@ import numpy as np
 import json
 
 from .base import BaseLLMTranslation
+from ...utils.api_errors import APIError
 from ...utils.translator_utils import MODEL_MAP
 
 
@@ -89,6 +90,4 @@ class ClaudeTranslation(BaseLLMTranslation):
         if response.status_code == 200:
             response_data = response.json()
             return response_data['content'][0]['text']
-        else:
-            error_msg = f"Error {response.status_code}: {response.text}"
-            raise Exception(f"Claude API request failed: {error_msg}")
+        raise APIError.from_response("Anthropic", response, self.model or "")

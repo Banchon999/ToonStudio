@@ -1,5 +1,5 @@
 from .dayu_widgets.message import MMessage
-from core.messages import content_flagged_text, server_error_text
+from core.messages import api_error_text, content_flagged_text, server_error_text
 from PySide6.QtCore import QCoreApplication, Qt
 from PySide6 import QtWidgets
 
@@ -153,6 +153,16 @@ class Messages:
         return server_error_text(status_code, context)
 
     @staticmethod
+    def show_api_error(parent, error):
+        """An AI provider refused a request (APIError): what to do, then its words."""
+        MMessage.error(
+            text=api_error_text(error),
+            parent=parent,
+            duration=None,
+            closable=True
+        )
+
+    @staticmethod
     def show_server_error(parent, status_code: int = 500, context: str = None):
         """
         Show a user-friendly error for 5xx server issues.
@@ -260,6 +270,12 @@ class Messages:
             ),
             thai_speech.MALE_SPEAKER_FEMALE_SPEECH: QCoreApplication.translate(
                 "Messages", "the AI says {0} (male) speaks, but the line uses ค่ะ/คะ/ดิฉัน"
+            ),
+            thai_speech.MODERN_IN_HISTORICAL: QCoreApplication.translate(
+                "Messages", "modern ครับ/ค่ะ/ดิฉัน in a historical series (use ขอรับ/เจ้าค่ะ/ข้า)"
+            ),
+            thai_speech.ARCHAIC_IN_MODERN: QCoreApplication.translate(
+                "Messages", "period ขอรับ/เจ้าค่ะ/ข้าน้อย in a present-day series"
             ),
         }
         text = texts.get(reason, reason)

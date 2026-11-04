@@ -6,6 +6,8 @@ from ...utils.translator_utils import MODEL_MAP
 
 class DeepseekTranslation(GPTTranslation):
     """Translation engine using Deepseek models with OpenAI-compatible API."""
+
+    PROVIDER = "DeepSeek"
     
     def __init__(self):
         super().__init__()

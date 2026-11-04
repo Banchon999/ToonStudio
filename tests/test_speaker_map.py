@@ -223,6 +223,14 @@ class TestEngine:
         assert engine.image_seen == [True, False]     # speakers with it, translation as set
         assert engine.img_as_llm_input is False
 
+    def test_a_page_with_no_image_still_gets_a_speaker_map(self):
+        # Forcing image input on with no image made the engine encode None,
+        # and the speaker step failed — silently, as a missing map.
+        engine = FakeEngine(self.SPEAKERS, self.TRANSLATION)
+        engine.translate([block("a"), block("b")], None, "")
+        assert engine.image_seen[0] is False
+        assert "SPEAKER MAP" in engine.calls[1][0]
+
     def test_a_failed_speaker_request_still_translates(self):
         engine = FakeEngine(RuntimeError("rate limited"), self.TRANSLATION)
         blocks = [block("a"), block("b")]

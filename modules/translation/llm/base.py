@@ -34,13 +34,21 @@ def build_user_prompt(raw_text: str, extra_context: str = "") -> str:
     return "\n\n".join(parts)
 
 
+#: Sampling temperature for translation requests (the OpenAI scale; Claude's
+#: engine halves it for Anthropic's 0–1 scale). It was 1.0, which gave the
+#: same page a different wording on every run — a name, a particle or a line
+#: changing between runs is exactly what a reader notices across pages.
+#: NovelTrans measured cross-run agreement going from 57% to 84–90% at 0.3.
+TRANSLATION_TEMPERATURE = 0.3
+
+
 class BaseLLMTranslation(LLMTranslation):
     """Base class for LLM-based translation engines with shared functionality."""
 
     def get_system_prompt(self, source_lang: str, target_lang: str) -> str:
         # Use the user's active prompt preset (manga/manhwa/webtoon/custom).
         from ...utils.prompts import PromptManager
-        return PromptManager.instance().build_system_prompt(source_lang, target_lang)
+        return PromptManager.instance().build_system_prompt(source_lang, target_lang, getattr(self, "series_setting", "auto"))
     
     def __init__(self):
         self.source_lang = None
@@ -56,6 +64,9 @@ class BaseLLMTranslation(LLMTranslation):
         # Glossary characters with their gender (speaker_map.Character), set by
         # Translator before each page; read by identify_speakers.
         self.speaker_characters = []
+        # The glossary profile's setting (thai_speech.SETTINGS), set by
+        # Translator before each page: the Thai register the rules ask for.
+        self.series_setting = "auto"
     
     def initialize(self, settings: Any, source_lang: str, target_lang: str, **kwargs) -> None:
         """
@@ -71,7 +82,7 @@ class BaseLLMTranslation(LLMTranslation):
         self.source_lang = source_lang
         self.target_lang = target_lang
         self.img_as_llm_input = llm_settings.get('image_input_enabled', True)
-        self.temperature = 1.0
+        self.temperature = TRANSLATION_TEMPERATURE
         self.top_p = 0.95
         self.max_tokens = 5000
         
@@ -93,13 +104,13 @@ class BaseLLMTranslation(LLMTranslation):
         # its own: the model credits a bubble to the name inside it when it
         # has to work that out while translating (see speaker_map).
         speakers = self.identify_speakers(blk_list, image) if targets_thai(self.target_lang or "") else None
-        speaker_block = speaker_map_block(speakers)
+        speaker_block = speaker_map_block(speakers, getattr(self, "series_setting", "auto"))
         context = "\n\n".join(p for p in (extra_context, speaker_block) if p and p.strip())
         user_prompt = build_user_prompt(entire_raw_text, context)
         
         entire_translated_text = self._perform_translation(user_prompt, system_prompt, image)
         set_texts_from_json(blk_list, entire_translated_text)
-        fixed = apply_speaker_map(blk_list, speakers)
+        fixed = apply_speaker_map(blk_list, speakers, getattr(self, "series_setting", "auto"))
         if fixed:
             logger.info("Speaker map: fixed ครับ/ค่ะ in %d block(s)", fixed)
             
@@ -127,7 +138,8 @@ class BaseLLMTranslation(LLMTranslation):
         # points at. Without it the model guesses from the words — measured,
         # 11-16% of Korean bubbles wrong against none with the figures seen,
         # and an English reply with no name in it simply went to the male lead.
-        self.temperature, self.img_as_llm_input = 0, True
+        # (No image at all — text-only callers — must not make it encode None.)
+        self.temperature, self.img_as_llm_input = 0, image is not None
         try:
             reply = self._perform_translation(prompt, SPEAKER_SYSTEM_PROMPT, image)
         except Exception as e:  # noqa: BLE001 - any failure means "no map"

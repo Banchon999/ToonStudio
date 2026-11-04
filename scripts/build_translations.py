@@ -40,7 +40,7 @@ FALLBACK_CONTEXT = "@fallback"
 
 # Vendored upstream code carries its own strings and is not part of our UI.
 SOURCE_EXCLUDES = ("*/pororo/pororo/*",)
-SOURCE_DIRS = ("app", "modules", "pipeline")
+SOURCE_DIRS = ("app", "core", "modules", "pipeline")
 SOURCE_FILES = ("comic.py", "controller.py")
 
 

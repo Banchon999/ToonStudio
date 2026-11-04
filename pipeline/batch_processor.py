@@ -15,7 +15,8 @@ from typing import List
 from core.i18n import translate
 from core.text_style import build_text_item_state
 from core.layers import merge_preserving_locked
-from core.messages import server_error_text
+from core.messages import api_error_text, server_error_text
+from modules.utils.api_errors import APIError
 from modules.detection.processor import TextBlockDetector
 from modules.translation.processor import Translator
 from modules.utils.textblock import sort_blk_list
@@ -402,6 +403,8 @@ class BatchProcessor:
                 # if it's a connection/network error, give a short message
                 if isinstance(e, requests.exceptions.ConnectionError):
                     err_msg = translate("Messages", "Unable to connect to the server.\nPlease check your internet connection.")
+                elif isinstance(e, APIError):
+                    err_msg = api_error_text(e)
                 # if it's an HTTPError, try to pull the "error_description" field
                 elif isinstance(e, requests.exceptions.HTTPError):
                     status_code = e.response.status_code if e.response is not None else 500

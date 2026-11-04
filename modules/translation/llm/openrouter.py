@@ -16,6 +16,7 @@ class OpenRouterTranslation(GPTTranslation):
 
     # OpenRouter expects the standard OpenAI "max_tokens" parameter
     MAX_TOKENS_PARAM = "max_tokens"
+    PROVIDER = "OpenRouter"
 
     def __init__(self):
         super().__init__()

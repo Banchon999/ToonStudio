@@ -7,7 +7,7 @@ import unicodedata
 from dataclasses import dataclass, asdict, field
 
 from .paths import get_user_data_dir
-from .thai_speech import SpeechIssue, fix_address_gender, is_thai, thai_gender_details
+from .thai_speech import SpeechIssue, fix_address_gender, is_thai, normalise_setting, thai_gender_details
 
 logger = logging.getLogger(__name__)
 
@@ -477,6 +477,10 @@ class GlossaryManager:
         self.sync_name: str = ""
         self.active_profile: str = self.DEFAULT_PROFILE
         self.entries: list[GlossaryEntry] = []
+        # The series' setting (thai_speech.SETTINGS): "modern" or "historical"
+        # decides the Thai register (ผม…ครับ or ข้า…ขอรับ); "auto" leaves it to
+        # the model. It belongs to the series, so it is stored in the profile.
+        self.setting: str = "auto"
         self._load_meta_and_migrate()
         self.load()
 
@@ -539,6 +543,7 @@ class GlossaryManager:
             return
         self.active_profile = name
         self.entries = []
+        self.setting = "auto"
         self.save()
 
     def rename_profile(self, new_name: str) -> None:
@@ -627,6 +632,7 @@ class GlossaryManager:
             logger.error(f"Failed to save glossary config: {e}")
 
     def load(self) -> None:
+        self.setting = "auto"
         if not os.path.exists(self.file_path):
             return
         try:
@@ -636,18 +642,40 @@ class GlossaryManager:
             logger.error(f"Failed to load glossary from {self.file_path}: {e}")
             return
         self.entries = self._parse_entries(data.get("entries", []))
+        if isinstance(data, dict):
+            self.setting = normalise_setting(data.get("setting"))
 
     def save(self) -> None:
+        data: dict = {"entries": [asdict(e) for e in self.entries]}
+        if self.setting != "auto":
+            # Only when set, so a profile nobody gave a setting saves as before.
+            data = {"setting": self.setting, **data}
         try:
             os.makedirs(self.base_dir, exist_ok=True)
             with open(self.file_path, "w", encoding="utf-8") as f:
-                json.dump(
-                    {"entries": [asdict(e) for e in self.entries]},
-                    f, ensure_ascii=False, indent=2,
-                )
+                json.dump(data, f, ensure_ascii=False, indent=2)
         except Exception as e:
             logger.error(f"Failed to save glossary to {self.file_path}: {e}")
         self._save_meta()
+
+    def set_setting(self, value: str) -> None:
+        value = normalise_setting(value)
+        if value != self.setting:
+            self.setting = value
+            self.save()
+
+    def setting_context(self) -> str:
+        """A line for the translation's extra context naming the series' setting.
+
+        Also what makes a changed setting retranslate a cached page: the
+        cache key hashes the extra context.
+        """
+        if self.setting == "modern":
+            return "Series setting: present day — modern register and vocabulary."
+        if self.setting == "historical":
+            return ("Series setting: historical (martial arts / palace / ancient world) — "
+                    "period register and vocabulary, no modern words.")
+        return ""
 
     # Editing
 
@@ -1158,7 +1186,7 @@ class GlossaryManager:
                 # Into Thai, a gender decides the particle and both pronouns,
                 # and the model only uses it reliably when told which ones.
                 if is_thai(target):
-                    details.extend(thai_gender_details(e.gender))
+                    details.extend(thai_gender_details(e.gender, self.setting))
                 else:
                     details.append(f"gender: {e.gender}")
             if e.note:
