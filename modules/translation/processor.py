@@ -175,7 +175,8 @@ class Translator:
                     issue.source_term, issue.seen_as, issue.expected,
                 )
         if targets_thai(getattr(self, "target_lang_en", "")):
-            speech = check_speech(blk_list, self._series_setting())
+            # Through the class: check_glossary is also borrowed unbound.
+            speech = check_speech(blk_list, Translator._series_setting(self))
             for issue in speech:
                 logger.warning("Mismatched Thai speech markers (%s): %r", issue.reason, issue.seen_as)
             issues = issues + speech
