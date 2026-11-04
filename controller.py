@@ -807,7 +807,16 @@ class ComicTranslate(ComicTranslateUI):
 
     def default_error_handler(self, error_tuple: Tuple):
         exctype, value, traceback_str = error_tuple
-        
+
+        # An AI provider's error status: say what to do about it, not the
+        # traceback (the provider's own words are kept in the message).
+        from modules.utils.api_errors import APIError
+        if issubclass(exctype, APIError):
+            Messages.show_api_error(self, value)
+            self.loading.setVisible(False)
+            self.enable_hbutton_group()
+            return
+
         # Handle HTTP Errors (Server-side)
         if issubclass(exctype, requests.exceptions.HTTPError):
             response = value.response

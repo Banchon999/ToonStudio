@@ -8,7 +8,8 @@ import numpy as np
 import requests
 
 from core.i18n import translate
-from core.messages import server_error_text
+from core.messages import api_error_text, server_error_text
+from modules.utils.api_errors import APIError
 from modules.detection.processor import TextBlockDetector
 from modules.translation.processor import Translator
 from modules.utils.device import resolve_device
@@ -108,6 +109,8 @@ class ChunkMixin:
                 "Messages",
                 "Unable to connect to the server.\nPlease check your internet connection.",
             )
+        if isinstance(error, APIError):
+            return api_error_text(error)
         if isinstance(error, requests.exceptions.HTTPError):
             status_code = error.response.status_code if error.response is not None else 500
             if status_code >= 500:

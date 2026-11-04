@@ -391,16 +391,20 @@ class ImageStateController:
 
         warnings: list[str] = []
 
-        for page in pages:
+        for number, page in enumerate(pages):
             file_path = page.image_path
             rgb_image = page.rgb_image
             if page.warning:
                 warnings.append(f"{os.path.basename(page.source_path)}: {page.warning}")
 
             self.main.image_files.append(file_path)
-            self.main.image_data[file_path] = rgb_image
+            # The importer wrote every page to image_path, so only the first,
+            # which is shown, stays in memory; holding all of them (twice, with
+            # the history copy) kept a whole imported book in RAM.
+            first = number == 0
+            self.main.image_data[file_path] = rgb_image if first else None
             self.main.image_history[file_path] = [file_path]
-            self.main.in_memory_history[file_path] = [rgb_image.copy()]
+            self.main.in_memory_history[file_path] = [rgb_image.copy()] if first else []
             self.main.current_history_index[file_path] = 0
             self.main.image_states.set_page_state(file_path, self._build_image_state(
                 file_path,
@@ -1013,16 +1017,34 @@ class ImageStateController:
             self.main.current_history_index[file_path] = 0
 
         self.display_image(index, switch_page)
+        self.remember_page_image(file_path, rgb_image)
 
-        # Manage loaded images
-        if file_path not in self.main.loaded_images:
-            self.main.loaded_images.append(file_path)
-            if len(self.main.loaded_images) > self.main.max_images_in_memory:
-                oldest_image = self.main.loaded_images.pop(0)
-                del self.main.image_data[oldest_image]
-                self.main.in_memory_history[oldest_image] = []
+    def remember_page_image(self, file_path: str, rgb_image) -> None:
+        """Keep a page's pixels in image_data, at most max_images_in_memory pages.
 
-                self.main.in_memory_patches.pop(oldest_image, None)
+        Every page is on disk (its file, or its latest history file), so a page
+        dropped here is simply read back by load_image. Whatever holds a page in
+        image_data for later goes through this, or the cap only covers the pages
+        someone happened to open: leaving webtoon mode and importing a PSD once
+        added pages nothing ever took out again.
+        """
+        self.main.image_data[file_path] = rgb_image
+        loaded = self.main.loaded_images
+        if file_path in loaded:
+            loaded.remove(file_path)
+        loaded.append(file_path)
+        current = (
+            self.main.image_files[self.main.curr_img_idx]
+            if 0 <= self.main.curr_img_idx < len(self.main.image_files) else None
+        )
+        while len(loaded) > self.main.max_images_in_memory:
+            oldest = next((p for p in loaded if p not in (file_path, current)), None)
+            if oldest is None:
+                break
+            loaded.remove(oldest)
+            self.main.image_data.pop(oldest, None)
+            self.main.in_memory_history[oldest] = []
+            self.main.in_memory_patches.pop(oldest, None)
 
     def set_image(self, rgb_img: np.ndarray, push: bool = True):
         if self.main.curr_img_idx >= 0:

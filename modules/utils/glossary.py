@@ -7,7 +7,7 @@ import unicodedata
 from dataclasses import dataclass, asdict, field
 
 from .paths import get_user_data_dir
-from .thai_speech import SpeechIssue, fix_address_gender, is_thai, thai_gender_details
+from .thai_speech import SpeechIssue, fix_address_gender, is_thai, normalise_setting, thai_gender_details
 
 logger = logging.getLogger(__name__)
 
@@ -470,8 +470,17 @@ class GlossaryManager:
         # Extract terms from each page as soon as it is recognised, so the
         # glossary fills in while you work instead of only at the end.
         self.auto_extract: bool = False
+        # Team sync through a Google Sheet (see glossary_sync): the web app's
+        # URL, the token its script checks, and the name stamped on our edits.
+        self.sync_url: str = ""
+        self.sync_token: str = ""
+        self.sync_name: str = ""
         self.active_profile: str = self.DEFAULT_PROFILE
         self.entries: list[GlossaryEntry] = []
+        # The series' setting (thai_speech.SETTINGS): "modern" or "historical"
+        # decides the Thai register (ผม…ครับ or ข้า…ขอรับ); "auto" leaves it to
+        # the model. It belongs to the series, so it is stored in the profile.
+        self.setting: str = "auto"
         self._load_meta_and_migrate()
         self.load()
 
@@ -492,6 +501,22 @@ class GlossaryManager:
 
     def _profile_path(self, name: str) -> str:
         return os.path.join(self.base_dir, f"{self._safe_filename(name)}.json")
+
+    def sync_base_path(self, name: str | None = None) -> str:
+        """Where the state last agreed with the team sheet is kept for a profile.
+
+        Not a .json, or list_profiles would offer it as a glossary.
+        """
+        return os.path.join(
+            self.base_dir, f"{self._safe_filename(name or self.active_profile)}.syncbase"
+        )
+
+    def _forget_sync_base(self, name: str) -> None:
+        try:
+            if os.path.exists(self.sync_base_path(name)):
+                os.remove(self.sync_base_path(name))
+        except OSError as e:
+            logger.error(f"Failed to remove glossary sync state for {name}: {e}")
 
     def list_profiles(self) -> list[str]:
         names = set()
@@ -518,6 +543,7 @@ class GlossaryManager:
             return
         self.active_profile = name
         self.entries = []
+        self.setting = "auto"
         self.save()
 
     def rename_profile(self, new_name: str) -> None:
@@ -527,6 +553,9 @@ class GlossaryManager:
         old_path, new_path = self.file_path, self._profile_path(new_name)
         if os.path.exists(old_path) and not os.path.exists(new_path):
             os.rename(old_path, new_path)
+        # The team tab is named after the profile, so a renamed profile syncs
+        # with a different tab: what was agreed with the old one says nothing.
+        self._forget_sync_base(self.active_profile)
         self.active_profile = new_name
         self.save()
 
@@ -536,6 +565,7 @@ class GlossaryManager:
                 os.remove(self.file_path)
         except OSError as e:
             logger.error(f"Failed to delete glossary profile {self.active_profile}: {e}")
+        self._forget_sync_base(self.active_profile)
         remaining = [p for p in self.list_profiles() if p != self.active_profile]
         self.active_profile = remaining[0] if remaining else self.DEFAULT_PROFILE
         self._save_meta()
@@ -554,6 +584,9 @@ class GlossaryManager:
                 self.log_ocr = bool(meta.get("log_ocr", True))
                 self.batch_extract = bool(meta.get("batch_extract", False))
                 self.auto_extract = bool(meta.get("auto_extract", False))
+                self.sync_url = str(meta.get("sync_url", "") or "").strip()
+                self.sync_token = str(meta.get("sync_token", "") or "").strip()
+                self.sync_name = str(meta.get("sync_name", "") or "").strip()
                 self.active_profile = self._safe_filename(
                     str(meta.get("active_profile", self.DEFAULT_PROFILE))
                 )
@@ -588,6 +621,9 @@ class GlossaryManager:
                         "log_ocr": self.log_ocr,
                         "batch_extract": self.batch_extract,
                         "auto_extract": self.auto_extract,
+                        "sync_url": self.sync_url,
+                        "sync_token": self.sync_token,
+                        "sync_name": self.sync_name,
                         "active_profile": self.active_profile,
                     },
                     f, ensure_ascii=False, indent=2,
@@ -596,6 +632,7 @@ class GlossaryManager:
             logger.error(f"Failed to save glossary config: {e}")
 
     def load(self) -> None:
+        self.setting = "auto"
         if not os.path.exists(self.file_path):
             return
         try:
@@ -605,18 +642,40 @@ class GlossaryManager:
             logger.error(f"Failed to load glossary from {self.file_path}: {e}")
             return
         self.entries = self._parse_entries(data.get("entries", []))
+        if isinstance(data, dict):
+            self.setting = normalise_setting(data.get("setting"))
 
     def save(self) -> None:
+        data: dict = {"entries": [asdict(e) for e in self.entries]}
+        if self.setting != "auto":
+            # Only when set, so a profile nobody gave a setting saves as before.
+            data = {"setting": self.setting, **data}
         try:
             os.makedirs(self.base_dir, exist_ok=True)
             with open(self.file_path, "w", encoding="utf-8") as f:
-                json.dump(
-                    {"entries": [asdict(e) for e in self.entries]},
-                    f, ensure_ascii=False, indent=2,
-                )
+                json.dump(data, f, ensure_ascii=False, indent=2)
         except Exception as e:
             logger.error(f"Failed to save glossary to {self.file_path}: {e}")
         self._save_meta()
+
+    def set_setting(self, value: str) -> None:
+        value = normalise_setting(value)
+        if value != self.setting:
+            self.setting = value
+            self.save()
+
+    def setting_context(self) -> str:
+        """A line for the translation's extra context naming the series' setting.
+
+        Also what makes a changed setting retranslate a cached page: the
+        cache key hashes the extra context.
+        """
+        if self.setting == "modern":
+            return "Series setting: present day — modern register and vocabulary."
+        if self.setting == "historical":
+            return ("Series setting: historical (martial arts / palace / ancient world) — "
+                    "period register and vocabulary, no modern words.")
+        return ""
 
     # Editing
 
@@ -1127,7 +1186,7 @@ class GlossaryManager:
                 # Into Thai, a gender decides the particle and both pronouns,
                 # and the model only uses it reliably when told which ones.
                 if is_thai(target):
-                    details.extend(thai_gender_details(e.gender))
+                    details.extend(thai_gender_details(e.gender, self.setting))
                 else:
                     details.append(f"gender: {e.gender}")
             if e.note:

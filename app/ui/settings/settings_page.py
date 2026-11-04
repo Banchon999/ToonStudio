@@ -228,12 +228,15 @@ class SettingsPage(QtWidgets.QWidget):
         only terms that appear in that text are included.
         """
         extra_context = self.ui.extra_context.toPlainText()
-        glossary_block = self.ui.glossary_page.manager.build_prompt(source_text)
-        if glossary_block:
-            if extra_context.strip():
-                return f"{extra_context}\n\n{glossary_block}"
-            return glossary_block
-        return extra_context
+        manager = self.ui.glossary_page.manager
+        setting_line = manager.setting_context()
+        glossary_block = manager.build_prompt(source_text)
+        if not setting_line and not glossary_block:
+            return extra_context
+        parts = [extra_context] if extra_context.strip() else []
+        # The series' setting first: the glossary's pronouns follow it.
+        parts += [p for p in (setting_line, glossary_block) if p]
+        return "\n\n".join(parts)
 
     def get_export_settings(self):
         owner = self.window()

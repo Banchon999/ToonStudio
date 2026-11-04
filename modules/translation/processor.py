@@ -105,6 +105,7 @@ class Translator:
         if self.is_llm_engine:
             # LLM translators need image and extra context
             self.engine.speaker_characters = self._speaker_characters()
+            self.engine.series_setting = self._series_setting()
             result = self.engine.translate(blk_list, image, extra_context)
         else:
             # Text-based translators only need the text blocks
@@ -113,6 +114,13 @@ class Translator:
         # running text, which it wraps to the bubble itself.
         join_translation_line_breaks(result if result is not None else blk_list)
         return result
+
+    def _series_setting(self) -> str:
+        """The glossary profile's setting, "auto" when there is none."""
+        try:
+            return self.settings.ui.glossary_page.manager.setting or "auto"
+        except AttributeError:
+            return "auto"
 
     def _speaker_characters(self) -> list:
         """The glossary's characters with a gender, under every name they go by.
@@ -167,7 +175,8 @@ class Translator:
                     issue.source_term, issue.seen_as, issue.expected,
                 )
         if targets_thai(getattr(self, "target_lang_en", "")):
-            speech = check_speech(blk_list)
+            # Through the class: check_glossary is also borrowed unbound.
+            speech = check_speech(blk_list, Translator._series_setting(self))
             for issue in speech:
                 logger.warning("Mismatched Thai speech markers (%s): %r", issue.reason, issue.seen_as)
             issues = issues + speech

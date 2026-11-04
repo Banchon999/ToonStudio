@@ -302,7 +302,10 @@ def _resolve_block_crop_bounds(
 ) -> tuple[int, int, int, int]:
     from modules.utils.textblock import adjust_text_line_coordinates
 
-    cx1, cy1, cx2, cy2 = adjust_text_line_coordinates(blk.xyxy, 10, 10, img)
+    # Whole pixels whatever the box holds: these slice the page, and boxes
+    # moved by a float offset (stitched batch detection, webtoon chunks)
+    # arrive as floats.
+    cx1, cy1, cx2, cy2 = (int(v) for v in adjust_text_line_coordinates(blk.xyxy, 10, 10, img))
     bubble_xyxy = getattr(blk, "bubble_xyxy", None)
     if getattr(blk, "text_class", None) != "text_bubble" or bubble_xyxy is None or len(bubble_xyxy) < 4:
         return cx1, cy1, cx2, cy2

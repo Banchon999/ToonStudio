@@ -15,7 +15,8 @@ from typing import List
 from core.i18n import translate
 from core.text_style import build_text_item_state
 from core.layers import merge_preserving_locked
-from core.messages import server_error_text
+from core.messages import api_error_text, server_error_text
+from modules.utils.api_errors import APIError
 from modules.detection.processor import TextBlockDetector
 from modules.translation.processor import Translator
 from modules.utils.textblock import sort_blk_list
@@ -118,7 +119,10 @@ class BatchProcessor:
             x1, y1, x2, y2 = [float(v) for v in box[:4]]
             y1 = min(max(y1 - dy, 0.0), float(page_height))
             y2 = min(max(y2 - dy, 0.0), float(page_height))
-            return np.array([x1, y1, x2, y2])
+            # Integers, as the detector gave them: a float box reached the
+            # Clean mask, which slices the page with it, and the batch died
+            # with "slice indices must be integers".
+            return np.array([round(x1), round(y1), round(x2), round(y2)], dtype=int)
 
         blk.xyxy = shift_box(blk.xyxy)
         if getattr(blk, 'bubble_xyxy', None) is not None:
@@ -399,6 +403,8 @@ class BatchProcessor:
                 # if it's a connection/network error, give a short message
                 if isinstance(e, requests.exceptions.ConnectionError):
                     err_msg = translate("Messages", "Unable to connect to the server.\nPlease check your internet connection.")
+                elif isinstance(e, APIError):
+                    err_msg = api_error_text(e)
                 # if it's an HTTPError, try to pull the "error_description" field
                 elif isinstance(e, requests.exceptions.HTTPError):
                     status_code = e.response.status_code if e.response is not None else 500

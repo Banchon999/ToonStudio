@@ -92,10 +92,54 @@ _GENDER_DETAILS = {
     "neutral": ["gender: neutral/กลาง"],
 }
 
+# With the series' setting known, only that register's forms are offered: a
+# line listing both ผม and ข้า leaves the model to pick, and it picks both.
+_SETTING_GENDER_DETAILS = {
+    "modern": {
+        "male": ["gender: male/ชาย", "3rd→เขา/ของเขา", "1st→ผม", "particle→ครับ"],
+        "female": ["gender: female/หญิง", "3rd→เธอ/ของเธอ", "1st→ฉัน/ดิฉัน", "particle→ค่ะ/คะ"],
+    },
+    "historical": {
+        "male": ["gender: male/ชาย", "3rd→เขา/ของเขา", "1st→ข้า", "particle→ขอรับ"],
+        "female": ["gender: female/หญิง", "3rd→นาง/ของนาง", "1st→ข้า", "particle→เจ้าค่ะ/เจ้าคะ"],
+    },
+}
 
-def thai_gender_details(gender: str) -> list[str]:
+
+def thai_gender_details(gender: str, setting: str = "auto") -> list[str]:
     """Prompt details for a character of this gender, when translating into Thai."""
-    return list(_GENDER_DETAILS.get(gender or "", []))
+    details = _SETTING_GENDER_DETAILS.get(normalise_setting(setting), {}).get(gender or "")
+    if details is None:
+        details = _GENDER_DETAILS.get(gender or "", [])
+    return list(details)
+
+
+# The series' setting decides the register (ผม…ครับ or ข้า…ขอรับ). "auto"
+# leaves it to the model, as before the setting existed.
+SETTINGS = ("auto", "modern", "historical")
+
+
+def normalise_setting(value) -> str:
+    value = str(value or "").strip().lower()
+    return value if value in SETTINGS else "auto"
+
+
+def setting_rule(setting: str) -> str:
+    """The register rule for a known setting, or "" for auto."""
+    if setting == "modern":
+        return (
+            "• SETTING: PRESENT DAY. Write modern Thai: polite self-pronoun ผม (male) / ฉัน or ดิฉัน "
+            "(female), casual ฉัน/เรา/กู; NEVER the archaic ข้า, ข้าน้อย, เจ้า (as \"you\"), ขอรับ or "
+            "เจ้าค่ะ, which belong to historical stories."
+        )
+    if setting == "historical":
+        return (
+            "• SETTING: HISTORICAL (martial arts, palace, ancient world). Write period Thai: self-pronoun "
+            "ข้า (ข้าน้อย to a superior), \"you\" เจ้า to an equal or inferior and ท่าน to a superior; "
+            "polite particles ขอรับ (male) and เจ้าค่ะ/เจ้าคะ (female); NEVER the modern ผม, ดิฉัน, นาย, "
+            "ครับ or ค่ะ, and no modern slang."
+        )
+    return ""
 
 
 # Translation rules
@@ -147,10 +191,19 @@ def _source_notes(source_lang: str) -> tuple[str, str]:
 SPEECH_PARTICLE_HEADER = "SPEECH PARTICLE RULES (คำลงท้าย ครับ/ค่ะ) — CRITICAL"
 
 
-def speech_particle_rules(source_lang: str = "") -> str:
+def speech_particle_rules(source_lang: str = "", setting: str = "auto") -> str:
     """The rules block added to the system prompt when translating into Thai."""
     address, register = _source_notes(source_lang)
-    return "\n".join([
+    setting = normalise_setting(setting)
+    particles = {
+        "modern": "• Male speaker: ครับ / นะครับ / ครับผม · Female speaker: ค่ะ / คะ / นะคะ.",
+        "historical": "• Male speaker: ขอรับ · Female speaker: เจ้าค่ะ / เจ้าคะ.",
+    }.get(setting, "• Male speaker: ครับ / นะครับ / ครับผม / ขอรับ · Female speaker: ค่ะ / คะ / นะคะ / เจ้าค่ะ.")
+    thought_self = {
+        "modern": "ฉัน or เรา",
+        "historical": "ข้า",
+    }.get(setting, "ฉัน or เรา (ข้า in a historical setting)")
+    lines = [
         SPEECH_PARTICLE_HEADER,
         "• Thai polite particles follow the gender of the SPEAKER of that block — never the "
         "listener, never the narrator.",
@@ -158,7 +211,7 @@ def speech_particle_rules(source_lang: str = "") -> str:
         "translating it, work out who says it — the bubble's tail in the page image, the turn "
         "order of the conversation, who is being addressed, the glossary gender — then choose "
         "the particle and the self-pronoun.",
-        "• Male speaker: ครับ / นะครับ / ครับผม / ขอรับ · Female speaker: ค่ะ / คะ / นะคะ / เจ้าค่ะ.",
+        particles,
         "• Royal register: male speaker → พ่ะย่ะค่ะ · female speaker → เพคะ.",
         "• NEVER mix male and female particles inside one block.",
         "• The particle must agree with the speaker's self-pronoun in the same block "
@@ -168,8 +221,8 @@ def speech_particle_rules(source_lang: str = "") -> str:
         "(นะ, จ้ะ, or no particle) instead.",
         "• Narration boxes, captions and sound effects take no polite particle.",
         "• Inner thoughts, a character's monologue boxes and talking to oneself are addressed to "
-        "no one: no polite particle (ครับ/ค่ะ), and the self-pronoun is ฉัน or เรา (ข้า in a "
-        "historical setting) — never ผม/ดิฉัน, which are polite forms for speaking to someone.",
+        f"no one: no polite particle, and the self-pronoun is {thought_self} — never ผม/ดิฉัน, which "
+        "are polite forms for speaking to someone.",
         f"• Forms of address follow the gender of the person ADDRESSED ({address}); never call "
         "a male character คุณหนู or a female one คุณชาย.",
         "• Third-person pronouns follow each character's gender: male → เขา · female → เธอ/นาง "
@@ -181,7 +234,12 @@ def speech_particle_rules(source_lang: str = "") -> str:
         "• If the source uses a wrong-gender pronoun for a character whose gender is in the "
         "glossary, follow the glossary gender — silently: never add notes, brackets or "
         "explanations to the translation.",
-    ])
+    ]
+    rule = setting_rule(setting)
+    if rule:
+        # Right after the header: the register colours every rule below it.
+        lines.insert(1, rule)
+    return "\n".join(lines)
 
 
 SPEAKER_OUTPUT_HEADER = "OUTPUT FORMAT — SPEAKER AND GENDER PER BLOCK"
@@ -286,6 +344,9 @@ FEMALE_SELF_MALE_PARTICLE = "female_self_male_particle"
 # The translator said who speaks, and the line contradicts that gender.
 FEMALE_SPEAKER_MALE_SPEECH = "female_speaker_male_speech"
 MALE_SPEAKER_FEMALE_SPEECH = "male_speaker_female_speech"
+# The series' setting is known and the line is in the other register.
+MODERN_IN_HISTORICAL = "modern_in_historical"
+ARCHAIC_IN_MODERN = "archaic_in_modern"
 
 
 @dataclass
@@ -347,7 +408,24 @@ def speaker_problem(text: str, gender: str) -> str | None:
     return None
 
 
-def check_speech(blk_list) -> list[SpeechIssue]:
+# Only words that belong to one register and nothing else: particles and
+# pronouns no one uses outside it. Bare ผม (also hair) and ข้า (also ข้าง,
+# ข้าว, ข้าม…) are left out — a warning that is often wrong is ignored.
+_MODERN_WORDS = re.compile(r"(?<!เจ้า)(ครับ|ค่ะ|คะ)" + _P_END + "|ดิฉัน|กระผม")
+_ARCHAIC_WORDS = re.compile(r"(ขอรับ|เจ้าค่ะ|เจ้าคะ)" + _P_END + "|ข้าน้อย")
+
+
+def register_problem(text: str, setting: str) -> str | None:
+    """Why a block's words do not belong to the series' setting, or None."""
+    t = _ROYAL_MALE_WORDS.sub(_ROYAL_MALE, text or "")
+    if setting == "historical" and _MODERN_WORDS.search(t):
+        return MODERN_IN_HISTORICAL
+    if setting == "modern" and _ARCHAIC_WORDS.search(t):
+        return ARCHAIC_IN_MODERN
+    return None
+
+
+def check_speech(blk_list, setting: str = "auto") -> list[SpeechIssue]:
     """Blocks whose Thai translation mixes male and female speech markers, or
     whose markers contradict the speaker's gender the translator reported.
 
@@ -366,4 +444,8 @@ def check_speech(blk_list) -> list[SpeechIssue]:
         reason = speaker_problem(translation, getattr(blk, "speaker_gender", "") or "")
         if reason:
             issues.append(SpeechIssue(index, seen_as, reason, getattr(blk, "speaker", "") or ""))
+            continue
+        reason = register_problem(translation, normalise_setting(setting))
+        if reason:
+            issues.append(SpeechIssue(index, seen_as, reason))
     return issues

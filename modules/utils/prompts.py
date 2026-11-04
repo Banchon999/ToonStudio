@@ -71,6 +71,38 @@ BUILTIN_PRESETS = {
 }
 
 
+RULE_PRIORITY_HEADER = "RULE PRIORITY — when two instructions disagree, the higher one wins"
+
+
+def rule_priority(target_lang: str, setting: str = "auto") -> str:
+    """The order the prompt's instructions give way to each other.
+
+    They do disagree: the Manhwa and Webtoon presets ask for "modern",
+    "contemporary, casual" Thai while a martial-arts series' setting asks for
+    ข้า…ขอรับ; "sound natural" pulls against a glossary term; the model's own
+    reading of a bubble against the speaker map. Unranked, a model settles
+    each one differently from page to page. NovelTrans found a stated order
+    the cheapest fix for that.
+    """
+    thai = targets_thai(target_lang)
+    ranks = [
+        f"The output format: the JSON keys, and every value written in {target_lang}.",
+        "The glossary: a term's translation exactly as given, and a character's gender.",
+    ]
+    if thai:
+        ranks.append("The speaker map, when one is given: who speaks each block, and that speaker's gender.")
+        if setting in ("modern", "historical"):
+            ranks.append("The series setting (the SETTING rule): its register — pronouns, particles and "
+                         "vocabulary.")
+        ranks.append("The speech particle rules: particles, pronouns and forms of address.")
+    ranks += [
+        "The translation style above: tone, slang, how freely to localise. Where it asks for a "
+        "register the rules above forbid, keep its tone in the allowed register.",
+        "The extra context about the comic, and \"sound natural\".",
+    ]
+    return "\n".join([RULE_PRIORITY_HEADER, *(f"{i}. {rank}" for i, rank in enumerate(ranks, 1))])
+
+
 def _fill(template: str, source_lang: str, target_lang: str) -> str:
     # Plain replace (not str.format) so braces in user templates can't crash.
     return template.replace("{source_lang}", source_lang).replace("{target_lang}", target_lang)
@@ -169,7 +201,7 @@ class PromptManager:
             f"{self.active_preset}:{self.get_template()}".encode("utf-8")
         ).hexdigest()[:12]
 
-    def build_system_prompt(self, source_lang: str, target_lang: str) -> str:
+    def build_system_prompt(self, source_lang: str, target_lang: str, setting: str = "auto") -> str:
         source_lang = source_lang or "the source language"
         target_lang = target_lang or "the target language"
 
@@ -190,7 +222,9 @@ class PromptManager:
         # here, at build time, rather than written into the presets, so a
         # custom preset saved before these rules existed still gets them.
         if targets_thai(target_lang):
-            parts.append(speech_particle_rules(source_lang))
+            parts.append(speech_particle_rules(source_lang, setting))
             parts.append(speaker_output_rules())
+        # Last of the rules, so it ranks everything it names.
+        parts.append(rule_priority(target_lang, setting))
         parts.append("Do your best! I'm really counting on you.")
         return "\n\n".join(parts)

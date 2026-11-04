@@ -3,6 +3,7 @@ import numpy as np
 import requests
 
 from .base import BaseLLMTranslation
+from ...utils.api_errors import APIError
 from ...utils.translator_utils import MODEL_MAP
 
 
@@ -116,8 +117,7 @@ class GeminiTranslation(BaseLLMTranslation):
         
         # Handle response
         if response.status_code != 200:
-            error_msg = f"API request failed with status code {response.status_code}: {response.text}"
-            raise Exception(error_msg)
+            raise APIError.from_response("Google Gemini", response, self.model or "")
         
         # Extract text from response
         response_data = response.json()

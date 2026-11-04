@@ -14,12 +14,25 @@ name: Release
 # checker and the release page agree, and the notes file must exist, so a
 # release never goes out with an empty description.
 #
+# A test build: "Run workflow" on any branch with "pre-release" ticked builds
+# exactly the same way and publishes it as a GitHub *pre-release* tagged
+# v<version>-beta.<run number>, with .github/release-notes/beta.md as its
+# notes. It is never marked latest, and GitHub's /releases/latest (what the
+# update checker asks) skips pre-releases, so nobody is offered it as an
+# update; it is only a page to download from.
+#
 # The PyTorch "full" Windows build is not part of it: it is several gigabytes,
 # and GitHub caps a release asset at 2 GB.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      prerelease:
+        description: "Test build: publish this branch as a pre-release (v<version>-beta.<run>), never as the latest release"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write
@@ -29,16 +42,29 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.version.outputs.tag }}
+      notes: ${{ steps.version.outputs.notes }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
       - name: The version, its tag and its release notes agree
         id: version
+        env:
+          PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease }}
         run: |
           version=$(python3 -c "import re; print(re.search(r'__version__\s*=\s*\"([^\"]+)\"', open('app/version.py').read()).group(1))")
           tag="v${version}"
-          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+          notes=".github/release-notes/${tag}.md"
+          if [ "${PRERELEASE}" = "true" ]; then
+            # Any branch; a fresh tag per run, so a test build never reuses one.
+            tag="v${version}-beta.${GITHUB_RUN_NUMBER}"
+            notes=".github/release-notes/beta.md"
+            if git ls-remote --exit-code --tags origin "refs/tags/${tag}" >/dev/null; then
+              echo "::error::${tag} already exists"
+              exit 1
+            fi
+          elif [ "${GITHUB_EVENT_NAME}" = "push" ]; then
             if [ "${GITHUB_REF_NAME}" != "${tag}" ]; then
               echo "::error::tag ${GITHUB_REF_NAME} does not match app/version.py (${version})"
               exit 1
@@ -53,12 +79,13 @@ jobs:
               exit 1
             fi
           fi
-          notes=".github/release-notes/${tag}.md"
           if [ ! -s "$notes" ]; then
             echo "::error::missing release notes: $notes"
             exit 1
           fi
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "notes=${notes}" >> "$GITHUB_OUTPUT"
+          echo "prerelease=${PRERELEASE:-false}" >> "$GITHUB_OUTPUT"
 
   tests:
     needs: check
@@ -123,7 +150,10 @@ jobs:
           # on the commit that was tested and built.
           tag_name: ${{ needs.check.outputs.tag }}
           target_commitish: ${{ github.sha }}
-          name: Toon Studio ${{ needs.check.outputs.tag }}
-          body_path: .github/release-notes/${{ needs.check.outputs.tag }}.md
+          name: Toon Studio ${{ needs.check.outputs.tag }}${{ needs.check.outputs.prerelease == 'true' && ' (test build)' || '' }}
+          # v<version>.md for a release, beta.md for a test build.
+          body_path: ${{ needs.check.outputs.notes }}
+          prerelease: ${{ needs.check.outputs.prerelease == 'true' }}
+          make_latest: ${{ needs.check.outputs.prerelease == 'true' && 'false' || 'true' }}
           files: ${{ steps.files.outputs.list }}
           fail_on_unmatched_files: true

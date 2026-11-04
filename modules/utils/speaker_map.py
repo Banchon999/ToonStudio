@@ -189,28 +189,42 @@ def parse_speaker_reply(raw: str, count: int, characters: list[Character]) -> li
     return speakers
 
 
-def speaker_map_block(speakers: list[Speaker]) -> str:
+# The forms each setting's map names (thai_speech.SETTINGS). "auto" keeps
+# the modern forms the map always named.
+_MAP_FORMS = {
+    "auto": {"male": ("ครับ", "ค่ะ/คะ/ดิฉัน"), "female": ("ค่ะ/คะ", "ครับ/ผม"), "self": "ฉัน or เรา",
+             "polite_self": "ผม/ดิฉัน", "particles": "ครับ/ค่ะ"},
+    "modern": {"male": ("ครับ", "ค่ะ/คะ/ดิฉัน"), "female": ("ค่ะ/คะ", "ครับ/ผม"), "self": "ฉัน or เรา",
+               "polite_self": "ผม/ดิฉัน", "particles": "ครับ/ค่ะ"},
+    "historical": {"male": ("ขอรับ", "ครับ/ค่ะ/เจ้าค่ะ"), "female": ("เจ้าค่ะ/เจ้าคะ", "ครับ/ค่ะ/ขอรับ"),
+                   "self": "ข้า", "polite_self": "ข้าน้อย/ผม/ดิฉัน",
+                   "particles": "ขอรับ/เจ้าค่ะ/ครับ/ค่ะ"},
+}
+
+
+def speaker_map_block(speakers: list[Speaker], setting: str = "auto") -> str:
     """The speaker map as handed to the translation request.
 
     The source text is deliberately not repeated: NovelTrans measured a
-    model leaving lines untranslated when the map quoted them.
+    model leaving lines untranslated when the map quoted them. The
+    particles it names are the series setting's (ขอรับ/เจ้าค่ะ in a
+    historical one).
     """
     if not speakers or not any(s.known or s.thought for s in speakers):
         return ""
+    forms = _MAP_FORMS.get(setting, _MAP_FORMS["auto"])
     lines = []
     for i, s in enumerate(speakers):
         who = s.name or "unknown"
         if s.thought:
             rule = (f"{s.gender + ', ' if s.known else ''}inner thought / talking to oneself → no "
-                    "ครับ/ค่ะ at all, self ฉัน or เรา — never ผม/ดิฉัน")
+                    f"{forms['particles']} at all, self {forms['self']} — never {forms['polite_self']}")
         # The map settles whose gender a particle follows, not whether the
         # line takes one: "male → ครับ, self ผม" for every block put ครับ on
         # casual lines and on a character muttering to himself.
-        elif s.gender == MALE:
-            rule = ("male → if the line takes a polite particle it is ครับ, never ค่ะ/คะ/ดิฉัน; "
-                    "casual speech takes none")
-        elif s.gender == FEMALE:
-            rule = ("female → if the line takes a polite particle it is ค่ะ/คะ, never ครับ/ผม; "
+        elif s.gender in (MALE, FEMALE):
+            right, wrong = forms[s.gender]
+            rule = (f"{s.gender} → if the line takes a polite particle it is {right}, never {wrong}; "
                     "casual speech takes none")
         else:
             rule = "speaker's gender unknown → no ครับ/ค่ะ"
@@ -250,24 +264,30 @@ def _resolve_hedge(text: str, gender: str) -> str:
     return _HEDGE.sub(pick, text)
 
 
-def fix_particles(text: str, gender: str) -> str:
+def fix_particles(text: str, gender: str, setting: str = "auto") -> str:
     """text with its ครับ/ค่ะ and ผม/ดิฉัน made to agree with gender.
 
     Ported from NovelTrans's fixQuoteGender. พ่ะย่ะค่ะ is a man's word and
-    ends in ค่ะ; ผม is also hair; คะแนน is not คะ.
+    ends in ค่ะ; ผม is also hair; คะแนน is not คะ. A wrong-gender word is
+    replaced by the setting's form: ขอรับ/เจ้าค่ะ and ข้า in a historical
+    series, ครับ/ค่ะ and ผม/ดิฉัน in a modern one. Only gender is fixed —
+    a right-gender word in the wrong register stays for a person to judge.
     """
     if not text:
         return text
     text = _resolve_hedge(text, gender)
     if gender not in (MALE, FEMALE):
         return text
+    historical = setting == "historical"
+    modern = setting == "modern"
     t = re.sub("พ่ะย่ะค่ะ|พะยะค่ะ", _ROYAL_M, text)
     if gender == FEMALE:
-        t = t.replace("ครับผม", "ค่ะ")
-        t = re.sub("ขอรับ" + _P_END, "เจ้าค่ะ", t)
-        t = t.replace("นะครับ", "นะคะ")
-        t = re.sub(r"ครับ(?=\s*[?？])", "คะ", t)
-        t = t.replace("ครับ", "ค่ะ")
+        polite, question = ("เจ้าค่ะ", "เจ้าคะ") if historical else ("ค่ะ", "คะ")
+        t = t.replace("ครับผม", polite)
+        t = re.sub("ขอรับ" + _P_END, "ค่ะ" if modern else "เจ้าค่ะ", t)
+        t = t.replace("นะครับ", "นะ" + question)
+        t = re.sub(r"ครับ(?=\s*[?？])", question, t)
+        t = t.replace("ครับ", polite)
         t = t.replace(_ROYAL_M, "เพคะ")
         hair: list[str] = []
 
@@ -276,21 +296,22 @@ def fix_particles(text: str, gender: str) -> str:
             return f"\u0002{len(hair) - 1}\u0002"
 
         t = _HAIR.sub(keep, t)
-        t = t.replace("กระผม", "ดิฉัน")
-        t = re.sub(r"(^|[\s“\"「…,])ผม", r"\1ฉัน", t)
+        t = t.replace("กระผม", "ข้า" if historical else "ดิฉัน")
+        t = re.sub(r"(^|[\s“\"「…,])ผม", r"\1" + ("ข้า" if historical else "ฉัน"), t)
         t = re.sub("\u0002(\\d+)\u0002", lambda m: hair[int(m.group(1))], t)
     else:
-        t = re.sub("เจ้าค่ะ" + _P_END, "ขอรับ", t)
+        polite = "ขอรับ" if historical else "ครับ"
+        t = re.sub("(?:เจ้าค่ะ|เจ้าคะ)" + _P_END, "ครับ" if modern else "ขอรับ", t)
         t = re.sub("เพคะ" + _P_END, _ROYAL_M, t)
-        t = t.replace("นะคะ", "นะครับ")
-        t = t.replace("ค่ะ", "ครับ")
-        t = re.sub("คะ" + _P_END, "ครับ", t)
+        t = t.replace("นะคะ", "นะ" + polite)
+        t = t.replace("ค่ะ", polite)
+        t = re.sub("คะ" + _P_END, polite, t)
         t = t.replace(_ROYAL_M, "พ่ะย่ะค่ะ")
-        t = re.sub("ดิฉัน|อิฉัน", "ผม", t)
+        t = re.sub("ดิฉัน|อิฉัน", "ข้า" if historical else "ผม", t)
     return t
 
 
-def strip_polite(text: str) -> str:
+def strip_polite(text: str, setting: str = "auto") -> str:
     """A thought as Thai writes one: no polite particle, no polite self-pronoun.
 
     ครับ/ค่ะ and ผม/ดิฉัน are how a speaker addresses someone; a character
@@ -314,14 +335,16 @@ def strip_polite(text: str) -> str:
         return f"\u0002{len(hair) - 1}\u0002"
 
     t = _HAIR.sub(keep, t)
-    t = re.sub("กระผม|ดิฉัน|อิฉัน", "ฉัน", t)
-    t = re.sub(r"(^|[\s“\"「…,])ผม", r"\1ฉัน", t)
+    # A historical series thinks in ข้า, as it speaks.
+    self_word = "ข้า" if setting == "historical" else "ฉัน"
+    t = re.sub("กระผม|ดิฉัน|อิฉัน|ข้าน้อย" if setting == "historical" else "กระผม|ดิฉัน|อิฉัน", self_word, t)
+    t = re.sub(r"(^|[\s“\"「…,])ผม", r"\1" + self_word, t)
     t = re.sub("\u0002(\\d+)\u0002", lambda m: hair[int(m.group(1))], t)
     t = re.sub(r"[ \t]+([!?.…,~])", r"\1", t)
     return re.sub(r"[ \t]{2,}", " ", t).strip()
 
 
-def apply_speaker_map(blk_list, speakers: list[Speaker] | None) -> int:
+def apply_speaker_map(blk_list, speakers: list[Speaker] | None, setting: str = "auto") -> int:
     """Put the map's speakers on the blocks and fix their particles.
 
     A block the map knows takes the map's speaker and gender (the request
@@ -340,11 +363,11 @@ def apply_speaker_map(blk_list, speakers: list[Speaker] | None) -> int:
             if s.known:
                 blk.speaker = s.name or getattr(blk, "speaker", "")
                 blk.speaker_gender = s.gender
-            after = strip_polite(before)
+            after = strip_polite(before, setting)
         elif s.known:
             blk.speaker = s.name or getattr(blk, "speaker", "")
             blk.speaker_gender = s.gender
-            after = fix_particles(before, s.gender)
+            after = fix_particles(before, s.gender, setting)
         else:
             after = _resolve_hedge(before, UNKNOWN)   # only "ครับ/ค่ะ" is touched
         if after != before:

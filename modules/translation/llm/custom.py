@@ -4,6 +4,8 @@ from .gpt import GPTTranslation
 
 class CustomTranslation(GPTTranslation):
     """Translation engine using custom LLM configurations with OpenAI-compatible API."""
+
+    PROVIDER = "The custom API"
     
     def __init__(self):
         super().__init__()

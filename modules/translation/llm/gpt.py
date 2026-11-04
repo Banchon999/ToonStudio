@@ -4,6 +4,7 @@ import requests
 import json
 
 from .base import BaseLLMTranslation
+from ...utils.api_errors import APIError, rejects_sampling
 from ...utils.translator_utils import MODEL_MAP
 
 
@@ -13,6 +14,9 @@ class GPTTranslation(BaseLLMTranslation):
     # Name of the max-token request parameter; subclasses targeting other
     # OpenAI-compatible APIs may override (e.g. OpenRouter uses "max_tokens").
     MAX_TOKENS_PARAM = "max_completion_tokens"
+
+    # Named in the error a user sees when the API refuses a request.
+    PROVIDER = "OpenAI"
 
     def __init__(self):
         super().__init__()
@@ -95,27 +99,28 @@ class GPTTranslation(BaseLLMTranslation):
         return self._make_api_request(payload, headers)
     
     def _make_api_request(self, payload, headers):
+        """POST the request; an error status raises APIError.
+
+        Reasoning models accept only their default temperature and top_p and
+        answer 400 to anything else; that request is sent once more without
+        them rather than failing the page.
         """
-        Make API request and process response
-        """
-        try:
-            response = requests.post(
-                f"{self.api_base_url}/chat/completions",
-                headers=headers,
-                data=json.dumps(payload),
-                timeout=self.timeout
-            )
-            
-            response.raise_for_status()
-            response_data = response.json()
-            
-            return response_data["choices"][0]["message"]["content"]
-        except requests.exceptions.RequestException as e:
-            error_msg = f"API request failed: {str(e)}"
-            if hasattr(e, 'response') and e.response is not None:
-                try:
-                    error_details = e.response.json()
-                    error_msg += f" - {json.dumps(error_details)}"
-                except:
-                    error_msg += f" - Status code: {e.response.status_code}"
-            raise RuntimeError(error_msg)
+        response = self._post(payload, headers)
+        if response.status_code == 400 and ("temperature" in payload or "top_p" in payload):
+            error = APIError.from_response(self.PROVIDER, response, self.model or "")
+            if rejects_sampling(error.status, error.detail):
+                payload = {k: v for k, v in payload.items() if k not in ("temperature", "top_p")}
+                response = self._post(payload, headers)
+        if not 200 <= response.status_code < 300:
+            raise APIError.from_response(self.PROVIDER, response, self.model or "")
+        return response.json()["choices"][0]["message"]["content"]
+
+    def _post(self, payload, headers):
+        # Network failures stay requests exceptions: the UI already says
+        # "check your connection" for those.
+        return requests.post(
+            f"{self.api_base_url}/chat/completions",
+            headers=headers,
+            data=json.dumps(payload),
+            timeout=self.timeout,
+        )

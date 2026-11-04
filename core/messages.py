@@ -41,6 +41,68 @@ def server_error_text(status_code: int = 500, context: str | None = None) -> str
     return messages.get(status_code, messages[500])
 
 
+def api_error_text(error) -> str:
+    """Localised text for a `modules.utils.api_errors.APIError`.
+
+    What the user can do about it first, then the provider's own words, which
+    are often the only place the real reason is (a model id typo, a region).
+    """
+    # The kinds are modules.utils.api_errors' constants, spelt out so core
+    # does not import modules.
+    AUTH, CREDIT, RATE_LIMIT, MODEL, TOO_LONG, BLOCKED, SERVER = (
+        "auth", "credit", "rate_limit", "model", "too_long", "blocked", "server",
+    )
+    provider = getattr(error, "provider", "") or "The AI provider"
+    model = getattr(error, "model", "") or "?"
+    status = getattr(error, "status", 0)
+    kind = getattr(error, "kind", "")
+    if kind == AUTH:
+        text = translate(
+            "Messages",
+            "{0} rejected the API key.\nCheck the key in Settings (and tick Save Keys to keep it).",
+        ).format(provider)
+    elif kind == CREDIT:
+        text = translate(
+            "Messages",
+            "{0}: the account has run out of credit.\nTop it up, or choose a cheaper model.",
+        ).format(provider)
+    elif kind == RATE_LIMIT:
+        text = translate(
+            "Messages",
+            "{0} is limiting requests (too many in a short time).\nWait a minute and try again, or choose another model.",
+        ).format(provider)
+    elif kind == MODEL:
+        text = translate(
+            "Messages",
+            "{0} cannot find the model \"{1}\".\nCheck the model name in Settings.",
+        ).format(provider, model)
+    elif kind == TOO_LONG:
+        text = translate(
+            "Messages",
+            "The page is more than the model \"{0}\" accepts in one request.\n"
+            "Choose a model with a larger context, or translate fewer pages at once.",
+        ).format(model)
+    elif kind == BLOCKED:
+        text = translate(
+            "Messages",
+            "{0} refused this content.\nTry a different model.",
+        ).format(provider)
+    elif kind == SERVER:
+        text = translate(
+            "Messages",
+            "{0} is having problems (HTTP {1}).\nTry again later, or choose another model.",
+        ).format(provider, status)
+    else:
+        text = translate(
+            "Messages",
+            "{0} refused the request (HTTP {1}).",
+        ).format(provider, status)
+    detail = (getattr(error, "detail", "") or "").strip()
+    if detail:
+        text += "\n\n" + translate("Messages", "The service said: {0}").format(detail[:300])
+    return text
+
+
 def content_flagged_text(details: str | None = None, context: str = "Operation") -> str:
     """Localised text for a provider refusing content as flagged.
 
