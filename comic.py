@@ -505,6 +505,37 @@ def _run_openvino_self_test() -> int:
     return 0
 
 
+#: The packages the PyTorch OCR engines import: what the full Windows build
+#: exists to carry. Kept beside the probe so the two cannot drift apart.
+OPTIONAL_OCR_PACKAGES = ("torch", "torchvision", "transformers", "easyocr")
+
+
+def _run_optional_ocr_self_test() -> int:
+    """Prove the full build can run EasyOCR and PaddleOCR-VL: their packages
+    import in this process and torch's native libraries run an operation.
+
+    build-windows-full.yml runs it against the frozen executable. A
+    collect-all that silently missed a module would otherwise ship a "full"
+    build whose engines are greyed out in Settings.
+    """
+    import importlib
+
+    try:
+        for name in OPTIONAL_OCR_PACKAGES:
+            importlib.import_module(name)
+        import torch
+        from easyocr import Reader  # noqa: F401 - the class the engine builds
+        from transformers import AutoModelForImageTextToText, AutoProcessor  # noqa: F401
+        importlib.import_module("transformers.models.paddleocr_vl")
+        if float((torch.ones(2) * 2).sum()) != 4.0:
+            print("torch computed a wrong result", file=sys.stderr)
+            return 1
+    except Exception as exc:
+        print(f"{type(exc).__name__}: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
 if __name__ == "__main__":
     # Checked before anything else is imported or shown: these processes exist
     # only to answer the question and exit.
@@ -514,4 +545,6 @@ if __name__ == "__main__":
         sys.exit(_run_skia_self_test())
     if "--openvino-self-test" in sys.argv[1:]:
         sys.exit(_run_openvino_self_test())
+    if "--optional-ocr-self-test" in sys.argv[1:]:
+        sys.exit(_run_optional_ocr_self_test())
     main()

@@ -1,18 +1,23 @@
 # Same app as build-windows.yml, plus the PyTorch stack, so the bundle can run
-# the PaddleOCR-VL text recognition engine without a Python install.
+# the EasyOCR and PaddleOCR-VL text recognition engines without a Python
+# install.
 #
-# Kept as a separate workflow rather than folded into the normal build because
-# torch multiplies the download from a few hundred megabytes to several
-# gigabytes, and most people never touch that engine. Ship the lean build as
-# the default; offer this one to whoever wants PaddleOCR-VL.
+# Kept as a separate build rather than folded into the normal one because
+# torch multiplies the download several times over, and most people never
+# touch those engines. release.yml publishes it beside the lean build as an
+# optional asset (ToonStudio-Windows-x86_64-full.zip): a release goes out
+# without it if this build fails or the archive is over GitHub's 2 GB asset
+# limit, and the update checker keeps each build on its own kind.
 #
 # CPU wheels only. A CUDA build would be larger again and would still be wrong
 # for anyone without a matching driver, so GPU users are better served running
 # from source with the CUDA index.
-name: Build Windows App (with PaddleOCR-VL)
+name: Build Windows App (Full - EasyOCR and PaddleOCR-VL)
 
 on:
   workflow_dispatch:
+  # release.yml builds the release's full download with this same workflow.
+  workflow_call:
 
 jobs:
   build-windows-full:
@@ -34,6 +39,8 @@ jobs:
           pip install -r requirements.txt
           pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision
           pip install "transformers>=5"
+          # After torch, so pip keeps the CPU wheels instead of fetching its own.
+          pip install easyocr
           pip install pyinstaller
 
       - name: Locate Skia's ICU data file
@@ -81,6 +88,8 @@ jobs:
             --collect-all tokenizers `
             --collect-all safetensors `
             --hidden-import transformers.models.paddleocr_vl `
+            --collect-all easyocr `
+            --collect-all skimage `
             --collect-all openvino `
             comic.py
 
@@ -96,23 +105,28 @@ jobs:
           Stop-Process -Id $p.Id -Force
           Write-Output "Smoke test passed"
 
-      # The point of this build is that the engine is actually reachable, which
-      # the app's own availability check decides. Assert it here rather than
-      # discovering after release that a collect-all silently missed something.
-      - name: Verify the PyTorch stack is bundled
+      # The point of this build is that the engines actually run, which a
+      # directory listing cannot show: a collect-all that missed one module
+      # ships a "full" build whose engines are greyed out in Settings. The
+      # frozen exe imports torch, torchvision, transformers (with the
+      # PaddleOCR-VL model) and easyocr, and has torch run an operation.
+      - name: Verify EasyOCR and PaddleOCR-VL run in the bundle
         shell: pwsh
         run: |
-          $missing = @()
-          foreach ($pkg in @('torch', 'torchvision', 'transformers')) {
-            if (-not (Get-ChildItem -Path dist/ToonStudio -Recurse -Directory -Filter $pkg -ErrorAction SilentlyContinue)) {
-              $missing += $pkg
-            }
-          }
-          if ($missing.Count -gt 0) {
-            Write-Error "Not bundled: $($missing -join ', ') - PaddleOCR-VL would be unavailable in this build"
+          $exe = Get-ChildItem -Path dist -Recurse -File -Filter 'ToonStudio.exe' |
+                 Select-Object -First 1
+          if (-not $exe) { Write-Error "no ToonStudio.exe in dist"; exit 1 }
+          $errFile = Join-Path $env:RUNNER_TEMP 'optional-ocr-self-test.err'
+          $proc = Start-Process -FilePath $exe.FullName `
+                                -ArgumentList '--optional-ocr-self-test' `
+                                -Wait -PassThru -NoNewWindow `
+                                -RedirectStandardError $errFile
+          $detail = if (Test-Path $errFile) { (Get-Content $errFile -Raw) } else { '' }
+          if ($proc.ExitCode -ne 0) {
+            Write-Error "EasyOCR / PaddleOCR-VL cannot run in the bundle (exit $($proc.ExitCode)): $detail"
             exit 1
           }
-          Write-Output "torch, torchvision and transformers are all present"
+          Write-Output "EasyOCR and PaddleOCR-VL self-test passed in the frozen bundle"
 
       # skia-python installs as a single extension module, not a package
       # directory, so the directory check used for the PyTorch stack would not
@@ -182,7 +196,19 @@ jobs:
 
       - name: Package zip
         shell: pwsh
-        run: Compress-Archive -Path dist/ToonStudio -DestinationPath dist/ToonStudio-Windows-x86_64-full.zip
+        run: |
+          # Compress-Archive cannot write archives over 2 GB; .NET's ZipFile can.
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          [System.IO.Compression.ZipFile]::CreateFromDirectory(
+            (Resolve-Path dist/ToonStudio), "$PWD/dist/ToonStudio-Windows-x86_64-full.zip",
+            [System.IO.Compression.CompressionLevel]::Optimal, $true)
+          $size = (Get-Item dist/ToonStudio-Windows-x86_64-full.zip).Length
+          Write-Output ("Full archive: {0:N0} MB" -f ($size / 1MB))
+          # GitHub refuses a release asset of 2 GiB or more.
+          if ($size -ge 2147483648) {
+            Write-Error ("The full archive is {0:N0} MB, over GitHub's 2 GB release asset limit" -f ($size / 1MB))
+            exit 1
+          }
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v6

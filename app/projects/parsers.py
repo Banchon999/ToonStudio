@@ -5,6 +5,7 @@ from PySide6 import QtGui
 from PySide6.QtCore import Qt
 from modules.utils.textblock import TextBlock
 from ..ui.canvas.text_item import OutlineInfo, OutlineType
+from ..ui.qt_values import to_qt_color
 
 class ProjectEncoder:
     def __init__(self):
@@ -104,7 +105,9 @@ class ProjectEncoder:
             'data': {
                 'start': obj.start,
                 'end': obj.end,
-                'color': ProjectEncoder.encode_qcolor(obj.color),
+                # A QColor from the canvas or a hex string from the pipeline
+                # (core.text_style.full_document_outline): both are saved as QColor.
+                'color': ProjectEncoder.encode_qcolor(to_qt_color(obj.color)),
                 'width': obj.width,
                 'type': obj.type.value
             }

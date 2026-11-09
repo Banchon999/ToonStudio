@@ -337,6 +337,19 @@ class Messages:
         return "\n".join(lines)
 
     @staticmethod
+    def show_autosave_failed(parent, detail: str):
+        """Say that auto-save could not write the project, and keep saying it
+        until it is closed: work done since the last save is not on disk."""
+        text = QCoreApplication.translate(
+            "Messages",
+            "Auto-save could not save the project.\n"
+            "Your latest changes are not on disk yet: use Save As to keep them.",
+        )
+        if detail:
+            text += "\n\n" + detail[:300]
+        return MMessage.error(text=text, parent=parent, duration=None, closable=True)
+
+    @staticmethod
     def show_glossary_issues(parent, issues):
         """Warn that a translation ignored the glossary (only warns; nothing is changed)."""
         if not issues:

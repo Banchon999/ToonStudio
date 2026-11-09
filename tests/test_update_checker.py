@@ -151,6 +151,22 @@ def test_an_installer_wins_over_an_archive_and_macos_needs_one():
     assert update_checker.choose_asset(no_dmg, "Darwin") is None
 
 
+def test_each_windows_build_is_updated_with_its_own_kind():
+    # Both archives match "windows" and ".zip": the lean build must not be
+    # offered the PyTorch one, nor the full build be "updated" into a lean one.
+    assets = _published_assets()
+    assert any("-full" in a["name"] for a in assets), "release.yml publishes the full build"
+    lean = update_checker.choose_asset(assets, "Windows", full=False)
+    full = update_checker.choose_asset(assets, "Windows", full=True)
+    assert lean == "https://dl.invalid/ToonStudio-Windows-x86_64.zip"
+    assert full == "https://dl.invalid/ToonStudio-Windows-x86_64-full.zip"
+    # A release without the full archive still updates a full build.
+    without = [a for a in assets if "-full" not in a["name"]]
+    assert update_checker.choose_asset(without, "Windows", full=True) == lean
+    # Whichever order GitHub lists them in.
+    assert update_checker.choose_asset(list(reversed(assets)), "Windows") == lean
+
+
 def test_the_dmg_is_opened_not_revealed():
     # `open` mounts a DMG and shows its window with the app and Applications.
     assert update_checker.is_installer("/tmp/ToonStudio-macOS-arm64.dmg", "Darwin")

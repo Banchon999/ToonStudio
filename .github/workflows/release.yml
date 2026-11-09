@@ -21,8 +21,10 @@ name: Release
 # update checker asks) skips pre-releases, so nobody is offered it as an
 # update; it is only a page to download from.
 #
-# The PyTorch "full" Windows build is not part of it: it is several gigabytes,
-# and GitHub caps a release asset at 2 GB.
+# The "full" Windows build (PyTorch, EasyOCR and PaddleOCR-VL;
+# build-windows-full.yml) is published beside the lean one when it builds and
+# fits GitHub's 2 GB asset limit; like the DMG it is optional, so a release
+# never waits on it.
 on:
   push:
     tags: ['v*']
@@ -95,6 +97,10 @@ jobs:
     needs: tests
     uses: ./.github/workflows/build-windows.yml
 
+  windows_full:
+    needs: tests
+    uses: ./.github/workflows/build-windows-full.yml
+
   linux:
     needs: tests
     uses: ./.github/workflows/build-linux.yml
@@ -110,7 +116,7 @@ jobs:
   # tests and the Windows and Linux builds pass; a DMG that did not build is
   # added later by build-macos-dmg.yml with attach_to: vX.Y.Z.
   publish:
-    needs: [check, tests, windows, linux, macos]
+    needs: [check, tests, windows, windows_full, linux, macos]
     if: >-
       ${{ always() && needs.check.result == 'success' && needs.tests.result == 'success'
       && needs.windows.result == 'success' && needs.linux.result == 'success' }}
@@ -135,11 +141,17 @@ jobs:
             echo "::warning::no macOS DMG (macos job: ${{ needs.macos.result }}) - add it later with build-macos-dmg.yml, attach_to: ${{ needs.check.outputs.tag }}"
             dmg=""
           fi
+          full=dist/ToonStudio-Windows-x86_64-full.zip
+          if [ ! -f "$full" ]; then
+            echo "::warning::no full Windows build (windows_full job: ${{ needs.windows_full.result }}) - the release goes out with the lean build only"
+            full=""
+          fi
           {
             echo "list<<EOF"
             echo dist/ToonStudio-Windows-x86_64.zip
             echo dist/ToonStudio-Linux-x86_64.tar.gz
             [ -n "$dmg" ] && echo "$dmg"
+            [ -n "$full" ] && echo "$full"
             echo EOF
           } >> "$GITHUB_OUTPUT"
 

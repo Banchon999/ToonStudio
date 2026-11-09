@@ -341,3 +341,38 @@ def test_in_webtoon_mode_a_stroke_on_page_two_lands_on_page_two(qapp, tmp_path):
     finally:
         win._skip_close_prompt = True
         win.close()
+
+
+class TestStrokeCost:
+    """Release works on the box the stroke touched, never the whole page.
+
+    Blending and comparing the whole page on every release held the GUI
+    thread 120 ms on a 1200×1800 page and 220–250 ms on an 800×5000 one (the
+    mask brush releases in ~1 ms), which is what made painting feel laggy.
+    """
+
+    def test_release_blends_only_the_touched_box(self, window, monkeypatch):
+        import app.ui.canvas.pixel_session as ps
+
+        shapes = []
+        real_blend = ps.blend
+
+        def spy(original, edited, alpha):
+            shapes.append(original.shape[:2])
+            return real_blend(original, edited, alpha)
+
+        monkeypatch.setattr(ps, "blend", spy)
+        window.image_viewer.drawing_manager.paint_size = 10
+        stroke(window, [(40, 40), (80, 42)])
+        page_h, page_w = composite(window).shape[:2]
+        assert shapes, "nothing was blended"
+        # The last blend is the release; the stroke spans ~50×16 px.
+        h, w = shapes[-1]
+        assert h <= 20 and w <= 60 and h * w < page_h * page_w / 20
+
+    def test_a_flat_colour_never_becomes_a_page_sized_array(self, window):
+        dm = window.image_viewer.drawing_manager
+        dm.pixel_press(QPointF(40, 40), "paint")
+        session = dm.pixel_session
+        assert session.source is None and session._colour is not None
+        dm.pixel_cancel()
