@@ -35,3 +35,22 @@ def test_an_outline_with_a_qcolor_still_round_trips():
 def test_an_outline_with_no_colour_does_not_stop_the_save():
     back = _round_trip([OutlineInfo(0, 2, None, 1, OutlineType.Full_Document)])[0]
     assert isinstance(back.color, QColor)
+
+
+def test_every_batch_rendered_text_state_saves():
+    # What a batch run puts on a page: the renderer's state with each default
+    # style applied over it (strings for every colour, stroke layers as dicts).
+    from core.text_style import build_text_item_state
+    from modules.utils.text_presets import BUILTIN_PRESETS, apply_to_state
+
+    for preset in (None, *BUILTIN_PRESETS):
+        state = build_text_item_state(
+            text="ไปกันเถอะ", font_family="Sans", font_size=24, text_color="#000000",
+            alignment=1, line_spacing=1.0, outline_color="#ffffff", outline_width=3.0,
+            bold=False, italic=False, underline=False, position=(10, 20), rotation=0.0,
+            scale=1.0, transform_origin=None, width=200.0, height=80.0, direction=0,
+            vertical=False, outline=True, object_id="t1",
+        )
+        state = apply_to_state(state, preset)
+        back = _round_trip({"text_items_state": [state]})["text_items_state"][0]
+        assert back["text"] == "ไปกันเถอะ" and back["object_id"] == "t1", preset

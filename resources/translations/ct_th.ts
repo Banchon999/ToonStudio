@@ -2001,11 +2001,18 @@ Draw a box over the leftover text, or paint it with the brush, lasso or magic wa
         <translation>มี {0} บอลลูนที่ต้องตรวจ ครับ/ค่ะ:</translation>
     </message>
     <message>
+        <location filename="../../app/ui/messages.py" line="343"/>
+        <source>Auto-save could not save the project.
+Your latest changes are not on disk yet: use Save As to keep them.</source>
+        <translation>บันทึกอัตโนมัติไม่สามารถบันทึกโปรเจกต์ได้
+งานล่าสุดยังไม่ได้ถูกบันทึกลงดิสก์ ใช้ "บันทึกเป็น" เพื่อเก็บไว้</translation>
+    </message>
+    <message>
         <source>{0} bubble(s) mix male and female speech (ครับ/ค่ะ):</source>
         <translation type="vanished">{0} บอลลูนใช้คำพูดชาย/หญิงปนกัน (ครับ/ค่ะ):</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="354"/>
+        <location filename="../../app/ui/messages.py" line="367"/>
         <source>{0} page(s) have translations that do not follow the glossary.
 Open Batch Report to see which terms.</source>
         <translation>มี {0} หน้าที่คำแปลไม่ตรงกับ Glossary
@@ -2064,14 +2071,14 @@ Wait a minute and try again, or choose another model.</source>
         <location filename="../../core/messages.py" line="75"/>
         <source>{0} cannot find the model &quot;{1}&quot;.
 Check the model name in Settings.</source>
-        <translation>{0} ไม่พบโมเดล "{1}"
+        <translation>{0} ไม่พบโมเดล &quot;{1}&quot;
 ตรวจชื่อโมเดลในการตั้งค่า</translation>
     </message>
     <message>
         <location filename="../../core/messages.py" line="80"/>
         <source>The page is more than the model &quot;{0}&quot; accepts in one request.
 Choose a model with a larger context, or translate fewer pages at once.</source>
-        <translation>หน้านี้ยาวเกินกว่าที่โมเดล "{0}" รับได้ในคำขอเดียว
+        <translation>หน้านี้ยาวเกินกว่าที่โมเดล &quot;{0}&quot; รับได้ในคำขอเดียว
 เลือกโมเดลที่รับข้อความได้มากกว่า หรือแปลทีละน้อยหน้าลง</translation>
     </message>
     <message>
@@ -5247,45 +5254,45 @@ It may have already been moved, renamed, or deleted.
         <translation>รายงานการประมวลผลชุด</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="445"/>
+        <location filename="../../app/controllers/projects.py" line="480"/>
         <source>Project Recovery</source>
         <translation>การกู้คืนโปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="446"/>
+        <location filename="../../app/controllers/projects.py" line="481"/>
         <source>An autosaved project from a previous session was found.</source>
         <translation>พบโปรเจกต์ที่บันทึกอัตโนมัติไว้จากการใช้งานครั้งก่อน</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="448"/>
+        <location filename="../../app/controllers/projects.py" line="483"/>
         <source>Last autosave: {saved_at}
 Do you want to restore it?</source>
         <translation>บันทึกอัตโนมัติล่าสุด: {saved_at}
 ต้องการกู้คืนหรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="450"/>
+        <location filename="../../app/controllers/projects.py" line="485"/>
         <source>Restore</source>
         <translation>กู้คืน</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="451"/>
+        <location filename="../../app/controllers/projects.py" line="486"/>
         <source>Discard</source>
         <translation>ทิ้งไป</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="650"/>
-        <location filename="../../app/controllers/projects.py" line="659"/>
+        <location filename="../../app/controllers/projects.py" line="685"/>
+        <location filename="../../app/controllers/projects.py" line="694"/>
         <source>Export Folder</source>
         <translation>โฟลเดอร์ส่งออก</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="651"/>
+        <location filename="../../app/controllers/projects.py" line="686"/>
         <source>Choose a folder path, not an existing file.</source>
         <translation>กรุณาเลือกพาธของโฟลเดอร์ ไม่ใช่ไฟล์ที่มีอยู่</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="661"/>
+        <location filename="../../app/controllers/projects.py" line="696"/>
         <source>Could not create the selected export folder.
 
 {error}</source>
@@ -5294,18 +5301,18 @@ Do you want to restore it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="681"/>
-        <location filename="../../app/controllers/projects.py" line="733"/>
+        <location filename="../../app/controllers/projects.py" line="716"/>
+        <location filename="../../app/controllers/projects.py" line="768"/>
         <source>Export Translations</source>
         <translation>ส่งออกคำแปล</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="708"/>
+        <location filename="../../app/controllers/projects.py" line="743"/>
         <source>There are no texts or translations to export yet.</source>
         <translation>ยังไม่มีข้อความหรือคำแปลให้ส่งออก</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="734"/>
+        <location filename="../../app/controllers/projects.py" line="769"/>
         <source>Could not write the export file.
 
 {error}</source>
@@ -5314,24 +5321,24 @@ Do you want to restore it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="739"/>
+        <location filename="../../app/controllers/projects.py" line="774"/>
         <source>Translations exported to {0}</source>
         <translation>ส่งออกคำแปลไปยัง {0} แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1239"/>
-        <location filename="../../app/controllers/projects.py" line="1249"/>
-        <location filename="../../app/controllers/projects.py" line="1319"/>
+        <location filename="../../app/controllers/projects.py" line="1274"/>
+        <location filename="../../app/controllers/projects.py" line="1284"/>
+        <location filename="../../app/controllers/projects.py" line="1354"/>
         <source>Project File</source>
         <translation>ไฟล์โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1240"/>
+        <location filename="../../app/controllers/projects.py" line="1275"/>
         <source>Choose an existing folder for the project file.</source>
         <translation>กรุณาเลือกโฟลเดอร์ที่มีอยู่จริงสำหรับไฟล์โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1251"/>
+        <location filename="../../app/controllers/projects.py" line="1286"/>
         <source>Could not create the selected project folder.
 
 {error}</source>
@@ -5340,12 +5347,12 @@ Do you want to restore it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1262"/>
+        <location filename="../../app/controllers/projects.py" line="1297"/>
         <source>Overwrite Project File</source>
         <translation>เขียนทับไฟล์โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1264"/>
+        <location filename="../../app/controllers/projects.py" line="1299"/>
         <source>A project file already exists at this location.
 
 {path}
@@ -5358,12 +5365,12 @@ Overwrite it?</source>
 ต้องการเขียนทับหรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1287"/>
+        <location filename="../../app/controllers/projects.py" line="1322"/>
         <source>Old Project File Kept</source>
         <translation>ไฟล์โปรเจกต์เดิมยังคงอยู่</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1289"/>
+        <location filename="../../app/controllers/projects.py" line="1324"/>
         <source>The project was saved to the new location, but the old file could not be removed.
 
 {path}
@@ -5376,12 +5383,12 @@ Overwrite it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1297"/>
+        <location filename="../../app/controllers/projects.py" line="1332"/>
         <source>Project file updated.</source>
         <translation>อัปเดตไฟล์โปรเจกต์แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1321"/>
+        <location filename="../../app/controllers/projects.py" line="1356"/>
         <source>Could not move the project file.
 
 {error}</source>
@@ -5390,22 +5397,22 @@ Overwrite it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1332"/>
+        <location filename="../../app/controllers/projects.py" line="1367"/>
         <source>Project file renamed.</source>
         <translation>เปลี่ยนชื่อไฟล์โปรเจกต์แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1334"/>
+        <location filename="../../app/controllers/projects.py" line="1369"/>
         <source>Project file moved.</source>
         <translation>ย้ายไฟล์โปรเจกต์แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1460"/>
+        <location filename="../../app/controllers/projects.py" line="1495"/>
         <source>Project Not Found</source>
         <translation>ไม่พบโปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1462"/>
+        <location filename="../../app/controllers/projects.py" line="1497"/>
         <source>The selected project file could not be found.
 It may have been moved, renamed, or deleted.
 
@@ -5416,12 +5423,12 @@ It may have been moved, renamed, or deleted.
 {path}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1559"/>
+        <location filename="../../app/controllers/projects.py" line="1594"/>
         <source>Auto</source>
         <translation>อัตโนมัติ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1560"/>
+        <location filename="../../app/controllers/projects.py" line="1595"/>
         <source>English</source>
         <translation>อังกฤษ</translation>
     </message>

@@ -51,6 +51,9 @@ class ProjectController:
         self._autosave_signals_connected = False
         self._autosave_save_pending = False
         self._autosave_retrigger_requested = False
+        # Shown once per run of failures, so a save that keeps failing is seen
+        # without a toast every 800 ms; a successful save re-arms it.
+        self._autosave_failure_reported = False
         self._active_save_workers: list = []  # keeps Python refs alive until workers finish
         self._last_project_dialog_dir = ""
 
@@ -324,8 +327,12 @@ class ProjectController:
 
         worker = GenericWorker(self.save_project, target_file)
         self._active_save_workers.append(worker)  # prevent GC until done
+        # The worker emits finished after an error too (thread_worker's
+        # `finally`): on_finished must not treat that as a save.
+        save_failed = {"value": False}
 
         def on_error(error_tuple):
+            save_failed["value"] = True
             try:
                 self._active_save_workers.remove(worker)
             except ValueError:
@@ -333,6 +340,7 @@ class ProjectController:
             self._autosave_save_pending = False
             exctype, value, _ = error_tuple
             logger.warning("Per-page autosave failed for %s: %s: %s", image_path, exctype.__name__, value)
+            self._report_autosave_failure(exctype, value)
             if self._autosave_retrigger_requested:
                 self._autosave_retrigger_requested = False
                 self._on_batch_page_done(image_path)
@@ -343,6 +351,9 @@ class ProjectController:
             except ValueError:
                 pass
             self._autosave_save_pending = False
+            if save_failed["value"]:
+                return  # nothing was written: the work stays unsaved
+            self._autosave_failure_reported = False
             self.clear_recovery_checkpoint()
             self.add_recent_project(target_file)
             self._refresh_home_screen()
@@ -359,6 +370,20 @@ class ProjectController:
             lambda: QtCore.QTimer.singleShot(0, self.main, on_finished)
         )
         self.main.threadpool.start(worker)
+
+    def _report_autosave_failure(self, exctype, value) -> None:
+        """Tell the user an auto-save failed. It used to be a log line only, so
+        a save that failed every time (3.3.0: any batch-rendered text) looked
+        like auto-save working while the project file stayed at its last good
+        state, and reopening it from Recent lost the work."""
+        if self._autosave_failure_reported:
+            return
+        self._autosave_failure_reported = True
+        try:
+            from app.ui.messages import Messages
+            Messages.show_autosave_failed(self.main, f"{getattr(exctype, '__name__', exctype)}: {value}")
+        except Exception:
+            logger.debug("Could not show the auto-save failure message.", exc_info=True)
 
     def notify_project_dirty_revision_changed(self):
         autosave_enabled = bool(
@@ -405,17 +430,27 @@ class ProjectController:
         is_regular_project_save = bool(self.main.project_file and target_file == self.main.project_file)
         autosave_start_revision = self.main._dirty_revision
         self._autosave_save_pending = True
+        # run_threaded calls finished after an error too. Treating that as a
+        # save marked the project clean and deleted the recovery checkpoint
+        # after every failed auto-save, so closing the app asked nothing and
+        # the work was gone.
+        save_failed = {"value": False}
 
         def on_error(error_tuple):
+            save_failed["value"] = True
             self._autosave_save_pending = False
             exctype, value, _ = error_tuple
             logger.warning("Project autosave failed: %s: %s", exctype.__name__, value)
+            self._report_autosave_failure(exctype, value)
             if self._autosave_retrigger_requested:
                 self._autosave_retrigger_requested = False
                 self._realtime_autosave_timer.start()
 
         def on_finished():
             self._autosave_save_pending = False
+            if save_failed["value"]:
+                return  # nothing was written: the work stays unsaved
+            self._autosave_failure_reported = False
             if is_regular_project_save:
                 self.clear_recovery_checkpoint()
                 self.add_recent_project(target_file)
