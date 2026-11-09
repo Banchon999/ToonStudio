@@ -30,7 +30,8 @@ def test_the_version_is_a_plain_release_number():
 def test_every_workflow_the_release_calls_can_be_called():
     release = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
     called = re.findall(r"uses:\s*\./\.github/workflows/([\w.-]+\.yml)", release)
-    assert set(called) == {"test.yml", "build-windows.yml", "build-linux.yml", "build-macos-dmg.yml"}
+    assert set(called) == {"test.yml", "build-windows.yml", "build-windows-full.yml",
+                           "build-linux.yml", "build-macos-dmg.yml"}
     for name in called:
         text = (WORKFLOWS / name).read_text(encoding="utf-8")
         assert re.search(r"^\s+workflow_call:", text, re.M), f"{name} cannot be called by release.yml"
@@ -42,11 +43,11 @@ def test_the_release_publishes_exactly_what_the_builds_upload():
     release = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
     published = set(re.findall(r"dist/(ToonStudio-[\w.-]+)", release))
     built = set()
-    for name in ("build-windows.yml", "build-linux.yml", "build-macos-dmg.yml"):
+    for name in ("build-windows.yml", "build-windows-full.yml", "build-linux.yml", "build-macos-dmg.yml"):
         text = (WORKFLOWS / name).read_text(encoding="utf-8")
         upload = text[text.index("upload-artifact"):]
         built |= set(re.findall(r"path:\s*dist/(ToonStudio-[\w.-]+)", upload))
-    assert published == built and len(built) == 3
+    assert published == built and len(built) == 4
 
 
 def test_the_release_runs_on_a_version_tag_or_by_hand_never_on_its_own():
@@ -124,3 +125,26 @@ def test_a_release_goes_out_without_the_dmg_when_only_macos_failed():
     # Windows and Linux are still required files; only the DMG is optional.
     assert "ls dist/ToonStudio-Windows-x86_64.zip dist/ToonStudio-Linux-x86_64.tar.gz" in publish
     assert "fail_on_unmatched_files: true" in publish
+
+
+def test_the_full_windows_build_is_optional_and_proven_to_run():
+    """The full build (PyTorch, EasyOCR, PaddleOCR-VL) rides along with a
+    release but never holds one up, and is refused over GitHub's 2 GB limit
+    rather than failing the upload of everything else."""
+    release = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
+    publish = release.split("\n  publish:\n", 1)[1]
+    condition = publish.split("runs-on:", 1)[0]
+    assert "windows_full" in publish.split("\n", 1)[0]          # waited for…
+    assert "needs.windows_full.result ==" not in condition       # …never required
+    assert 'full=dist/ToonStudio-Windows-x86_64-full.zip' in publish
+    assert '[ -n "$full" ] && echo "$full"' in publish
+    full = (WORKFLOWS / "build-windows-full.yml").read_text(encoding="utf-8")
+    assert "pip install easyocr" in full and "--collect-all easyocr" in full
+    assert "--optional-ocr-self-test" in full
+    assert "2147483648" in full
+    # The probe checks the packages the app's own availability check asks for.
+    import comic
+    settings_ui = (ROOT / "app" / "ui" / "settings" / "settings_ui.py").read_text(encoding="utf-8")
+    for package in ("torch", "torchvision", "transformers", "easyocr"):
+        assert package in comic.OPTIONAL_OCR_PACKAGES
+        assert f'"{package}"' in settings_ui

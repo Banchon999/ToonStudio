@@ -22,25 +22,50 @@ ARCHIVES = {
     "Windows": ("windows", ".zip"),
     "Linux": ("linux", ".tar.gz"),
 }
+#: Marks the "full" archive (release.yml: the Windows build with PyTorch,
+#: EasyOCR and PaddleOCR-VL). Each build is updated with its own kind: the
+#: lean one must not be offered a download several times its size, and the
+#: full one must not be "updated" into a build without its OCR engines.
+FULL_MARKER = "-full"
 
 
-def choose_asset(assets: list[dict], system: str) -> str | None:
+def is_full_build() -> bool:
+    """Whether this app carries the PyTorch OCR engines (the full build)."""
+    import importlib.util
+
+    try:
+        return importlib.util.find_spec("torch") is not None
+    except (ImportError, ValueError):
+        return False
+
+
+def choose_asset(assets: list[dict], system: str, full: bool = False) -> str | None:
     """The download URL for this OS from a release's assets, or None.
 
     An installer wins when the release has one; otherwise the archive built
     for this OS (``ToonStudio-Windows-x86_64.zip``, ``ToonStudio-Linux-…``).
+    A full build gets the full archive (``…-full.zip``) when the release has
+    one and the ordinary one otherwise; an ordinary build never gets the full
+    one — both match "windows" and ".zip", which is why this is decided here.
     """
     installers = INSTALLER_SUFFIXES.get(system, ())
     for asset in assets:
         if asset.get("name", "").lower().endswith(installers) and installers:
             return asset.get("browser_download_url")
     fragment, suffix = ARCHIVES.get(system, (None, None))
-    if fragment:
-        for asset in assets:
-            name = asset.get("name", "").lower()
-            if fragment in name and name.endswith(suffix):
-                return asset.get("browser_download_url")
-    return None
+    if not fragment:
+        return None
+    lean, heavy = None, None
+    for asset in assets:
+        name = asset.get("name", "").lower()
+        if fragment in name and name.endswith(suffix):
+            if FULL_MARKER in name:
+                heavy = heavy or asset.get("browser_download_url")
+            else:
+                lean = lean or asset.get("browser_download_url")
+    if full and heavy:
+        return heavy
+    return lean
 
 
 def is_installer(path: str, system: str | None = None) -> bool:
@@ -167,7 +192,7 @@ class UpdateWorker:
                  return
 
             if version.parse(latest_tag) > version.parse(self.current_version):
-                asset_url = choose_asset(data.get("assets", []), platform.system())
+                asset_url = choose_asset(data.get("assets", []), platform.system(), full=is_full_build())
                 if asset_url:
                     self.emit("update_available", latest_tag, data.get("html_url", ""), asset_url)
                 else:
