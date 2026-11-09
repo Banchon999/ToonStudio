@@ -147,6 +147,12 @@ class PixelSession:
         self.preview: PixelPreviewItem | None = None
         self._last: tuple[float, float] | None = None
         self._carry = 0.0
+        # What the stroke has touched so far, as [x0, y0, x1, y1] in session
+        # pixels: release works on this box, not on the whole page.
+        self._box: list[int] | None = None
+        # A flat-colour source (paint, AI) is one RGB value, never a page-sized
+        # array: filling one per press cost ~20 ms on an 800×5000 page.
+        self._colour: np.ndarray | None = None
 
     # -- lifecycle -------------------------------------------------------------
     def begin(self, scene_pos: QPointF, pressure=None) -> bool:
@@ -173,8 +179,8 @@ class PixelSession:
             self.source, self.source_valid = paint.shifted(self.composite, *self.clone_offset)
         else:
             colour = QColor(255, 0, 0) if self.mode == AI else self.colour
-            self.source = np.empty_like(self.composite)
-            self.source[...] = (colour.red(), colour.green(), colour.blue())
+            self.source = None
+            self._colour = np.array((colour.red(), colour.green(), colour.blue()), np.uint8)
         if self.mode not in CLONE_MODES:
             self.source_valid = None
         ox, oy = self.offset
@@ -202,28 +208,48 @@ class PixelSession:
         self._last = point
 
     def finish(self) -> PixelEdit | None:
-        """Blend the stroke into the composite. None when nothing changed."""
+        """Blend the stroke into the composite. None when nothing changed.
+
+        Only the box the stroke touched is blended and compared. Doing it over
+        the whole page held the GUI thread on every release — 120 ms on a
+        1200×1800 page, 220–250 ms on an 800×5000 one — while a mask-brush
+        stroke released in ~1 ms, which is what made the paint brush feel
+        laggy beside it.
+        """
         if self._last is None:
             return None
         self._remove_preview()
-        alpha = self._alpha(np.s_[:, :])
-        if not (alpha > 0).any():
-            self._last = None
+        self._last = None
+        if self._box is None:
             return None
+        height, width = self.coverage.shape
+        x0, y0, x1, y1 = self._box
+        if self.mode == HEAL:
+            # The healing correction is pinned on the ring just outside the
+            # stroke, so the box takes that ring in.
+            x0, y0, x1, y1 = max(0, x0 - 2), max(0, y0 - 2), min(width, x1 + 2), min(height, y1 + 2)
+        region = np.s_[y0:y1, x0:x1]
+        alpha = self._alpha(region)
+        if not (alpha > 0).any():
+            return None
+        mask = np.zeros((height, width), np.uint8)
         if self.mode == AI:
             # Nothing is blended: the stroke is what the inpainter must fill.
-            self._last = None
-            mask = (alpha > 0).astype(np.uint8) * 255
+            mask[region] = (alpha > 0).astype(np.uint8) * 255
             return PixelEdit(image=self.composite, mask=mask, mappings=self.mappings, mode=self.mode)
-        source = self.source
+        original = self.composite[region]
+        source = self._source(region)
         if self.mode == HEAL:
-            source = paint.heal(self.composite, self.source, alpha > 0, valid=self.source_valid)
-        image = blend(self.composite, source, alpha)
-        changed = np.any(image != self.composite, axis=2)
-        self._last = None
+            valid = None if self.source_valid is None else self.source_valid[region]
+            source = paint.heal(original, source, alpha > 0, valid=valid)
+        blended = blend(original, source, alpha)
+        changed = np.any(blended != original, axis=2)
         if not changed.any():
             return None
-        mask = changed.astype(np.uint8) * 255
+        mask[region] = changed.astype(np.uint8) * 255
+        # The session's composite is its own copy: the stroke is written into it.
+        image = self.composite
+        image[region] = blended
         return PixelEdit(image=image, mask=mask, mappings=self.mappings, mode=self.mode)
 
     def cancel(self) -> None:
@@ -242,6 +268,15 @@ class PixelSession:
     def _radius(self, pressure) -> float:
         return self.diameter / 2.0 * paint.pressure_scale(pressure, self.pressure_size)
 
+    def _source(self, region) -> np.ndarray:
+        """The source pixels under `region` (a flat colour is broadcast)."""
+        if self._colour is not None:
+            y, x = region
+            h = len(range(*y.indices(self.composite.shape[0])))
+            w = len(range(*x.indices(self.composite.shape[1])))
+            return np.broadcast_to(self._colour, (h, w, 3))
+        return self.source[region]
+
     def _alpha(self, region) -> np.ndarray:
         opacity = 1.0 if self.mode == AI else self.opacity
         alpha = self.coverage[region] * opacity
@@ -255,13 +290,18 @@ class PixelSession:
     def _stamp(self, point, pressure) -> None:
         flow = paint.pressure_scale(pressure, self.pressure_flow)
         rect = paint.stamp(self.coverage, point[0], point[1], self._radius(pressure), self.hardness, flow)
-        if rect is None or self.preview is None:
+        if rect is None:
             return
         x0, y0, x1, y1 = rect
+        box = self._box
+        self._box = [x0, y0, x1, y1] if box is None else [
+            min(box[0], x0), min(box[1], y0), max(box[2], x1), max(box[3], y1)]
+        if self.preview is None:
+            return
         region = np.s_[y0:y1, x0:x1]
         alpha = self._alpha(region)
         shown = alpha * AI_PREVIEW_ALPHA if self.mode == AI else alpha
-        rgb = blend(self.composite[region], self.source[region], shown)
+        rgb = blend(self.composite[region], self._source(region), shown)
         try:
             self.preview.put(x0, y0, rgb, alpha)
         except RuntimeError:
