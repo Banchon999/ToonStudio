@@ -146,11 +146,119 @@ def shifted(image: np.ndarray, dx: int, dy: int):
     return out, valid
 
 
-#: Relaxation sweeps for the healing brush's correction. The start is already
-#: a smooth estimate, so this only has to settle it, not build it from zero.
+#: Kept for callers that pass a sweep count; the solver no longer needs one.
 HEAL_ITERATIONS = 400
-#: Text-shaped regions are thin, so the relaxation settles in far fewer steps.
 SMOOTH_FILL_ITERATIONS = 80
+
+#: Sweeps and over-relaxation on every grid above the coarsest. The start is
+#: the coarser grid's answer, so only the fine detail is left to settle.
+MEMBRANE_FINE_SWEEPS = 30
+MEMBRANE_FINE_OMEGA = 1.7
+MEMBRANE_COARSE_SWEEPS = 400
+MEMBRANE_COARSE_OMEGA = 1.85
+#: Stop sweeping once no pixel moves by more than this (grey levels).
+MEMBRANE_TOLERANCE = 0.01
+
+
+def solve_membrane(values: np.ndarray, known: np.ndarray, unknown: np.ndarray) -> np.ndarray:
+    """`values` with the `unknown` pixels replaced by the smoothest surface
+    through the `known` ones (Laplace's equation, per channel).
+
+    Pixels in neither mask take no part: they are not read and do not act as
+    a boundary, so a hole at the image edge is free there rather than pulled
+    towards zero. `values` is (H, W, C) float.
+
+    Solved coarse to fine. The problem is halved until it is tiny, solved
+    there, and each finer grid starts from the coarser answer enlarged, so a
+    few red-black over-relaxed sweeps per grid are enough. Plain relaxation
+    from one grid moves information one pixel per sweep and never settles a
+    wide hole; this does, in a fraction of the time.
+
+    The scheme (cascadic multigrid with SOR) follows PhotoCraft's
+    `crates/algo/src/poisson.rs` (MIT OR Apache-2.0, (c) ArtCraft Team and the
+    PhotoCraft contributors), rewritten for numpy with red-black ordering.
+    """
+    values = np.array(values, dtype=np.float32)
+    known = np.asarray(known, bool) & ~np.asarray(unknown, bool)
+    unknown = np.asarray(unknown, bool)
+    if not unknown.any() or not known.any():
+        return values
+    _membrane(values, known, unknown, 0)
+    return values
+
+
+def _membrane(v: np.ndarray, known: np.ndarray, unknown: np.ndarray, depth: int) -> None:
+    height, width = unknown.shape
+    mean = v[known].mean(axis=0)
+    if height >= 8 and width >= 8 and int(unknown.sum()) > 64 and depth < 16:
+        ch, cw = (height + 1) // 2, (width + 1) // 2
+        pad = ((0, ch * 2 - height), (0, cw * 2 - width))
+        k = np.pad(known, pad).reshape(ch, 2, cw, 2)
+        u = np.pad(unknown, pad).reshape(ch, 2, cw, 2)
+        vv = np.pad(np.where(known[..., None], v, 0.0), pad + ((0, 0),)).reshape(ch, 2, cw, 2, -1)
+        count = k.sum(axis=(1, 3))
+        # A coarse pixel is known when any of its four is, at their mean.
+        coarse_known = count > 0
+        coarse = vv.sum(axis=(1, 3)) / np.maximum(count, 1)[..., None]
+        coarse_unknown = u.any(axis=(1, 3)) & ~coarse_known
+        if coarse_known.any() and coarse_unknown.any():
+            _membrane(coarse, coarse_known, coarse_unknown, depth + 1)
+        # Coarse pixels outside both masks hold nothing; give the enlargement
+        # something neutral to blend with.
+        coarse[~(coarse_known | coarse_unknown)] = mean
+        fy = np.clip((np.arange(height) + 0.5) / 2.0 - 0.5, 0, ch - 1)
+        fx = np.clip((np.arange(width) + 0.5) / 2.0 - 0.5, 0, cw - 1)
+        y0 = np.floor(fy).astype(int); y1 = np.minimum(y0 + 1, ch - 1); ty = (fy - y0)[:, None, None]
+        x0 = np.floor(fx).astype(int); x1 = np.minimum(x0 + 1, cw - 1); tx = (fx - x0)[None, :, None]
+        top = coarse[y0][:, x0] * (1 - tx) + coarse[y0][:, x1] * tx
+        bottom = coarse[y1][:, x0] * (1 - tx) + coarse[y1][:, x1] * tx
+        guess = top * (1 - ty) + bottom * ty
+        v[unknown] = guess[unknown]
+        _relax(v, known, unknown, MEMBRANE_FINE_SWEEPS, MEMBRANE_FINE_OMEGA)
+    else:
+        v[unknown] = mean
+        _relax(v, known, unknown, MEMBRANE_COARSE_SWEEPS, MEMBRANE_COARSE_OMEGA)
+
+
+def _relax(v: np.ndarray, known: np.ndarray, unknown: np.ndarray, sweeps: int, omega: float) -> None:
+    """Red-black successive over-relaxation of the unknown pixels, in place,
+    on the bounding box of the unknown pixels only."""
+    ys, xs = np.nonzero(unknown)
+    height, width = unknown.shape
+    y0, y1 = max(0, int(ys.min()) - 1), min(height, int(ys.max()) + 2)
+    x0, x1 = max(0, int(xs.min()) - 1), min(width, int(xs.max()) + 2)
+    block = v[y0:y1, x0:x1]
+    free = unknown[y0:y1, x0:x1]
+    part = np.pad((known | unknown)[y0:y1, x0:x1].astype(np.float32), 1)
+    count = part[:-2, 1:-1] + part[2:, 1:-1] + part[1:-1, :-2] + part[1:-1, 2:]
+    inner = part[1:-1, 1:-1][..., None]
+    yy, xx = np.indices(free.shape)
+    passes = []
+    for parity in (0, 1):
+        colour = free & (((yy + xx) & 1) == parity) & (count > 0)
+        if colour.any():
+            # Dense weights, zero off this colour: whole-array arithmetic is
+            # several times faster than indexing the pixels out and back.
+            gain = np.where(colour, omega, 0.0).astype(np.float32)[..., None]
+            share = np.where(colour, 1.0 / np.maximum(count, 1.0), 0.0).astype(np.float32)[..., None]
+            passes.append((gain, share))
+    buffer = np.zeros((block.shape[0] + 2, block.shape[1] + 2, block.shape[2]), np.float32)
+    total = np.empty_like(block)
+    for sweep in range(int(sweeps)):
+        for gain, share in passes:
+            # Pixels taking no part count as absent, whatever they hold.
+            np.multiply(block, inner, out=buffer[1:-1, 1:-1])
+            np.add(buffer[:-2, 1:-1], buffer[2:, 1:-1], out=total)
+            total += buffer[1:-1, :-2]
+            total += buffer[1:-1, 2:]
+            total *= share
+            total -= block
+            total *= gain            # zero off this colour, so nothing else moves
+            block += total
+        # Checking costs a pass over the array; every fourth sweep is enough.
+        moved = float(np.abs(total).max()) if sweep % 4 == 3 else np.inf
+        if moved < MEMBRANE_TOLERANCE:
+            break
 
 
 def heal(dest: np.ndarray, source: np.ndarray, region: np.ndarray,
@@ -201,26 +309,9 @@ def heal(dest: np.ndarray, source: np.ndarray, region: np.ndarray,
         # or nothing around it has a source): plain clone.
         corr = np.zeros_like(diff)
     else:
-        corr = _smooth_fill(diff, ring, free)
-        # Average only over neighbours that take part (free or pinned): a
-        # pixel outside both — past the crop, or a corner the ring skips —
-        # must not act as a zero boundary.
-        part = np.pad((free | ring).astype(np.float32), 1)[..., None]
-        count = part[:-2, 1:-1] + part[2:, 1:-1] + part[1:-1, :-2] + part[1:-1, 2:]
-        weight = np.where(free[..., None], 1.0 / np.maximum(count, 1.0), 0.0).astype(np.float32)
-        keep = np.where(free[..., None], 0.0, corr).astype(np.float32)
-        inner = part[1:-1, 1:-1]
-        buffer = np.zeros((corr.shape[0] + 2, corr.shape[1] + 2, corr.shape[2]), np.float32)
-        total = np.empty_like(corr, dtype=np.float32)
-        corr = corr.astype(np.float32)
-        for _ in range(int(iterations)):
-            np.multiply(corr, inner, out=buffer[1:-1, 1:-1])
-            np.add(buffer[:-2, 1:-1], buffer[2:, 1:-1], out=total)
-            total += buffer[1:-1, :-2]
-            total += buffer[1:-1, 2:]
-            # Free pixels take their neighbours' mean; pinned ones keep theirs.
-            np.multiply(total, weight, out=corr)
-            corr += keep
+        # Pixels outside both the ring and the region — past the crop, or a
+        # corner the ring skips — take no part, so they are no zero boundary.
+        corr = solve_membrane(diff, ring, free)
     healed = np.clip(s + corr, 0, 255)
     if dest.ndim == 2:
         healed = healed[..., 0]
@@ -261,31 +352,3 @@ def plane_residual(image: np.ndarray, ring: np.ndarray, percentile: float = 90.0
     coef, *_ = np.linalg.lstsq(design, values, rcond=None)
     residual = np.abs(values - design @ coef).max(axis=1)
     return float(np.percentile(residual, percentile))
-
-
-def _smooth_fill(values: np.ndarray, known: np.ndarray, unknown: np.ndarray) -> np.ndarray:
-    """Fill `unknown` pixels from `known` ones by normalised box blurs that
-    widen until every unknown pixel has seen a known one — a cheap, smooth
-    starting point for the relaxation."""
-    result = np.where(known[..., None], values, 0.0).astype(np.float32)
-    weight = known.astype(np.float32)
-    todo = unknown & ~known
-    radius = 1
-    limit = max(values.shape[:2])
-    while todo.any() and radius <= limit:
-        blurred = _box(result * weight[..., None], radius)
-        norm = _box(weight[..., None], radius)
-        seen = (norm[..., 0] > 1e-6) & todo
-        result[seen] = blurred[seen] / norm[seen]
-        weight = np.where(seen, 1.0, weight)
-        todo &= ~seen
-        radius *= 2
-    return result
-
-
-def _box(values: np.ndarray, radius: int) -> np.ndarray:
-    """Sum over a (2r+1)² window, zero outside, via summed-area tables."""
-    padded = np.pad(values, ((radius + 1, radius), (radius + 1, radius), (0, 0)))
-    table = padded.cumsum(0).cumsum(1)
-    size = 2 * radius + 1
-    return table[size:, size:] - table[:-size, size:] - table[size:, :-size] + table[:-size, :-size]
