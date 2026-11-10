@@ -149,3 +149,97 @@ def test_a_stroke_without_an_id_still_gets_a_row(ct):
     assert _group_row(ct.layers_panel, LayerGroup.STROKES).childCount() == 1
     from app.ui.canvas.scene_registry import object_id_of
     assert object_id_of(stroke)  # stamped, so edits can address it
+
+
+# --- showing one layer alone (Alt+click on the eye, as PhotoCraft and
+# Photoshop do) and the row's right-click menu ---------------------------------
+
+
+def _alt_click(monkeypatch, panel, row):
+    from PySide6 import QtWidgets
+    from PySide6.QtCore import Qt
+
+    monkeypatch.setattr(QtWidgets.QApplication, "keyboardModifiers",
+                        staticmethod(lambda: Qt.KeyboardModifier.AltModifier))
+    panel._on_item_clicked(row, COL_VIS)
+
+
+def test_alt_click_on_an_eye_shows_that_layer_alone_and_again_shows_all(ct, monkeypatch):
+    a = ct.image_viewer.add_text_item(_text_props(text="<p>one</p>"))
+    b = ct.image_viewer.add_text_item(_text_props(text="<p>two</p>", position=(10, 80)))
+    c = ct.image_viewer.add_text_item(_text_props(text="<p>three</p>", position=(10, 150)))
+    box = ct.image_viewer.add_rectangle(QRectF(0, 0, 30, 30), QPointF(200, 200))
+    panel = ct.layers_panel
+    panel.rebuild()
+
+    _alt_click(monkeypatch, panel, _object_row(panel, b.object_id))
+    assert [a.isVisible(), b.isVisible(), c.isVisible()] == [False, True, False]
+    assert box.isVisible()                       # other groups are not touched
+
+    panel.rebuild()
+    _alt_click(monkeypatch, panel, _object_row(panel, b.object_id))
+    assert all(item.isVisible() for item in (a, b, c))
+
+    ct.undo_group.undo()                         # each is one undo step
+    assert [a.isVisible(), b.isVisible(), c.isVisible()] == [False, True, False]
+    ct.undo_group.undo()
+    assert all(item.isVisible() for item in (a, b, c))
+
+
+def test_alt_click_on_a_hidden_layer_shows_it_alone(ct, monkeypatch):
+    a = ct.image_viewer.add_text_item(_text_props(text="<p>one</p>"))
+    b = ct.image_viewer.add_text_item(_text_props(text="<p>two</p>", position=(10, 80)))
+    ct.layer_ctrl.set_object_props([b.object_id], visible=False)
+    panel = ct.layers_panel
+    panel.rebuild()
+    _alt_click(monkeypatch, panel, _object_row(panel, b.object_id))
+    assert not a.isVisible() and b.isVisible()
+
+
+def test_a_lone_layer_has_nothing_to_hide(ct):
+    a = ct.image_viewer.add_text_item(_text_props())
+    assert ct.layer_ctrl.solo(a.object_id) is False
+    assert a.isVisible()
+
+
+def test_alt_click_on_a_group_eye_shows_that_group_over_the_page(ct, monkeypatch):
+    text = ct.image_viewer.add_text_item(_text_props())
+    box = ct.image_viewer.add_rectangle(QRectF(0, 0, 30, 30), QPointF(200, 200))
+    panel = ct.layers_panel
+    panel.rebuild()
+
+    _alt_click(monkeypatch, panel, _group_row(panel, LayerGroup.TEXT))
+    assert text.isVisible() and not box.isVisible()
+    assert ct.image_viewer.photo.isVisible()     # the page stays under it
+
+    panel.rebuild()
+    _alt_click(monkeypatch, panel, _group_row(panel, LayerGroup.TEXT))
+    assert text.isVisible() and box.isVisible()
+
+
+def test_the_row_menu_offers_what_the_row_can_do(ct):
+    a = ct.image_viewer.add_text_item(_text_props(text="<p>one</p>"))
+    b = ct.image_viewer.add_text_item(_text_props(text="<p>two</p>", position=(10, 80)))
+    panel = ct.layers_panel
+    panel.rebuild()
+
+    def pick(row, label):
+        panel.tree.setCurrentItem(row)
+        menu = panel._build_context_menu(row)
+        actions = {act.text(): act for act in menu.actions() if not act.isSeparator()}
+        if label:
+            actions[label].trigger()
+        return list(actions)
+
+    labels = pick(_object_row(panel, a.object_id), "Show Only This Layer")
+    assert labels == ["Hide", "Show Only This Layer", "Lock", "Rename", "Delete"]
+    assert a.isVisible() and not b.isVisible()
+
+    panel.rebuild()
+    pick(_object_row(panel, a.object_id), "Lock")
+    assert ct.layer_ctrl.object_props(a.object_id).locked
+
+    panel.rebuild()
+    assert pick(_group_row(panel, LayerGroup.TEXT), None) == [
+        "Hide Group", "Show Only This Group", "Lock Group"]
+    assert pick(_group_row(panel, LayerGroup.RAW), None) == ["Hide Group"]
