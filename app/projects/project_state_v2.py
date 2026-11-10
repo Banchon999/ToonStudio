@@ -13,6 +13,7 @@ from .parsers import ProjectDecoder, ProjectEncoder, ensure_string_keys
 from .page_state_store import PageStateStore
 from modules.utils.file_handler import ensure_prepared_path_materialized
 from modules.utils.common_utils import new_object_id
+from core import recovery
 from core.layers import DocumentLayers
 
 if TYPE_CHECKING:
@@ -477,6 +478,9 @@ def save_state_to_proj_file_v2(comic_translate: "ComicTranslate", file_name: str
         if use_temp_and_replace:
             conn.close()
     if use_temp_and_replace and temp_db_path is not None:
+        # On disk before it takes the project's name: a rename can survive a
+        # power cut that the bytes it points at did not.
+        recovery.sync_file(temp_db_path)
         os.replace(temp_db_path, file_name)
 
 

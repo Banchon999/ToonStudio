@@ -16,6 +16,7 @@ from PySide6.QtCore import QSettings
 from PySide6.QtGui import QUndoStack
 
 from app.thread_worker import GenericWorker
+from core import recovery
 from app.ui.dayu_widgets.message import MMessage
 from app.ui.canvas.text_item import TextBlockItem
 from app.ui.canvas.text.text_item_properties import TextItemProperties
@@ -55,6 +56,9 @@ class ProjectController:
         # without a toast every 800 ms; a successful save re-arms it.
         self._autosave_failure_reported = False
         self._active_save_workers: list = []  # keeps Python refs alive until workers finish
+        # The open project came from the crash-recovery checkpoint and has not
+        # been saved since.
+        self._restored_from_recovery = False
         self._last_project_dialog_dir = ""
 
     # Recent projects (persisted via QSettings)
@@ -287,12 +291,11 @@ class ProjectController:
         return os.path.join(autosave_dir, f"{base_name}_{fallback_timestamp}.ctpr")
 
     def clear_recovery_checkpoint(self):
-        recovery_file = self._recovery_project_path()
-        if os.path.exists(recovery_file):
-            try:
-                os.remove(recovery_file)
-            except Exception:
-                logger.debug("Failed to remove recovery project file: %s", recovery_file)
+        """Drop the crash-recovery checkpoint. Called when the project is
+        saved or deliberately closed or replaced — never because it was
+        restored (see `restore_recovery_project`)."""
+        recovery.remove(self._recovery_project_path())
+        self._restored_from_recovery = False
 
     def _on_autosave_timeout(self):
         # Interval timer is reserved for recovery checkpoints.
@@ -428,6 +431,9 @@ class ProjectController:
             return
 
         is_regular_project_save = bool(self.main.project_file and target_file == self.main.project_file)
+        # A project restored from a checkpoint and not saved since still
+        # belongs to the file it was recovered for.
+        recovery_original = self.main.project_file
         autosave_start_revision = self.main._dirty_revision
         self._autosave_save_pending = True
         # run_threaded calls finished after an error too. Treating that as a
@@ -451,6 +457,14 @@ class ProjectController:
             if save_failed["value"]:
                 return  # nothing was written: the work stays unsaved
             self._autosave_failure_reported = False
+            if not is_regular_project_save:
+                # Say what this checkpoint is of, so restoring it can put the
+                # work back under its own project file.
+                try:
+                    recovery.write_info(target_file, recovery.new_info(
+                        recovery_original, len(self.main.image_files)))
+                except Exception:
+                    logger.debug("Could not write the recovery sidecar.", exc_info=True)
             if is_regular_project_save:
                 self.clear_recovery_checkpoint()
                 self.add_recent_project(target_file)
@@ -465,7 +479,10 @@ class ProjectController:
 
         self.main.run_threaded(self.save_project, None, on_error, on_finished, target_file)
 
-    def prompt_restore_recovery_if_available(self) -> bool:
+    def prompt_restore_recovery_if_available(self, opening: str | None = None) -> bool:
+        """Offer the crash-recovery checkpoint, if there is one. `opening` is
+        a project file about to be opened instead: the offer is made first,
+        because opening it would otherwise discard the checkpoint unasked."""
         if self.main.image_files:
             return False
 
@@ -473,17 +490,25 @@ class ProjectController:
         if not os.path.exists(recovery_file):
             return False
 
-        saved_at = datetime.fromtimestamp(os.path.getmtime(recovery_file)).strftime("%Y-%m-%d %H:%M:%S")
+        info = recovery.read_info(recovery_file)
+        saved_at = datetime.fromtimestamp(info.saved_at).strftime("%Y-%m-%d %H:%M:%S")
 
         msg_box = QtWidgets.QMessageBox(self.main)
         msg_box.setIcon(QtWidgets.QMessageBox.Question)
         msg_box.setWindowTitle(self.main.tr("Project Recovery"))
         msg_box.setText(self.main.tr("An autosaved project from a previous session was found."))
-        msg_box.setInformativeText(
-            self.main.tr("Last autosave: {saved_at}\nDo you want to restore it?").format(saved_at=saved_at)
-        )
+        lines = []
+        if info.document_name:
+            lines.append(self.main.tr("Project: {name}").format(name=info.document_name))
+        if info.pages:
+            lines.append(self.main.tr("Pages: {count}").format(count=info.pages))
+        lines.append(self.main.tr("Last autosave: {saved_at}\nDo you want to restore it?").format(saved_at=saved_at))
+        msg_box.setInformativeText("\n".join(lines))
         restore_btn = msg_box.addButton(self.main.tr("Restore"), QtWidgets.QMessageBox.ButtonRole.AcceptRole)
         discard_btn = msg_box.addButton(self.main.tr("Discard"), QtWidgets.QMessageBox.ButtonRole.DestructiveRole)
+        if opening:
+            # Neither restores nor discards: the copy is offered again next time.
+            msg_box.addButton(self.main.tr("Not Now"), QtWidgets.QMessageBox.ButtonRole.RejectRole)
         msg_box.setDefaultButton(restore_btn)
         msg_box.exec()
 
@@ -501,8 +526,14 @@ class ProjectController:
         if not os.path.exists(recovery_file):
             return
 
+        info = recovery.read_info(recovery_file)
+        # Back under its own file when that file is still there; otherwise an
+        # unsaved project the user gives a destination.
+        original = info.original_path if info.original_path and os.path.isfile(info.original_path) else None
+        title = os.path.basename(original) if original else self.main.tr('RecoveredProject.ctpr')
+
         self.main.image_ctrl.clear_state()
-        self.main.setWindowTitle(f"{self.main.tr('RecoveredProject.ctpr')}[*]")
+        self.main.setWindowTitle(f"{title}[*]")
 
         load_failed = {"value": False}
 
@@ -514,11 +545,14 @@ class ProjectController:
             if load_failed["value"]:
                 return
             self.update_ui_from_project()
-            # Keep recovered data as an unsaved project so users can choose a destination.
-            self.main.project_file = None
-            self.main.setWindowTitle(f"{self.main.tr('RecoveredProject.ctpr')}[*]")
+            self.main.project_file = original
+            self._restored_from_recovery = True
+            self.main.setWindowTitle(f"{title}[*]")
             self.main.mark_project_dirty()
-            self.clear_recovery_checkpoint()
+            # The checkpoint stays on disk. It used to be deleted here, so a
+            # second crash before the next checkpoint (up to the auto-save
+            # interval later) lost everything that had just been recovered.
+            # Saving the project, or closing it, removes it.
 
         self.main.run_threaded(
             self.load_project,

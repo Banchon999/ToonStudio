@@ -215,7 +215,7 @@ def main():
             self._pending_project_file: str | None = None
 
         @Slot(str)
-        def request_open_project(self, path: str):
+        def request_open_project(self, path: str, clear_recovery: bool = True):
             if not path:
                 return
             if not path.lower().endswith(".ctpr"):
@@ -229,7 +229,7 @@ def main():
                         return
                 except Exception:
                     pass
-                self._ct.project_ctrl.thread_load_project(norm)
+                self._ct.project_ctrl.thread_load_project(norm, clear_recovery=clear_recovery)
             else:
                 self._pending_project_file = norm
 
@@ -276,13 +276,14 @@ def main():
 
                 splash.finish(self._ct)
 
-                if project_file:
-                    self.request_open_project(project_file)
-                elif self._pending_project_file:
-                    self.request_open_project(self._pending_project_file)
-                else:
-                    # Offer recovery only on plain startup (no explicit project open request).
-                    self._ct.project_ctrl.prompt_restore_recovery_if_available()
+                # A crash is usually followed by double-clicking the project
+                # again, and opening it used to delete the recovery checkpoint
+                # unasked. The offer comes first; declining it without
+                # discarding leaves the checkpoint for next time.
+                opening = project_file or self._pending_project_file
+                restored = self._ct.project_ctrl.prompt_restore_recovery_if_available(opening=opening)
+                if opening and not restored:
+                    self.request_open_project(opening, clear_recovery=False)
             except Exception as e:
                 logging.error(f"Error during UI initialization: {e}")
                 splash.close()
