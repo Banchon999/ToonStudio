@@ -102,16 +102,22 @@ class TestItem:
         # The white outline is still there, between the fill and the black ring.
         assert count(drawn, (255, 255, 255)) > 300
 
-    def test_a_thick_stroke_has_no_gaps(self, item):
+    def test_a_thick_stroke_has_no_gaps(self, item, monkeypatch):
         """Stroked from the glyph outlines, not faked with 16 offset copies:
         the ring must be solid, so the letters' counters fill in rather than
         showing grey specks between copies."""
+        # This is the Qt painter's stroke, measured against Qt's own layout.
+        # It used to pass whatever drew the text: the glyph path came back
+        # empty before the item's first paint, so the box checked was empty.
+        from app.ui.canvas import skia_paint
+        monkeypatch.setattr(skia_paint.text_engine, "paints_with_skia", lambda: False)
         item.set_outline(None, 0)
         item.set_stroke_layers([("#ff000000", 14)])
         image = render(item)
         grey = QColor(Qt.GlobalColor.gray)
         box = item.document_glyph_path().boundingRect().translated(60, 60)
         inner = box.adjusted(4, 4, -4, -4)
+        assert inner.width() > 100 and inner.height() > 10      # a real box, not an empty one
         speckles = 0
         for y in range(int(inner.top()), int(inner.bottom())):
             for x in range(int(inner.left()), int(inner.right())):

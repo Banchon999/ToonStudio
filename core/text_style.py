@@ -27,6 +27,12 @@ class OutlineType(Enum):
     Selection = 'selection'
 
 
+#: Outlines wider than this (pixels) are drawn in three passes of decreasing
+#: width by both painters, to cover the pinhole a wide stroke leaves beside a
+#: small contour.
+WIDE_OUTLINE = 4.0
+
+
 @dataclass
 class OutlineInfo:
     """One outlined range of a text item.

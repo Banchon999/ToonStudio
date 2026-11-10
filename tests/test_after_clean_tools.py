@@ -104,6 +104,61 @@ class TestOcrAfterClean:
         assert (seen[0][LETTERING] == 20).all(), "OCR was handed the page with its lettering"
         assert window.blk_list[0].text == "read"
 
+    def test_ocr_runs_after_the_boxes_left_the_canvas(self, window, monkeypatch):
+        """Segment and Render take the boxes off the page and keep the blocks.
+        OCR needed the boxes, so after Clean the button did nothing, and the
+        only way to read the page again was to undo back to before it."""
+        add_box(window, [100, 100, 200, 140])
+        clean(window, (95, 95, 110, 50))
+        window.image_viewer.clear_rectangles(page_switch=True)   # gone, as after Segment
+        assert window.blk_list and not window.image_viewer.rectangles
+        seen = self.capture_ocr(monkeypatch)
+        window.pipeline.OCR_image()
+        assert seen, "OCR ran without its boxes on the canvas"
+        assert window.blk_list[0].text == "read"
+
+    def test_the_ocr_button_puts_the_boxes_back(self, qapp, window, monkeypatch):
+        from app.controllers import manual_workflow
+
+        add_box(window, [100, 100, 200, 140])
+        window.image_viewer.clear_rectangles(page_switch=True)
+        assert not window.image_viewer.rectangles
+        seen = self.capture_ocr(monkeypatch)
+        monkeypatch.setattr(manual_workflow, "validate_ocr", lambda *a, **k: True)
+        window.ocr()
+        assert len(window.image_viewer.rectangles) == 1  # back at once, on the GUI thread
+        assert _pump_until(qapp, lambda: bool(seen) and window.blk_list[0].text == "read")
+
+    def test_pressing_ocr_again_reads_again(self, window, monkeypatch):
+        """With every block already holding what the cache has, serving the
+        cache changes nothing: "I press it again and it does not read"."""
+        add_box(window, [100, 100, 200, 140])
+        seen = self.capture_ocr(monkeypatch)
+        window.pipeline.OCR_image()
+        assert len(seen) == 1
+        window.pipeline.OCR_image()
+        assert len(seen) == 2, "the second press read the page again"
+
+    def test_a_page_reopened_with_empty_boxes_still_uses_the_cache(self, window, monkeypatch):
+        """The cache still saves a real run when it has something to give."""
+        blk = add_box(window, [100, 100, 200, 140])
+        seen = self.capture_ocr(monkeypatch)
+        window.pipeline.OCR_image()
+        blk.text = ""                                   # boxes detected again, nothing read yet
+        window.pipeline.OCR_image()
+        assert len(seen) == 1 and blk.text == "read"
+
+    def test_reading_one_box_again_reads_it(self, window, monkeypatch):
+        """The box's own OCR action returned without doing anything once the
+        box had text — the case it is used for."""
+        blk = add_box(window, [100, 100, 200, 140])
+        seen = self.capture_ocr(monkeypatch)
+        window.pipeline.OCR_image()
+        blk.text = "rea"                                # incomplete, as the user sees it
+        monkeypatch.setattr(window.pipeline, "get_selected_block", lambda: blk)
+        window.pipeline.OCR_image(single_block=True)
+        assert len(seen) == 2 and blk.text == "read"
+
     def test_ocr_in_webtoon_mode_reads_the_lettering_too(self, qapp, tmp_path, monkeypatch):
         from PIL import Image
 

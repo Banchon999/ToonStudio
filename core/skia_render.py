@@ -50,6 +50,7 @@ from core.skia_text import (
     unavailable_reason,
 )
 from core.text_measure import TextStyle
+from core import text_style
 
 #: 64 megapixels — 256 MB at RGBA8888. Comfortably above any single text block
 #: and far below a full webtoon strip.
@@ -100,6 +101,7 @@ MAX_RENDER_SCALE = 3.0
 #: shape as a change in amount — which is how these shadows were first, wrongly,
 #: reported as 18-29% too diffuse.
 SHADOW_BLUR_TO_SIGMA = 0.15
+
 
 
 class SurfaceTooLarge(ValueError):
@@ -397,9 +399,9 @@ class SkiaTextRenderer:
             for outline in sorted(line_spec.outlines, key=lambda o: o.width, reverse=True):
                 if outline.width <= 0:
                     continue
-                self._paint_pass(canvas, line_spec, x, y, layout_width,
-                                 self._outline_paint(outline), ink=outline.color,
-                                 outline=outline)
+                for paint in self._outline_paints(outline):
+                    self._paint_pass(canvas, line_spec, x, y, layout_width,
+                                     paint, ink=outline.color, outline=outline)
             painted = self._paint_pass(canvas, line_spec, x, y, layout_width,
                                        self._fill_paint(spec), ink=spec.fill_color,
                                        run_colors=True)
@@ -511,12 +513,27 @@ class SkiaTextRenderer:
             paint.setColor(_skia_color(spec.fill_color))
         return paint
 
-    def _outline_paint(self, outline: OutlineLayer):
+    def _outline_paints(self, outline: OutlineLayer):
+        """The paints that together draw one outline.
+
+        One stroke is the whole outline up to a few pixels. A stroke much
+        wider than a small contour (the dot of "!", a Thai tone mark) leaves
+        a pinhole beside it — in Qt's stroker as in Skia's — so a wide
+        outline is drawn again at two-thirds and one-third of its width, in
+        the same colour, which covers it.
+        """
+        scales = (1.0,) if outline.width <= text_style.WIDE_OUTLINE else (1.0, 2.0 / 3.0, 1.0 / 3.0)
+        return [self._outline_paint(outline, scale) for scale in scales]
+
+    def _outline_paint(self, outline: OutlineLayer, scale: float = 1.0):
         paint = skia.Paint(AntiAlias=True)
-        paint.setStyle(skia.Paint.kStroke_Style)
+        # Stroke *and* fill: stroked alone, a contour smaller than the stroke
+        # (the dot of "!" under a 14 px outline) turns its inner edge inside
+        # out and leaves a hole the fill on top does not cover.
+        paint.setStyle(skia.Paint.kStrokeAndFill_Style)
         # Doubled: Skia centres the stroke on the contour, so only half shows
         # once the fill lands on top. See the module docstring.
-        paint.setStrokeWidth(float(outline.width) * 2.0)
+        paint.setStrokeWidth(float(outline.width) * 2.0 * scale)
         paint.setStrokeJoin(skia.Paint.kRound_Join)
         paint.setColor(_skia_color(outline.color, default=(255, 255, 255, 255)))
         return paint
@@ -607,9 +624,9 @@ class SkiaTextRenderer:
                                       key=lambda o: o.width, reverse=True):
                     if outline.width <= 0:
                         continue
-                    self._paint_pass(canvas, cluster_spec, x, y, cluster_layout_w,
-                                     self._outline_paint(outline), ink=outline.color,
-                                     outline=outline)
+                    for paint in self._outline_paints(outline):
+                        self._paint_pass(canvas, cluster_spec, x, y, cluster_layout_w,
+                                         paint, ink=outline.color, outline=outline)
                 self._paint_pass(canvas, cluster_spec, x, y, cluster_layout_w,
                                  self._fill_paint(cluster_spec), ink=spec.fill_color,
                                  run_colors=True)
