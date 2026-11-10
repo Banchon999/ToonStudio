@@ -19,16 +19,22 @@ SETTINGS_GROUP = "chapter_queue"
 
 
 def status_label(status: str) -> str:
-    tr = QtCore.QCoreApplication.translate
-    return {
-        cq.PENDING: tr("ChapterQueueDialog", "Waiting"),
-        cq.RUNNING: tr("ChapterQueueDialog", "Working…"),
-        cq.DONE: tr("ChapterQueueDialog", "Done"),
-        cq.REVIEW: tr("ChapterQueueDialog", "Done — review"),
-        cq.FAILED: tr("ChapterQueueDialog", "Failed"),
-        cq.SKIPPED: tr("ChapterQueueDialog", "Already done"),
-        cq.STOPPED: tr("ChapterQueueDialog", "Stopped"),
-    }.get(status, status)
+    # Spelled out each time: lupdate misfiles an aliased translate().
+    if status == cq.PENDING:
+        return QtCore.QCoreApplication.translate("ChapterQueueDialog", "Waiting")
+    if status == cq.RUNNING:
+        return QtCore.QCoreApplication.translate("ChapterQueueDialog", "Working…")
+    if status == cq.DONE:
+        return QtCore.QCoreApplication.translate("ChapterQueueDialog", "Done")
+    if status == cq.REVIEW:
+        return QtCore.QCoreApplication.translate("ChapterQueueDialog", "Done — review")
+    if status == cq.FAILED:
+        return QtCore.QCoreApplication.translate("ChapterQueueDialog", "Failed")
+    if status == cq.SKIPPED:
+        return QtCore.QCoreApplication.translate("ChapterQueueDialog", "Already done")
+    if status == cq.STOPPED:
+        return QtCore.QCoreApplication.translate("ChapterQueueDialog", "Stopped")
+    return status
 
 
 class ChapterQueueDialog(QtWidgets.QDialog):

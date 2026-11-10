@@ -126,9 +126,13 @@ def test_three_chapters_become_three_projects_with_their_own_pages(window, qapp)
     assert len(win.image_files) == 2
     texts = sorted(b.translation for p in win.image_files for b in win.image_states.blk_list(p))
     assert texts == ["แปล:글자5", "แปล:글자6"]
-    # The exported page carries the cleaning: the fake lettering went white.
+    # The exported page is the finished one: the fake lettering (a flat block
+    # of grey 20) was cleaned away and the translation drawn in its place.
+    source = np.asarray(Image.open(os.path.join(series, "ep 1", "00.png")).convert("RGB"))
     page = np.asarray(Image.open(os.path.join(out, "ep 1", "00.png")).convert("RGB"))
-    assert page[40, 80].min() > 200
+    assert (source[30:50, 30:130] == 20).all(axis=-1).sum() == 2000
+    assert (page[30:50, 30:130] == 20).all(axis=-1).sum() < 200
+    assert not np.array_equal(page, source)
     progress = cq.load_progress(out)
     assert {k: v["status"] for k, v in progress.items()} == {"ep 1": "done", "ep 2": "done", "ep 10": "done"}
     assert finished and finished[-1][0][:4] == (3, 0, 0, 0)

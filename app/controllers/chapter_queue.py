@@ -99,6 +99,26 @@ class ChapterQueueController(QtCore.QObject):
         self._next()
         return True
 
+    def _preflight(self, mode: str) -> bool:
+        """The settings every chapter will need, checked once before the first.
+
+        Each check shows its own message, as the run buttons do; a key or a
+        font missing at chapter 1 would be missing at chapter 20 too.
+        """
+        main = self.main
+        if mode == MODE_SMART:
+            from app.controllers.smart_workflow import load_order
+            from core.smart_workflow import validate
+            from app.ui.messages import Messages
+            steps = [s for s, enabled in load_order() if enabled]
+            blocking = [p for p in validate(steps) if p.blocking]
+            if blocking or not steps:
+                Messages.show_smart_workflow_invalid(main, "; ".join(p.message for p in blocking))
+                return False
+            return main.smart_ctrl._preflight(steps)
+        from app import validation
+        return bool(validation.validate_settings(main, main.t_combo.currentText()))
+
     def cancel(self) -> None:
         """Stop after saving what the current chapter has so far."""
         if not self.running:
