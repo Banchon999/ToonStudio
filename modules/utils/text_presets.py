@@ -47,6 +47,7 @@ class TextPreset:
     underline: Optional[bool] = None
     line_spacing: Optional[float] = None
     letter_spacing: Optional[float] = None
+    horizontal_scale: Optional[float] = None
     outline: Optional[bool] = None
     outline_color: Optional[str] = None
     outline_width: Optional[float] = None

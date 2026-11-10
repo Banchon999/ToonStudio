@@ -553,6 +553,8 @@ class ImageViewer(QGraphicsView):
         # Text effects
         if properties.letter_spacing:
             item.set_letter_spacing(properties.letter_spacing)
+        if properties.horizontal_scale != 100.0:
+            item.set_horizontal_scale(properties.horizontal_scale)
         item.set_shadow(
             properties.shadow_enabled,
             properties.shadow_color,

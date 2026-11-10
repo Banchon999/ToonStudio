@@ -52,6 +52,8 @@ def build_text_item(text_block: dict) -> TextBlockItem:
     text_item.selection_outlines = text_props.selection_outlines.copy()
     if text_props.letter_spacing:
         text_item.set_letter_spacing(text_props.letter_spacing)
+    if text_props.horizontal_scale != 100.0:
+        text_item.set_horizontal_scale(text_props.horizontal_scale)
     text_item.set_shadow(
         text_props.shadow_enabled,
         text_props.shadow_color,
@@ -308,6 +310,8 @@ class ImageSaveRenderer:
             # the height is measured. The shadow does not affect layout.
             if text_props.letter_spacing:
                 text_item.set_letter_spacing(text_props.letter_spacing)
+            if text_props.horizontal_scale != 100.0:
+                text_item.set_horizontal_scale(text_props.horizontal_scale)
             return float(text_item.boundingRect().height())
         except Exception:
             return None

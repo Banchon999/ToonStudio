@@ -58,6 +58,8 @@ def apply_preset_to_item(item, preset: TextPreset, only=None) -> None:
         item.set_line_spacing(float(values["line_spacing"]))
     if "letter_spacing" in values:
         item.set_letter_spacing(float(values["letter_spacing"]))
+    if "horizontal_scale" in values:
+        item.set_horizontal_scale(float(values["horizontal_scale"]))
 
     if values.get("outline") is False:
         item.set_outline(None, 0)
@@ -102,6 +104,7 @@ def preset_from_item(item, name: str) -> TextPreset:
         underline=bool(item.underline),
         line_spacing=float(item.line_spacing),
         letter_spacing=float(getattr(item, "letter_spacing", 0.0) or 0.0),
+        horizontal_scale=float(getattr(item, "horizontal_scale", 100.0) or 100.0),
         outline=bool(item.outline),
         outline_color=_hex(item.outline_color) if item.outline else None,
         outline_width=float(item.outline_width) if item.outline else None,

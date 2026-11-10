@@ -265,6 +265,13 @@ class WorkspaceMixin:
         self.letter_spacing_dropdown.setFixedWidth(60)
         self.letter_spacing_dropdown.set_editable(True)
 
+        self.horizontal_scale_dropdown = MComboBox().small()
+        self.horizontal_scale_dropdown.setToolTip(self.tr(
+            "Horizontal Scale (%): below 100 condenses the letters, so more fits on a line"))
+        self.horizontal_scale_dropdown.addItems(["100", "95", "90", "85", "80", "75", "110", "120"])
+        self.horizontal_scale_dropdown.setFixedWidth(60)
+        self.horizontal_scale_dropdown.set_editable(True)
+
         # Two rows, so the controls fit the one-column inspector: the face,
         # then its metrics.
         self.font_dropdown.setMinimumWidth(120)
@@ -275,6 +282,7 @@ class WorkspaceMixin:
         font_metrics_layout.addWidget(self.font_size_dropdown)
         font_metrics_layout.addWidget(self.line_spacing_dropdown)
         font_metrics_layout.addWidget(self.letter_spacing_dropdown)
+        font_metrics_layout.addWidget(self.horizontal_scale_dropdown)
         font_metrics_layout.addStretch()
 
         main_text_settings_layout = QtWidgets.QHBoxLayout()

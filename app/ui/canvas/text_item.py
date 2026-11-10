@@ -99,6 +99,8 @@ class TextBlockItem(QGraphicsTextItem):
 
         # Text effects
         self.letter_spacing = 0.0
+        # Glyph width as a percentage of the font's own (100 = as designed).
+        self.horizontal_scale = 100.0
         self.shadow_enabled = False
         self.shadow_color = QColor(0, 0, 0, 160)
         self.shadow_offset = (4.0, 4.0)
@@ -349,7 +351,31 @@ class TextBlockItem(QGraphicsTextItem):
             font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, self.letter_spacing)
         else:
             font.setLetterSpacing(QFont.SpacingType.PercentageSpacing, 100.0)
+        # The horizontal scale lives on the font too, and is dropped the same way.
+        font.setStretch(int(round(getattr(self, "horizontal_scale", 100.0) or 100.0)))
         return font
+
+    #: How far glyphs may be squeezed or widened. Past these a face stops
+    #: looking condensed and starts looking broken.
+    MIN_HORIZONTAL_SCALE = 50.0
+    MAX_HORIZONTAL_SCALE = 200.0
+
+    def set_horizontal_scale(self, percent: float):
+        """Glyph width as a percentage of the font's own: below 100 condenses
+        the lettering (more words per line in a narrow bubble, at full
+        height), above widens it. Item-wide; 100 is the face as designed.
+
+        The Character panel's horizontal scale in PhotoCraft and Photoshop.
+        """
+        try:
+            percent = float(percent)
+        except (TypeError, ValueError):
+            return
+        if percent != percent:                       # NaN
+            return
+        self.horizontal_scale = min(self.MAX_HORIZONTAL_SCALE, max(self.MIN_HORIZONTAL_SCALE, percent))
+        self.apply_letter_spacing()
+        self.update()
 
     def set_letter_spacing(self, spacing: float):
         """Extra space between characters in points; 0 restores the font's own."""

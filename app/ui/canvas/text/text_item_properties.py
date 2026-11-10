@@ -40,6 +40,8 @@ class TextItemProperties:
     
     # Text effects
     letter_spacing: float = 0.0
+    # Glyph width in percent of the font's own; 100 = as designed.
+    horizontal_scale: float = 100.0
     shadow_enabled: bool = False
     shadow_color: Optional[QColor] = None
     shadow_offset: tuple = (4.0, 4.0)
@@ -132,6 +134,10 @@ class TextItemProperties:
         
         # Text effects
         props.letter_spacing = data.get('letter_spacing', 0.0)
+        try:
+            props.horizontal_scale = float(data.get('horizontal_scale', 100.0) or 100.0)
+        except (TypeError, ValueError):
+            props.horizontal_scale = 100.0
         props.shadow_enabled = bool(data.get('shadow_enabled', False))
         if 'shadow_color' in data:
             if isinstance(data['shadow_color'], QColor):
@@ -203,6 +209,7 @@ class TextItemProperties:
         
         # Text effects
         props.letter_spacing = getattr(item, 'letter_spacing', 0.0)
+        props.horizontal_scale = float(getattr(item, 'horizontal_scale', 100.0) or 100.0)
         props.shadow_enabled = bool(getattr(item, 'shadow_enabled', False))
         props.shadow_color = getattr(item, 'shadow_color', None)
         props.shadow_offset = getattr(item, 'shadow_offset', (4.0, 4.0))
@@ -261,6 +268,8 @@ class TextItemProperties:
             out['layer'] = self.layer
         if self.stroke_layers:
             out['stroke_layers'] = stroke_layers_payload(self.stroke_layers)
+        if self.horizontal_scale and abs(self.horizontal_scale - 100.0) > 1e-6:
+            out['horizontal_scale'] = self.horizontal_scale
         if self.quad:
             out['quad'] = [list(corner) for corner in self.quad]
         if self.warp_style and self.warp_bend:
