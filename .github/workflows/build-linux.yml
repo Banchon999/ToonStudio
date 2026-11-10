@@ -7,7 +7,10 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
+    # A named release, not ubuntu-latest. When that label moved to 26.04 the
+    # job died in "Set up Python" (setup-python has no 3.14.5 build for 26.04),
+    # and a bundle built there would need 26.04's glibc to start at all.
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
