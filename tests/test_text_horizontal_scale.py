@@ -13,6 +13,17 @@ from PySide6.QtGui import QColor, QImage, QPainter
 from PySide6.QtWidgets import QStyleOptionGraphicsItem
 
 
+@pytest.fixture(autouse=True)
+def _engine_as_found():
+    """A window switches the process-wide text engine to the one in its
+    settings; the files after this one expect to find it as they left it."""
+    from core import text_engine
+
+    before = text_engine.engine()
+    yield
+    text_engine.set_engine(before)
+
+
 @pytest.fixture
 def item(qapp):
     from app.ui.canvas.text_item import TextBlockItem
