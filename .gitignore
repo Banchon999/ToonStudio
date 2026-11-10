@@ -33,3 +33,4 @@ scripts/*
 !scripts/check_psd_in_photopea.py
 !scripts/build_icons.py
 !scripts/build_brand.py
+!scripts/make_ocr_pack.py

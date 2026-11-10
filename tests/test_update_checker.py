@@ -138,12 +138,14 @@ def _published_assets():
     ("Darwin", "ToonStudio-macOS-arm64.dmg"),
 ])
 def test_every_os_finds_its_own_archive_in_a_release(system, expected):
-    url = update_checker.choose_asset(_published_assets(), system)
+    # An unzipped Windows copy; the installed one is tested below.
+    url = update_checker.choose_asset(_published_assets(), system, installed=system != "Windows")
     assert url == f"https://dl.invalid/{expected}"
 
 
 def test_an_installer_wins_over_an_archive_and_macos_needs_one():
-    assets = _published_assets() + [{"name": "ToonStudio-Setup.exe", "browser_download_url": "https://dl.invalid/setup"}]
+    archives = [a for a in _published_assets() if not a["name"].endswith(".exe")]
+    assets = archives + [{"name": "ToonStudio-Setup.exe", "browser_download_url": "https://dl.invalid/setup"}]
     assert update_checker.choose_asset(assets, "Windows") == "https://dl.invalid/setup"
     # A release without the DMG (v3.0.0 went out without one): macOS is told
     # there is nothing for it rather than offered another OS's archive.
@@ -156,15 +158,15 @@ def test_each_windows_build_is_updated_with_its_own_kind():
     # offered the PyTorch one, nor the full build be "updated" into a lean one.
     assets = _published_assets()
     assert any("-full" in a["name"] for a in assets), "release.yml publishes the full build"
-    lean = update_checker.choose_asset(assets, "Windows", full=False)
-    full = update_checker.choose_asset(assets, "Windows", full=True)
+    lean = update_checker.choose_asset(assets, "Windows", full=False, installed=False)
+    full = update_checker.choose_asset(assets, "Windows", full=True, installed=False)
     assert lean == "https://dl.invalid/ToonStudio-Windows-x86_64.zip"
     assert full == "https://dl.invalid/ToonStudio-Windows-x86_64-full.zip"
     # A release without the full archive still updates a full build.
     without = [a for a in assets if "-full" not in a["name"]]
-    assert update_checker.choose_asset(without, "Windows", full=True) == lean
+    assert update_checker.choose_asset(without, "Windows", full=True, installed=False) == lean
     # Whichever order GitHub lists them in.
-    assert update_checker.choose_asset(list(reversed(assets)), "Windows") == lean
+    assert update_checker.choose_asset(list(reversed(assets)), "Windows", installed=False) == lean
 
 
 def test_the_dmg_is_opened_not_revealed():
@@ -217,3 +219,35 @@ def test_an_installer_is_still_run(monkeypatch):
     assert update_checker.is_installer("setup.exe", "Windows")
     update_checker.UpdateChecker().run_installer("setup.exe")
     assert launched == ["setup.exe"]
+
+
+def test_an_unzipped_windows_copy_keeps_updating_from_the_zip(tmp_path):
+    """Every release now has a Windows installer. A copy someone unzipped must
+    not be "updated" by installing a second copy elsewhere; an installed one
+    gets the installer."""
+    assets = _published_assets()
+    setup = [a["name"] for a in assets if a["name"].endswith(".exe")]
+    assert setup == ["ToonStudio-Setup-x64.exe"], "release.yml publishes the installer"
+    assert update_checker.choose_asset(assets, "Windows", installed=True) == f"https://dl.invalid/{setup[0]}"
+    assert update_checker.choose_asset(assets, "Windows", installed=False) == \
+        "https://dl.invalid/ToonStudio-Windows-x86_64.zip"
+    assert update_checker.choose_asset(assets, "Windows", full=True, installed=False) == \
+        "https://dl.invalid/ToonStudio-Windows-x86_64-full.zip"
+
+    exe = tmp_path / "ToonStudio.exe"
+    exe.write_bytes(b"")
+    assert not update_checker.is_installed_copy(str(exe))
+    (tmp_path / "unins000.exe").write_bytes(b"")
+    assert update_checker.is_installed_copy(str(exe))
+
+
+def test_the_installers_ocr_pack_is_never_offered_as_the_app():
+    assets = _published_assets()
+    pack = [a for a in assets if "ocr-pack" in a["name"]]
+    assert pack, "release.yml publishes the OCR pack with the installer"
+    for order in (assets, list(reversed(assets)), pack + assets):
+        for full in (False, True):
+            url = update_checker.choose_asset(order, "Windows", full=full, installed=False)
+            assert "ocr-pack" not in url
+    # Even when it is the only zip there.
+    assert update_checker.choose_asset(pack, "Windows", installed=False) is None

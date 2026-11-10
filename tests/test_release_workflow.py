@@ -31,23 +31,27 @@ def test_every_workflow_the_release_calls_can_be_called():
     release = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
     called = re.findall(r"uses:\s*\./\.github/workflows/([\w.-]+\.yml)", release)
     assert set(called) == {"test.yml", "build-windows.yml", "build-windows-full.yml",
-                           "build-linux.yml", "build-macos-dmg.yml"}
+                           "build-windows-installer.yml", "build-linux.yml", "build-macos-dmg.yml"}
     for name in called:
         text = (WORKFLOWS / name).read_text(encoding="utf-8")
         assert re.search(r"^\s+workflow_call:", text, re.M), f"{name} cannot be called by release.yml"
-        # The manual button stays.
-        assert "workflow_dispatch" in text, name
+        # The manual button stays. The installer has none: it packages the
+        # two Windows builds of the run that calls it and builds nothing itself.
+        if name != "build-windows-installer.yml":
+            assert "workflow_dispatch" in text, name
 
 
 def test_the_release_publishes_exactly_what_the_builds_upload():
     release = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
     published = set(re.findall(r"dist/(ToonStudio-[\w.-]+)", release))
     built = set()
-    for name in ("build-windows.yml", "build-windows-full.yml", "build-linux.yml", "build-macos-dmg.yml"):
+    for name in ("build-windows.yml", "build-windows-full.yml", "build-windows-installer.yml",
+                 "build-linux.yml", "build-macos-dmg.yml"):
         text = (WORKFLOWS / name).read_text(encoding="utf-8")
-        upload = text[text.index("upload-artifact"):]
-        built |= set(re.findall(r"path:\s*dist/(ToonStudio-[\w.-]+)", upload))
-    assert published == built and len(built) == 4
+        upload = text[text.rindex("upload-artifact"):]
+        # One path, or several under "path: |" (the installer and its pack).
+        built |= set(re.findall(r"^\s*(?:path:\s*)?dist/(ToonStudio-[\w.-]+)\s*$", upload, re.M))
+    assert published == built and len(built) == 6
 
 
 def test_the_release_runs_on_a_version_tag_or_by_hand_never_on_its_own():
@@ -158,3 +162,36 @@ def test_the_linux_build_runs_on_a_named_ubuntu_release():
     text = (WORKFLOWS / "build-linux.yml").read_text(encoding="utf-8")
     runner = re.search(r"^\s+runs-on:\s*(\S+)", text, re.M).group(1)
     assert re.fullmatch(r"ubuntu-\d\d\.\d\d", runner), runner
+
+
+def test_the_windows_installer_is_optional_proven_and_goes_out_with_its_pack():
+    """The installer is made from the two Windows builds of the same run, is
+    tested by installing it, and is published with the OCR pack it downloads
+    or not at all — an installer whose download is missing fails for whoever
+    ticks the component."""
+    release = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
+    job = release.split("\n  installer:\n", 1)[1].split("\n  linux:\n", 1)[0]
+    assert "needs: [check, windows, windows_full]" in job
+    assert "tag: ${{ needs.check.outputs.tag }}" in job
+    publish = release.split("\n  publish:\n", 1)[1]
+    condition = publish.split("runs-on:", 1)[0]
+    assert "installer" in publish.split("\n", 1)[0]              # waited for…
+    assert "needs.installer.result ==" not in condition          # …never required
+    assert '[ ! -f "$setup" ] || [ ! -f "$pack" ]' in publish
+    assert '[ -n "$setup" ] && echo "$setup" && echo "$pack"' in publish
+
+    build = (WORKFLOWS / "build-windows-installer.yml").read_text(encoding="utf-8")
+    script = (ROOT / "packaging" / "windows" / "ToonStudio.iss").read_text(encoding="utf-8")
+    # One name for the pack everywhere: what is built, published and downloaded.
+    for text in (release, build):
+        assert "ToonStudio-ocr-pack-x64.zip" in text
+    assert "releases/download/${{ inputs.tag }}/ToonStudio-ocr-pack-x64.zip" in build
+    assert "OutputBaseFilename=ToonStudio-Setup-x64" in script and "ToonStudio-Setup-x64.exe" in release
+    # Installed both ways, and the engines run in the result.
+    assert "/COMPONENTS=main'" in build and "/COMPONENTS=main,torchocr'" in build
+    assert "--optional-ocr-self-test" in build and "/PACKFILE=" in build
+    # The download is checked against the hash of the pack that was built.
+    assert "/DPackSha256=$env:PACK_SHA256" in build
+    assert "DownloadPage.Add('{#PackUrl}', 'ocr-pack.zip', '{#PackSha256}')" in script
+    # Where settings and the installed copy are found must never move.
+    assert "AppId={{6B0B0A52-6F6C-4D0B-9B4E-7A2C5D1E3F84}" in script

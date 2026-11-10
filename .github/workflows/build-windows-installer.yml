@@ -1,0 +1,153 @@
+# The Windows installer: ToonStudio-Setup-x64.exe, and the optional OCR pack
+# it can download (ToonStudio-ocr-pack-x64.zip).
+#
+# Why an installer beside the zips. The release zips are large and GitHub
+# serves them slowly; the installer packs the ordinary build with LZMA2, which
+# is much smaller than the zip, and leaves PyTorch — several times the size of
+# everything else — out unless the person installing ticks "EasyOCR and
+# PaddleOCR-VL". Ticked, the installer downloads the pack from the same
+# release and lays it over the app.
+#
+# It builds nothing itself. It takes the two Windows builds the calling
+# workflow already made and tested (build-windows.yml, build-windows-full.yml)
+# from that run's artifacts, so what is installed is exactly what those two
+# workflows proved — and then proves the installer too, by installing with and
+# without the component and running the app's own self-tests in the result.
+name: Build Windows Installer
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "The release tag the OCR pack will be published under (the installer downloads it from there)"
+        type: string
+        required: true
+
+jobs:
+  build-installer:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Download the two Windows builds
+        uses: actions/download-artifact@v7
+        with:
+          pattern: Comic-Translate-Windows*
+          path: builds
+          merge-multiple: true
+
+      - name: Unpack them
+        shell: pwsh
+        run: |
+          # tar, not Expand-Archive: the full build is over a gigabyte, and
+          # this is the same tool the installer unpacks the pack with.
+          New-Item -ItemType Directory -Force -Path lean, full | Out-Null
+          tar -xf builds/ToonStudio-Windows-x86_64.zip -C lean
+          if ($LASTEXITCODE -ne 0) { Write-Error "could not unpack the ordinary build"; exit 1 }
+          tar -xf builds/ToonStudio-Windows-x86_64-full.zip -C full
+          if ($LASTEXITCODE -ne 0) { Write-Error "could not unpack the full build"; exit 1 }
+          # Either zip may or may not have a top ToonStudio folder.
+          foreach ($name in 'lean', 'full') {
+            $exe = Get-ChildItem -Path $name -Recurse -File -Filter 'ToonStudio.exe' | Select-Object -First 1
+            if (-not $exe) { Write-Error "no ToonStudio.exe in the $name build"; exit 1 }
+            "$($name.ToUpper())_DIR=$($exe.Directory.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          }
+
+      - name: Build the OCR pack
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          $facts = python scripts/make_ocr_pack.py --lean $env:LEAN_DIR --full $env:FULL_DIR --out dist/ToonStudio-ocr-pack-x64.zip
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Write-Output $facts
+          $f = $facts | ConvertFrom-Json
+          "PACK_SHA256=$($f.sha256)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "PACK_MB=$([math]::Ceiling($f.bytes / 1MB))" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "PACK_INSTALLED=$($f.installed_bytes)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Find Inno Setup
+        shell: pwsh
+        run: |
+          $iscc = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe") |
+                  Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) {
+            choco install innosetup --no-progress -y
+            $iscc = @("${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe", "$env:ProgramFiles\Inno Setup 6\ISCC.exe") |
+                    Where-Object { Test-Path $_ } | Select-Object -First 1
+          }
+          if (-not $iscc) { Write-Error "Inno Setup is not installed and could not be"; exit 1 }
+          "ISCC=$iscc" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          $version = (Select-String -Path app/version.py -Pattern '__version__\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+          if (-not $version) { Write-Error "no version in app/version.py"; exit 1 }
+          $url = "https://github.com/${{ github.repository }}/releases/download/${{ inputs.tag }}/ToonStudio-ocr-pack-x64.zip"
+          & $env:ISCC "/DAppVersion=$version" "/DSourceDir=$env:LEAN_DIR" "/DOutputDir=$PWD\dist" `
+            "/DPackUrl=$url" "/DPackSha256=$env:PACK_SHA256" "/DPackMB=$env:PACK_MB" `
+            "/DPackInstalledBytes=$env:PACK_INSTALLED" packaging\windows\ToonStudio.iss
+          if ($LASTEXITCODE -ne 0) { Write-Error "Inno Setup failed"; exit 1 }
+          $setup = Get-Item dist/ToonStudio-Setup-x64.exe
+          $zip = Get-Item builds/ToonStudio-Windows-x86_64.zip
+          Write-Output ("Installer: {0:N0} MB (the zip of the same build: {1:N0} MB); OCR pack: {2} MB" -f `
+            ($setup.Length / 1MB), ($zip.Length / 1MB), $env:PACK_MB)
+          if ($setup.Length -ge 2147483648) { Write-Error "the installer is over GitHub's 2 GB asset limit"; exit 1 }
+
+      # The installer is only proven by installing. Without the component the
+      # result must be the ordinary app, running; with it — the pack given as
+      # a file, since the release it will be downloaded from does not exist
+      # yet — the result must run EasyOCR and PaddleOCR-VL.
+      - name: Install without the OCR engines and run the app
+        shell: pwsh
+        run: |
+          $target = Join-Path $env:RUNNER_TEMP 'install-standard'
+          $log = Join-Path $env:RUNNER_TEMP 'install-standard.log'
+          $p = Start-Process -FilePath dist/ToonStudio-Setup-x64.exe -Wait -PassThru -ArgumentList `
+            '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', '/COMPONENTS=main', "/DIR=$target", "/LOG=$log"
+          if ($p.ExitCode -ne 0) { Get-Content $log -Tail 40; Write-Error "the installer exited with $($p.ExitCode)"; exit 1 }
+          $exe = Join-Path $target 'ToonStudio.exe'
+          if (-not (Test-Path $exe)) { Get-Content $log -Tail 40; Write-Error "nothing was installed"; exit 1 }
+          if (Test-Path (Join-Path $target 'ocr-pack.txt')) { Write-Error "the OCR pack was installed unasked"; exit 1 }
+          $app = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 30
+          if ($app.HasExited) { Write-Error "the installed app exited early with code $($app.ExitCode)"; exit 1 }
+          Stop-Process -Id $app.Id -Force
+          $errFile = Join-Path $env:RUNNER_TEMP 'installed-skia.err'
+          $probe = Start-Process -FilePath $exe -ArgumentList '--skia-self-test' -Wait -PassThru -NoNewWindow -RedirectStandardError $errFile
+          if ($probe.ExitCode -ne 0) { Write-Error "the installed app's Skia self-test failed: $(Get-Content $errFile -Raw)"; exit 1 }
+          Write-Output "The installed app starts and renders"
+
+      - name: Install with the OCR engines and run them
+        shell: pwsh
+        run: |
+          $target = Join-Path $env:RUNNER_TEMP 'install-full'
+          $log = Join-Path $env:RUNNER_TEMP 'install-full.log'
+          $pack = (Resolve-Path dist/ToonStudio-ocr-pack-x64.zip).Path
+          $p = Start-Process -FilePath dist/ToonStudio-Setup-x64.exe -Wait -PassThru -ArgumentList `
+            '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', '/COMPONENTS=main,torchocr', `
+            "/DIR=$target", "/LOG=$log", "/PACKFILE=$pack"
+          if ($p.ExitCode -ne 0) { Get-Content $log -Tail 40; Write-Error "the installer exited with $($p.ExitCode)"; exit 1 }
+          $exe = Join-Path $target 'ToonStudio.exe'
+          if (-not (Test-Path (Join-Path $target 'ocr-pack.txt'))) {
+            Get-Content $log -Tail 40; Write-Error "the OCR pack was not installed"; exit 1
+          }
+          $errFile = Join-Path $env:RUNNER_TEMP 'installed-ocr.err'
+          $probe = Start-Process -FilePath $exe -ArgumentList '--optional-ocr-self-test' -Wait -PassThru -NoNewWindow -RedirectStandardError $errFile
+          if ($probe.ExitCode -ne 0) {
+            Write-Error "EasyOCR / PaddleOCR-VL do not run in the installed app (exit $($probe.ExitCode)): $(Get-Content $errFile -Raw)"
+            exit 1
+          }
+          Write-Output "EasyOCR and PaddleOCR-VL run in the installed app"
+
+      - name: Upload the installer and the OCR pack
+        uses: actions/upload-artifact@v6
+        with:
+          name: Toon-Studio-Installer
+          path: |
+            dist/ToonStudio-Setup-x64.exe
+            dist/ToonStudio-ocr-pack-x64.zip
+          if-no-files-found: error
+          retention-days: 30
