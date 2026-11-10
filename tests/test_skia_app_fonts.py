@@ -98,6 +98,13 @@ def _paint(item, engine):
 
 def test_an_app_font_draws_the_same_under_skia_as_under_qt(app_font, skia_engine):
     """Under Skia the substitute face's wider glyphs were clipped at the box."""
+    # The first text laid out in a font before any of its glyphs has been
+    # drawn sits 1/64 px off every later layout (measured: a 170.438 px line,
+    # then 170.453 for good). That is Qt's, and it shows now that an outline
+    # is stroked from exact glyph positions: two Qt renders differed by up to
+    # 12 grey levels along the outline's edge. One throwaway render first, so
+    # what is compared is the engines and not the font's first use.
+    _paint(_item(app_font), text_engine.QT)
     item = _item(app_font)
     assert not __import__("app.ui.canvas.skia_paint", fromlist=["x"]).can_paint(item)
     qt_pixels = _paint(_item(app_font), text_engine.QT)

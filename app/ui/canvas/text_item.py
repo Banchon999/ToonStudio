@@ -16,7 +16,7 @@ from app.ui.canvas import skia_paint
 # Qt. Same classes, so the project encoder and every existing holder of one
 # are unaffected, and `from .text_item import OutlineInfo` still works.
 from core.text_style import OutlineInfo, OutlineType  # noqa: F401
-from core.text_style import StrokeLayer, stroke_layers_from, stroke_reaches
+from core.text_style import WIDE_OUTLINE, StrokeLayer, stroke_layers_from, stroke_reaches
 from modules.rendering.text_effects import (
     arc_bulge, arc_placements, gradient_line,
     normalise_quad, quad_corner_from_point, quad_is_convex, quad_points,
@@ -99,6 +99,8 @@ class TextBlockItem(QGraphicsTextItem):
 
         # Text effects
         self.letter_spacing = 0.0
+        # Glyph width as a percentage of the font's own (100 = as designed).
+        self.horizontal_scale = 100.0
         self.shadow_enabled = False
         self.shadow_color = QColor(0, 0, 0, 160)
         self.shadow_offset = (4.0, 4.0)
@@ -349,7 +351,31 @@ class TextBlockItem(QGraphicsTextItem):
             font.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, self.letter_spacing)
         else:
             font.setLetterSpacing(QFont.SpacingType.PercentageSpacing, 100.0)
+        # The horizontal scale lives on the font too, and is dropped the same way.
+        font.setStretch(int(round(getattr(self, "horizontal_scale", 100.0) or 100.0)))
         return font
+
+    #: How far glyphs may be squeezed or widened. Past these a face stops
+    #: looking condensed and starts looking broken.
+    MIN_HORIZONTAL_SCALE = 50.0
+    MAX_HORIZONTAL_SCALE = 200.0
+
+    def set_horizontal_scale(self, percent: float):
+        """Glyph width as a percentage of the font's own: below 100 condenses
+        the lettering (more words per line in a narrow bubble, at full
+        height), above widens it. Item-wide; 100 is the face as designed.
+
+        The Character panel's horizontal scale in PhotoCraft and Photoshop.
+        """
+        try:
+            percent = float(percent)
+        except (TypeError, ValueError):
+            return
+        if percent != percent:                       # NaN
+            return
+        self.horizontal_scale = min(self.MAX_HORIZONTAL_SCALE, max(self.MIN_HORIZONTAL_SCALE, percent))
+        self.apply_letter_spacing()
+        self.update()
 
     def set_letter_spacing(self, spacing: float):
         """Extra space between characters in points; 0 restores the font's own."""
@@ -477,8 +503,9 @@ class TextBlockItem(QGraphicsTextItem):
             outlines.append(OutlineInfo(0, end, QColor(layer.color), reach, OutlineType.Full_Document))
         return outlines
 
-    def document_glyph_path(self) -> QPainterPath:
-        """Every glyph of the laid-out document as one path, in item coordinates.
+    def document_glyph_path(self, start: int | None = None, end: int | None = None) -> QPainterPath:
+        """Every glyph of the laid-out document as one path, in item coordinates
+        — or only the glyphs of the characters from `start` to `end`.
 
         Read from each block's own layout, so wrapping, alignment, letter
         spacing and per-range fonts are exactly what Qt draws.
@@ -489,7 +516,13 @@ class TextBlockItem(QGraphicsTextItem):
             layout = block.layout()
             if layout is not None:
                 origin = layout.position()
-                for run in layout.glyphRuns():
+                first, length = 0, block.length()
+                if start is not None or end is not None:
+                    lo = max(0, (start or 0) - block.position())
+                    hi = min(block.length(), (self._document_end() if end is None else end) - block.position())
+                    first, length = lo, hi - lo
+                runs = layout.glyphRuns(first, length) if length > 0 else []
+                for run in runs:
                     raw_font = run.rawFont()
                     for index, position in zip(run.glyphIndexes(), run.positions()):
                         glyph = raw_font.pathForGlyph(index)
@@ -497,6 +530,53 @@ class TextBlockItem(QGraphicsTextItem):
                         path.addPath(glyph)
             block = block.next()
         return path
+
+    def _paint_outlines_stroked(self, painter: QPainter) -> bool:
+        """Draw every outline and stroke layer as a real stroke of the glyph
+        outlines, widest first. False when it cannot be done this way (the
+        vertical layout places its glyphs itself), so the caller falls back.
+
+        An outline used to be the text drawn again at 16 offsets round a
+        circle. That covers only the ring at exactly the outline's radius: up
+        to a few pixels the copies overlap and it reads as an outline, and
+        from about 10 px they come apart into sixteen separate copies of the
+        word with holes between them. A pen with round joins along the glyph
+        path is the glyph grown by the width, at any width — what a layer
+        style's stroke is in PhotoCraft and Photoshop.
+        """
+        outlines = [o for o in self.effective_outlines() if getattr(o, "width", 0) and o.width > 0]
+        if not outlines:
+            return True
+        if self.vertical:
+            return False
+        whole = None
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        for outline in sorted(outlines, key=lambda o: o.width, reverse=True):
+            if outline.type == OutlineType.Full_Document:
+                if whole is None:
+                    whole = self.document_glyph_path()
+                path = whole
+            else:
+                path = self.document_glyph_path(outline.start, outline.end)
+            if path.isEmpty():
+                continue
+            color = to_qt_color(outline.color)
+            painter.setBrush(color)
+            # Winding, so a glyph whose strokes cross (most Thai letters, any
+            # bold face) is solid under its fill rather than punched through.
+            path.setFillRule(Qt.FillRule.WindingFill)
+            # A stroke much wider than a small contour (the dot of "!")
+            # leaves a pinhole beside it; the narrower passes cover it.
+            scales = (1.0,) if outline.width <= WIDE_OUTLINE else (1.0, 2.0 / 3.0, 1.0 / 3.0)
+            for scale in scales:
+                pen = QPen(color, float(outline.width) * 2.0 * scale)
+                pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+                pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+                painter.setPen(pen)
+                painter.drawPath(path)
+        painter.restore()
+        return True
 
     def _paint_stroke_layers(self, painter: QPainter) -> bool:
         """Stroke the layers from the glyph outlines, widest first.
@@ -1185,13 +1265,11 @@ class TextBlockItem(QGraphicsTextItem):
                 self._paint_handles(painter, option)
             return
 
-        # Outline pass: draw the glyphs underneath, displaced around a circle, so
-        # their union is the glyph dilated by the outline width. The fill is then
-        # painted on top and stays intact.
-        # Stroke layers first — they are always wider than the outline — then
-        # the outline pass over them, then the fill.
-        outlines = self.selection_outlines if self._paint_stroke_layers(painter) else self.effective_outlines()
-        if outlines:
+        # Outline pass: the glyph outlines stroked underneath, widest first,
+        # with the fill painted on top. The vertical layout places its glyphs
+        # itself, so it is still drawn as displaced copies of the text.
+        if not self._paint_outlines_stroked(painter):
+            outlines = self.effective_outlines()
             painter.save()
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
             for width, doc in self._outline_documents(outlines):
@@ -1225,17 +1303,36 @@ class TextBlockItem(QGraphicsTextItem):
         else:
             handles.paint_handles_projected(painter, self.text_rect(), scale)
 
-    # Enough displacements that the gap left between neighbours, width*(1-cos(pi/n)),
-    # stays under 2% of the outline width — well below a pixel at any usable size.
+    # The fewest displacements round a ring, and how far apart neighbours on
+    # a ring and neighbouring rings may be (pixels) before gaps show.
     OUTLINE_SAMPLES = 16
+    OUTLINE_MAX_SAMPLES = 64
+    OUTLINE_GAP = 1.5
+    OUTLINE_RING_STEP = 3.0
+    OUTLINE_MAX_RINGS = 6
 
     @classmethod
     def _outline_offsets(cls, width: float) -> list[tuple[float, float]]:
-        step = 2 * math.pi / cls.OUTLINE_SAMPLES
-        return [
-            (width * math.cos(i * step), width * math.sin(i * step))
-            for i in range(cls.OUTLINE_SAMPLES)
-        ]
+        """Where to draw copies of the text so that together they are the text
+        grown by `width` (the fallback for layouts that cannot be stroked).
+
+        One ring of 16 is enough for a pixel or two. A wide outline needs more
+        copies round the ring, or they separate, and rings inside it, or the
+        band between the letters and the ring stays empty.
+        """
+        width = float(width)
+        if width <= 0:
+            return []
+        rings = max(1, min(cls.OUTLINE_MAX_RINGS, math.ceil(width / cls.OUTLINE_RING_STEP)))
+        offsets = []
+        for ring in range(rings, 0, -1):
+            radius = width * ring / rings
+            samples = max(cls.OUTLINE_SAMPLES,
+                          min(cls.OUTLINE_MAX_SAMPLES, math.ceil(2 * math.pi * radius / cls.OUTLINE_GAP)))
+            step = 2 * math.pi / samples
+            offsets.extend((radius * math.cos(i * step), radius * math.sin(i * step))
+                           for i in range(samples))
+        return offsets
 
     def _outline_documents(self, outlines=None):
         """Yield (width, document) for each distinct outline width in use.

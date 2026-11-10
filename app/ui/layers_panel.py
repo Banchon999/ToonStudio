@@ -111,6 +111,8 @@ class LayersPanel(QtWidgets.QWidget):
         self.down_button.clicked.connect(lambda: self._move_selected(-1))
         self.delete_button.clicked.connect(self._delete_selected)
         self.tree.installEventFilter(self)
+        self.tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.tree.customContextMenuRequested.connect(self._show_context_menu)
         self._update_controls()
 
     # --- wiring ------------------------------------------------------------------
@@ -192,7 +194,8 @@ class LayersPanel(QtWidgets.QWidget):
 
     def _set_state_icons(self, row, visible: bool, locked: bool, lockable: bool = True):
         row.setIcon(COL_VIS, self._icons["eye" if visible else "eye-off"])
-        row.setToolTip(COL_VIS, self.tr("Hide") if visible else self.tr("Show"))
+        row.setToolTip(COL_VIS, (self.tr("Hide") if visible else self.tr("Show"))
+                       + "\n" + self.tr("Alt+click: show only this"))
         if lockable:
             row.setIcon(COL_LOCK, self._icons["lock" if locked else "lock-open"])
             row.setToolTip(COL_LOCK, self.tr("Unlock") if locked else self.tr("Lock"))
@@ -273,6 +276,15 @@ class LayersPanel(QtWidgets.QWidget):
         if self._ctrl is None or column not in (COL_VIS, COL_LOCK):
             return
         oid, group = self._row_target(row)
+        # Alt+click on an eye shows that layer (or group) alone; again, and
+        # everything is back. The quick way to see what one patch covers.
+        alt = bool(QtWidgets.QApplication.keyboardModifiers() & Qt.KeyboardModifier.AltModifier)
+        if alt and column == COL_VIS:
+            if oid is None:
+                self._ctrl.solo_group(group)
+            else:
+                self._ctrl.solo(oid, text=self.tr("Show only this layer"))
+            return
         if oid is None:
             gprops = self._ctrl.document().group(group)
             if column == COL_VIS:
@@ -289,6 +301,47 @@ class LayersPanel(QtWidgets.QWidget):
         else:
             self._ctrl.set_object_props([oid], text=self.tr("Toggle layer lock"),
                                         locked=not props.locked)
+
+    def _show_context_menu(self, pos):
+        """Right-click on a row: what the eye, the lock and the buttons do,
+        plus showing one layer alone, in one place."""
+        row = self.tree.itemAt(pos)
+        if row is None or self._ctrl is None:
+            return
+        if not row.isSelected():
+            self.tree.setCurrentItem(row)
+        menu = self._build_context_menu(row)
+        if menu is not None:
+            menu.exec(self.tree.viewport().mapToGlobal(pos))
+
+    def _build_context_menu(self, row):
+        oid, group = self._row_target(row)
+        menu = QtWidgets.QMenu(self)
+        if oid is None:
+            gprops = self._ctrl.document().group(group)
+            menu.addAction(self.tr("Hide Group") if gprops.visible else self.tr("Show Group"),
+                           lambda: self._ctrl.set_group_props(group, visible=not gprops.visible))
+            if group is not LayerGroup.RAW:
+                menu.addAction(self.tr("Show Only This Group"), lambda: self._ctrl.solo_group(group))
+                menu.addAction(self.tr("Unlock Group") if gprops.locked else self.tr("Lock Group"),
+                               lambda: self._ctrl.set_group_props(group, locked=not gprops.locked))
+        else:
+            props = self._ctrl.object_props(oid)
+            if props is None:
+                return None
+            ids = [o for o, _g in self._selected_targets() if o] or [oid]
+            menu.addAction(self.tr("Hide") if props.visible else self.tr("Show"),
+                           lambda: self._ctrl.set_object_props(
+                               ids, text=self.tr("Toggle layer visibility"), visible=not props.visible))
+            menu.addAction(self.tr("Show Only This Layer"),
+                           lambda: self._ctrl.solo(oid, text=self.tr("Show only this layer")))
+            menu.addAction(self.tr("Unlock") if props.locked else self.tr("Lock"),
+                           lambda: self._ctrl.set_object_props(
+                               ids, text=self.tr("Toggle layer lock"), locked=not props.locked))
+            menu.addSeparator()
+            menu.addAction(self.tr("Rename"), lambda: self.tree.editItem(row, COL_NAME))
+            menu.addAction(self.tr("Delete"), self._delete_selected)
+        return menu
 
     def _on_item_changed(self, row, column):
         if self._rebuilding or self._ctrl is None or column != COL_NAME:

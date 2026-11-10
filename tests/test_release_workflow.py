@@ -148,3 +148,13 @@ def test_the_full_windows_build_is_optional_and_proven_to_run():
     for package in ("torch", "torchvision", "transformers", "easyocr"):
         assert package in comic.OPTIONAL_OCR_PACKAGES
         assert f'"{package}"' in settings_ui
+
+
+def test_the_linux_build_runs_on_a_named_ubuntu_release():
+    """`ubuntu-latest` moves. When it reached 26.04 the 3.3.1 release failed in
+    "Set up Python": the pinned interpreter has no build for that image, so the
+    required Linux archive was never made and nothing was published. The
+    runner also sets the oldest glibc the bundle starts on."""
+    text = (WORKFLOWS / "build-linux.yml").read_text(encoding="utf-8")
+    runner = re.search(r"^\s+runs-on:\s*(\S+)", text, re.M).group(1)
+    assert re.fullmatch(r"ubuntu-\d\d\.\d\d", runner), runner

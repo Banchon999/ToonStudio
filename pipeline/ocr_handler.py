@@ -21,7 +21,10 @@ class OCRHandler:
             self.main_page.s_combo.currentText(),
             self.main_page.lang_mapping,
         )
-        if self.main_page.image_viewer.hasPhoto() and self.main_page.image_viewer.rectangles:
+        # The blocks are what is read; whether their boxes are on the canvas
+        # (Segment and Render remove them) does not matter.
+        if self.main_page.image_viewer.hasPhoto() and (
+                self.main_page.image_viewer.rectangles or self.main_page.blk_list):
             # The page as drawn, without the cleaning patches on it: OCR run
             # again after Clean read the cleaned bubbles and came back empty
             # ("DEPUTY DIRECTOR!" -> "A"). Multi-page OCR reads image_data,
@@ -38,10 +41,16 @@ class OCRHandler:
                 if blk is None:
                     return
                 
-                # Check if block already has text to avoid redundant processing
+                # A box that already has text is being read *again*: its OCR
+                # came back wrong or incomplete, and the user asked for it by
+                # name. It used to return here without doing anything.
                 if hasattr(blk, 'text') and blk.text and blk.text.strip():
+                    self.ocr.initialize(self.main_page, source_lang)
+                    self.ocr.process(image, [blk])
+                    self.cache_manager.update_ocr_cache_for_block(cache_key, blk)
+                    logger.info(f"Read the block again: '{blk.text}'")
                     return
-                
+
                 # Check if we have cached results for this image/model/language
                 if self.cache_manager._is_ocr_cached(cache_key):
                     # Check if block exists in cache (even if text is empty)
@@ -85,7 +94,11 @@ class OCRHandler:
                         logger.info(f"Cached OCR results and extracted text for block: {cached_text}")
             else:
                 # For full page OCR, check if we can use cached results
-                if self.cache_manager._can_serve_all_blocks_from_ocr_cache(cache_key, self.main_page.blk_list):
+                # Pressing OCR on a page whose boxes already hold what the
+                # cache has would change nothing — the reported "I press it
+                # again and it does not read". That press means read it again.
+                reread = self.cache_manager.ocr_cache_would_change_nothing(cache_key, self.main_page.blk_list)
+                if not reread and self.cache_manager._can_serve_all_blocks_from_ocr_cache(cache_key, self.main_page.blk_list):
                     # All blocks can be served from cache
                     self.cache_manager._apply_cached_ocr_to_blocks(cache_key, self.main_page.blk_list)
                     logger.info(f"Using cached OCR results for all {len(self.main_page.blk_list)} blocks")

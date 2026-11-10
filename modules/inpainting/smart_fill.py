@@ -1,4 +1,4 @@
-"""Solid-fill cleaning stage.
+"""Smart Fill: paint what is white, heal what is smooth, inpaint the rest.
 
 Uses the mask-fitting algorithm ported from PanelCleaner; see
 `mask_fitting.py` for attribution. Distributed under GPL-3.0-or-later.
@@ -9,6 +9,10 @@ from dataclasses import dataclass
 
 import numpy as np
 import imkit as imk
+
+from core import clean_triage
+from core.balloons import MIN_LIGHT
+from core.paint import smooth_fill
 
 from .base import InpaintModel
 from .mask_fitting import pick_best_mask
@@ -32,26 +36,36 @@ class MaskerConfig:
 
 
 class SmartFill(InpaintModel):
-    """Solid-fill cleaner using PanelCleaner's mask fitting.
+    """Cleans each region of the mask with the cheapest tool that suits it.
 
-    For each connected region of the inpaint mask, progressively grown masks
-    are ranked by how uniform the image colours along their border are. A
-    uniform border means the text sits on flat background — typically a speech
-    bubble — so the region is filled with that border's median colour for a
-    perfectly crisp result. Regions whose border never becomes uniform (busy
-    art) are handed to LaMa for inpainting instead.
+    Every connected region is judged by what surrounds it, in this order:
+
+    1. **White** — PanelCleaner's mask fitting finds a grown mask whose border
+       is one colour, and that colour is white: the region is painted in it.
+       This comes first and decides most speech bubbles.
+    2. **Heal** — the surroundings are smooth but not one white (a gradient, a
+       tinted caption box, a flat panel): the region is filled from the pixels
+       just outside it, as the healing brush does, with no model.
+    3. **Model** — the surroundings have texture: the region is left for LaMa.
+
+    `last_report` says how many regions each took, so a caller can tell the
+    user what was done.
     """
 
     name = "smart_fill"
 
-    # Skip huge regions (full-page masks); solid fill only makes sense locally.
+    # Skip huge regions (full-page masks); a local fill only makes sense locally.
     MAX_REGION_AREA_RATIO = 0.5
+    # A region wider than this many pixels on its short side is not healed: a
+    # smooth fill across so much is a blur, however smooth its rim.
+    MAX_HEAL_THICKNESS = 120
 
     def init_model(self, device, **kwargs):
         self.backend = kwargs.get("backend", "onnx")
         self._fill_device = device
         self._fallback_model = None
         self.masker_conf = kwargs.get("masker_conf") or MaskerConfig()
+        self.last_report = {clean_triage.COLOUR: 0, clean_triage.HEAL: 0, clean_triage.MODEL: 0}
 
     @staticmethod
     def is_downloaded() -> bool:
@@ -68,6 +82,8 @@ class SmartFill(InpaintModel):
         return: RGB image
         """
         result = image.copy()
+        report = {clean_triage.COLOUR: 0, clean_triage.HEAL: 0, clean_triage.MODEL: 0}
+        self.last_report = report
         binary_mask = np.where(mask > 127, 255, 0).astype(np.uint8)
         if not binary_mask.any():
             return result
@@ -77,29 +93,30 @@ class SmartFill(InpaintModel):
         height, width = binary_mask.shape[:2]
         max_region_area = int(height * width * self.MAX_REGION_AREA_RATIO)
 
-        filled = 0
         for label in range(1, num_labels):
             component = labels == label
             area = int(component.sum())
             if area == 0:
                 continue
-            if area > max_region_area or not self._fill_component(result, component):
+            method = clean_triage.MODEL
+            if area <= max_region_area:
+                method = self._fill_component(result, component)
+            if method == clean_triage.MODEL:
                 residual_mask[component] = 255
-            else:
-                filled += 1
+            report[method] += 1
 
         logger.info(
-            "Smart Fill: filled %d/%d regions, %s",
-            filled, num_labels - 1,
-            "no fallback needed" if not residual_mask.any() else "falling back to LaMa for the rest",
+            "Smart Fill: %d regions painted white, %d healed, %d sent to the model",
+            report[clean_triage.COLOUR], report[clean_triage.HEAL], report[clean_triage.MODEL],
         )
 
         if residual_mask.any():
             result = self._get_fallback_model()(result, residual_mask, config)
         return result
 
-    def _fill_component(self, result: np.ndarray, component: np.ndarray) -> bool:
-        """Try to solid-fill one mask component. Returns True when filled."""
+    def _fill_component(self, result: np.ndarray, component: np.ndarray) -> str:
+        """Clean one mask region in place if no model is needed; returns the
+        method that suits it (clean_triage.COLOUR, HEAL or MODEL)."""
         conf = self.masker_conf
         ys, xs = np.nonzero(component)
         margin = (
@@ -123,11 +140,28 @@ class SmartFill(InpaintModel):
             self._bounding_box_mask(mask_crop, conf.min_mask_thickness),
             conf,
         )
-        if best_mask is None or best_color is None:
-            return False
+        # 1. White first: one flat, white surround is painted in its colour.
+        if best_mask is not None and best_color is not None and min(best_color) >= MIN_LIGHT:
+            image_crop[best_mask > 0] = np.array(best_color, dtype=np.uint8)
+            return clean_triage.COLOUR
 
-        image_crop[best_mask > 0] = np.array(best_color, dtype=np.uint8)
-        return True
+        # 2. Smooth but not white: healed from the pixels around it. The mask
+        # fitting's choice is used when it made one (it has cleared any glow);
+        # otherwise the region grown past the glyphs' anti-aliased rim.
+        if best_mask is not None:
+            region = best_mask > 0
+        else:
+            region = imk.dilate(mask_crop, np.ones((3, 3), np.uint8),
+                                iterations=max(1, conf.min_mask_thickness // 2)) > 0
+        if min(int(ys.max() - ys.min()), int(xs.max() - xs.min())) + 1 > self.MAX_HEAL_THICKNESS:
+            return clean_triage.MODEL
+        method, _colour, _texture = clean_triage.triage(image_crop, clean_triage.ring_of(region, 3))
+        if method == clean_triage.MODEL:
+            return clean_triage.MODEL
+        # A white ring found here (the mask fitting saw too much spread over
+        # its wider border) heals just as well: on white the two agree.
+        image_crop[...] = smooth_fill(image_crop, region)
+        return clean_triage.HEAL
 
     @staticmethod
     def _bounding_box_mask(mask_crop: np.ndarray, pad: int) -> np.ndarray:
@@ -144,6 +178,6 @@ class SmartFill(InpaintModel):
     def _get_fallback_model(self):
         if self._fallback_model is None:
             from .lama import LaMa
-            logger.info("Smart Fill: initializing LaMa fallback inpainter")
+            logger.info("Smart Fill: loading LaMa for the textured regions")
             self._fallback_model = LaMa(self._fill_device, backend=self.backend)
         return self._fallback_model

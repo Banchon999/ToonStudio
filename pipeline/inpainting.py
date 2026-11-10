@@ -5,6 +5,7 @@ import inspect
 import imkit as imk
 
 
+from core import clean_triage
 from core.paint import plane_residual, smooth_fill
 from modules.inpainting.denoise import denoise_around_mask
 from modules.utils.device import resolve_device
@@ -567,10 +568,19 @@ class InpaintingHandler:
         if texture > FAST_FILL_MAX_TEXTURE:
             return False, f"textured:{texture:.1f}"
 
-        # Filled from the pixels just outside the text instead of with one
-        # colour: on a gradient bubble a flat fill left a visible patch shaped
-        # like the mask.
-        smooth = smooth_fill(crop, region)
+        # White first: a white, flat bubble is painted in its own colour,
+        # which is exact. Anything else smooth is healed — filled from the
+        # pixels just outside the text — since on a gradient or a tinted box
+        # one flat colour left a visible patch shaped like the mask.
+        method, colour, _texture = clean_triage.triage(
+            crop, clean_triage.ring_of(region, 3, bubble_mask), FAST_FILL_MAX_TEXTURE)
+        if method == clean_triage.COLOUR:
+            smooth = np.empty_like(crop)
+            smooth[...] = np.array(colour, dtype=crop.dtype)
+            color_reason = f"white:{color_reason}"
+        else:
+            smooth = smooth_fill(crop, region)
+            color_reason = f"heal:{color_reason}"
 
         # Feathered outward only: blurred both ways, the region's own edge kept
         # a tenth of each glyph's colour and left a faint outline of the text.

@@ -204,6 +204,63 @@ class LayerController(QObject):
         self.layers_changed.emit()
         return True
 
+    def solo(self, object_id: str, text: str = "Show only this layer") -> bool:
+        """Alt+click on a layer's eye, as in an image editor: show this object
+        and hide the others in its group — or, when it already is the only one
+        showing, show them all again. One undo step. Returns False when there
+        is nothing to change (a group of one)."""
+        target = find_by_id(self.viewer._scene, object_id, viewer=self.viewer)
+        if target is None:
+            return False
+        group = kind_of(target)
+        members = [(oid, item) for g, oid, item in self.page_objects() if g is group]
+        others = [(oid, item) for oid, item in members if oid != object_id]
+        if not others:
+            return False
+        alone = (LayerProps.from_dict(get_item_layer(target)).visible
+                 and not any(LayerProps.from_dict(get_item_layer(item)).visible for _oid, item in others))
+        batch = []
+        for oid, item in members:
+            old = get_item_layer(item)
+            props = LayerProps.from_dict(old)
+            props.visible = True if alone else oid == object_id
+            new = props.to_dict()
+            if new != old:
+                batch.append((oid, old, new))
+        if not batch:
+            return False
+        cmd = SetLayerPropsCommand(self.main, batch, text)
+        stack = self.main.undo_group.activeStack()
+        if stack is not None:
+            stack.push(cmd)
+        else:
+            cmd.redo()
+        self.main.mark_project_dirty()
+        self.layers_changed.emit()
+        return True
+
+    def solo_group(self, group: LayerGroup) -> bool:
+        """Alt+click on a group's eye: only this group over the page, or every
+        group again when it already is. The raw image stays as it is — a
+        group shown alone over nothing is a blank canvas."""
+        doc = self.document()
+        others = [g for g in LayerGroup if g not in (group, LayerGroup.RAW)]
+        alone = doc.group(group).visible and not any(doc.group(g).visible for g in others)
+        changed = False
+        for g in others:
+            if doc.group(g).visible != alone:
+                doc.group(g).visible = alone
+                changed = True
+        if not doc.group(group).visible:
+            doc.group(group).visible = True
+            changed = True
+        if not changed:
+            return False
+        self.viewer.refresh_layers()
+        self.main.mark_project_dirty()
+        self.layers_changed.emit()
+        return True
+
     def reorder(self, ordered_ids: list[str]) -> bool:
         """Give objects of one group an explicit order, bottom to top."""
         batch = []

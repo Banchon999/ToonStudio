@@ -319,7 +319,10 @@ class ManualWorkflowController:
                         continue
                     source_lang = state.get("source_lang", source_lang_fallback)
                     cache_key = cache_manager._get_ocr_cache_key(image, source_lang, ocr_model, device)
-                    if cache_manager._can_serve_all_blocks_from_ocr_cache(cache_key, blk_list):
+                    # A page whose blocks already hold the cached text is
+                    # being read again on purpose (see OCRHandler.OCR_image).
+                    reread = cache_manager.ocr_cache_would_change_nothing(cache_key, blk_list)
+                    if not reread and cache_manager._can_serve_all_blocks_from_ocr_cache(cache_key, blk_list):
                         cache_manager._apply_cached_ocr_to_blocks(cache_key, blk_list)
                     else:
                         ocr.initialize(self.main, source_lang)
@@ -352,6 +355,14 @@ class ManualWorkflowController:
                 finished_cb,
             )
             return
+
+        # Segment and Render take the boxes off the canvas, and the blocks
+        # stay. OCR used to need the boxes, so after Clean the button did
+        # nothing at all and the only way to read a page again was to undo
+        # back to before it. The boxes come back with the blocks they stand for.
+        if (not self.main.webtoon_mode and not single_block and self.main.blk_list
+                and self.main.image_viewer.hasPhoto() and not self.main.image_viewer.rectangles):
+            self.main.pipeline.load_box_coords(self.main.blk_list)
 
         self.main.loading.setVisible(True)
         self.main.disable_hbutton_group()

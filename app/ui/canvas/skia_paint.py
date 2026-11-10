@@ -224,6 +224,10 @@ def can_paint(item) -> bool:
     see `core.skia_text.has_family` for what went wrong otherwise."""
     if not text_engine.paints_with_skia():
         return False
+    # Skia's paragraph has no horizontal scale; Qt measures and paints a
+    # condensed or widened item with the same stretched font.
+    if abs(float(getattr(item, "horizontal_scale", 100.0) or 100.0) - 100.0) > 1e-6:
+        return False
     families = {getattr(item, "font_family", "") or ""}
     try:
         families.add(item.document().defaultFont().family())

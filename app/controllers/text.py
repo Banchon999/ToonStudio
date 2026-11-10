@@ -44,6 +44,7 @@ class TextController:
             self.main.outline_width_dropdown,
             self.main.outline_checkbox,
             self.main.letter_spacing_dropdown,
+            self.main.horizontal_scale_dropdown,
             self.main.shadow_checkbox,
             self.main.shadow_color_button,
             self.main.shadow_offset_x_dropdown,
@@ -956,6 +957,24 @@ class TextController:
         command.finalize_new_state()
         self.main.push_command(command)
 
+    def on_horizontal_scale_change(self, _value=None):
+        """Condense or widen the selected text's letters (one undo step)."""
+        item = self.main.curr_tblock_item
+        if not item:
+            return
+        try:
+            percent = float(self.main.horizontal_scale_dropdown.currentText().replace("%", ""))
+        except (TypeError, ValueError):
+            return
+        if not (item.MIN_HORIZONTAL_SCALE <= percent <= item.MAX_HORIZONTAL_SCALE):
+            return                      # mid-typing ("9" on the way to "90")
+        if abs(percent - float(getattr(item, "horizontal_scale", 100.0))) < 1e-6:
+            return
+        command = TextFormatCommand(self.main.image_viewer, item)
+        item.set_horizontal_scale(percent)
+        command.finalize_new_state()
+        self.main.push_command(command)
+
     # Widget helpers
     def block_text_item_widgets(self, widgets):
         # Block signals
@@ -1016,6 +1035,9 @@ class TextController:
 
             self.main.letter_spacing_dropdown.setCurrentText(
                 str(getattr(text_item, 'letter_spacing', 0.0))
+            )
+            self.main.horizontal_scale_dropdown.setCurrentText(
+                f"{float(getattr(text_item, 'horizontal_scale', 100.0)):g}"
             )
 
             shadow_color = getattr(text_item, 'shadow_color', None) or QColor(0, 0, 0)

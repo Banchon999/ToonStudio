@@ -298,6 +298,7 @@ class ComicTranslate(ComicTranslateUI):
         self.outline_width_dropdown.currentTextChanged.connect(self.text_ctrl.on_outline_width_change)
         self.outline_checkbox.stateChanged.connect(self.text_ctrl.toggle_outline_settings)
         self.letter_spacing_dropdown.currentTextChanged.connect(self.text_ctrl.on_letter_spacing_change)
+        self.horizontal_scale_dropdown.currentTextChanged.connect(self.text_ctrl.on_horizontal_scale_change)
         self.shadow_checkbox.stateChanged.connect(self.text_ctrl.apply_shadow_settings)
         self.shadow_color_button.clicked.connect(self.text_ctrl.on_shadow_color_change)
         self.shadow_offset_x_dropdown.currentTextChanged.connect(self.text_ctrl.apply_shadow_settings)

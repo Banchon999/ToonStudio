@@ -339,6 +339,18 @@ class CacheManager:
         
         return True
 
+    def ocr_cache_would_change_nothing(self, cache_key, block_list) -> bool:
+        """True when every block already holds exactly what the cache has for
+        it. Then serving the cache is a no-op, and a user who pressed OCR is
+        asking for the page to be read again, not for the same answer."""
+        if not block_list or not self._can_serve_all_blocks_from_ocr_cache(cache_key, block_list):
+            return False
+        for block in block_list:
+            cached = self._get_cached_text_for_block(cache_key, block)
+            if (cached or "") != (getattr(block, "text", "") or ""):
+                return False
+        return True
+
     def _can_serve_all_blocks_from_translation_cache(self, cache_key, block_list):
         """Check if all blocks in the list can be served from translation cache with matching source text"""
         if not self._is_translation_cached(cache_key):
