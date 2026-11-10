@@ -218,6 +218,12 @@ class SmartWorkflowController:
         refresh = getattr(self.main, "refresh_step_bar", None)
         if callable(refresh):
             refresh()
+        queue = getattr(self.main, "chapter_queue_ctrl", None)
+        if queue is not None and queue.running:
+            # One chapter of a queue: the queue saves it and moves on, and
+            # says how every chapter went at the end instead of a toast each.
+            queue.on_run_finished(stopped=cancelled, failed=failed)
+            return
         summary = " · ".join(
             translate("SmartWorkflow", "{0}: {1} page(s)").format(step_label(s), n) for s, n in self._done
         ) or translate("SmartWorkflow", "every page already had every step")

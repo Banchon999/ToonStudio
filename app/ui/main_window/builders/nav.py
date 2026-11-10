@@ -62,6 +62,9 @@ class NavRailMixin:
         folder_action = self.tool_menu.addAction(MIcon("folder-open.svg"), self.tr("Folder"))
         folder_action.triggered.connect(self.folder_browser_button.clicked)
 
+        queue_action = self.tool_menu.addAction(MIcon("folder-open.svg"), self.tr("Many Chapters (Queue)…"))
+        queue_action.triggered.connect(lambda: self.open_chapter_queue())
+
         document_action = self.tool_menu.addAction(MIcon("mingcute--document-line.svg"), self.tr("Document"))
         document_action.triggered.connect(self.document_browser_button.clicked)
 

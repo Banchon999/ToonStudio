@@ -30,6 +30,26 @@ class Messages:
         show(text=f"{head}\n{summary}", parent=parent, duration=None, closable=True)
 
     @staticmethod
+    def show_chapter_queue_done(parent, done: int, review: int, failed: int, skipped: int,
+                                output_dir: str, stopped: bool = False):
+        """The end of a chapter queue: how many chapters went which way, and where."""
+        head = (
+            QCoreApplication.translate("Messages", "Chapter queue stopped.")
+            if stopped else
+            QCoreApplication.translate("Messages", "Chapter queue finished.")
+        )
+        parts = [QCoreApplication.translate("Messages", "{0} done").format(done)]
+        if review:
+            parts.append(QCoreApplication.translate("Messages", "{0} with pages to review").format(review))
+        if failed:
+            parts.append(QCoreApplication.translate("Messages", "{0} failed").format(failed))
+        if skipped:
+            parts.append(QCoreApplication.translate("Messages", "{0} already done").format(skipped))
+        where = QCoreApplication.translate("Messages", "Projects are in {0}").format(output_dir)
+        show = MMessage.warning if (stopped or failed or review) else MMessage.success
+        show(text=f"{head}\n{' · '.join(parts)}\n{where}", parent=parent, duration=None, closable=True)
+
+    @staticmethod
     def show_smart_workflow_invalid(parent, problems: str):
         MMessage.error(
             text=QCoreApplication.translate(
