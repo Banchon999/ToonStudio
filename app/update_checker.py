@@ -27,6 +27,9 @@ ARCHIVES = {
 #: lean one must not be offered a download several times its size, and the
 #: full one must not be "updated" into a build without its OCR engines.
 FULL_MARKER = "-full"
+#: Marks what the Windows installer downloads for its optional component: a
+#: part of an app, never an app.
+PACK_MARKER = "-ocr-pack"
 
 
 def is_full_build() -> bool:
@@ -39,26 +42,45 @@ def is_full_build() -> bool:
         return False
 
 
-def choose_asset(assets: list[dict], system: str, full: bool = False) -> str | None:
+def is_installed_copy(executable: str | None = None) -> bool:
+    """Whether this app was put here by the Windows installer rather than
+    unzipped: the installer leaves its uninstaller beside the executable."""
+    import sys
+
+    folder = os.path.dirname(os.path.abspath(executable or sys.executable))
+    try:
+        return any(name.lower().startswith("unins") and name.lower().endswith(".exe")
+                   for name in os.listdir(folder))
+    except OSError:
+        return False
+
+
+def choose_asset(assets: list[dict], system: str, full: bool = False,
+                 installed: bool = True) -> str | None:
     """The download URL for this OS from a release's assets, or None.
 
-    An installer wins when the release has one; otherwise the archive built
+    An installer wins when the release has one — unless this copy was not
+    installed (`installed=False`: a Windows zip someone unpacked where they
+    wanted it), which is updated with the next zip rather than installed a
+    second time somewhere else. Otherwise the archive built
     for this OS (``ToonStudio-Windows-x86_64.zip``, ``ToonStudio-Linux-…``).
+    The installer's OCR pack (``…-ocr-pack-…``) is never an update.
     A full build gets the full archive (``…-full.zip``) when the release has
     one and the ordinary one otherwise; an ordinary build never gets the full
     one — both match "windows" and ".zip", which is why this is decided here.
     """
     installers = INSTALLER_SUFFIXES.get(system, ())
-    for asset in assets:
-        if asset.get("name", "").lower().endswith(installers) and installers:
-            return asset.get("browser_download_url")
+    if installed:
+        for asset in assets:
+            if asset.get("name", "").lower().endswith(installers) and installers:
+                return asset.get("browser_download_url")
     fragment, suffix = ARCHIVES.get(system, (None, None))
     if not fragment:
         return None
     lean, heavy = None, None
     for asset in assets:
         name = asset.get("name", "").lower()
-        if fragment in name and name.endswith(suffix):
+        if fragment in name and name.endswith(suffix) and PACK_MARKER not in name:
             if FULL_MARKER in name:
                 heavy = heavy or asset.get("browser_download_url")
             else:
@@ -192,7 +214,12 @@ class UpdateWorker:
                  return
 
             if version.parse(latest_tag) > version.parse(self.current_version):
-                asset_url = choose_asset(data.get("assets", []), platform.system(), full=is_full_build())
+                system = platform.system()
+                asset_url = choose_asset(
+                    data.get("assets", []), system, full=is_full_build(),
+                    # Only Windows has both an installer and an archive.
+                    installed=is_installed_copy() if system == "Windows" else True,
+                )
                 if asset_url:
                     self.emit("update_available", latest_tag, data.get("html_url", ""), asset_url)
                 else:

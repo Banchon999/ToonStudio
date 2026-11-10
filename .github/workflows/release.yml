@@ -25,6 +25,10 @@ name: Release
 # build-windows-full.yml) is published beside the lean one when it builds and
 # fits GitHub's 2 GB asset limit; like the DMG it is optional, so a release
 # never waits on it.
+#
+# The Windows installer (build-windows-installer.yml) is made from those two
+# builds: ToonStudio-Setup-x64.exe, much smaller than the zip, and the OCR
+# pack it downloads when "EasyOCR and PaddleOCR-VL" is ticked. Optional too.
 on:
   push:
     tags: ['v*']
@@ -101,6 +105,14 @@ jobs:
     needs: tests
     uses: ./.github/workflows/build-windows-full.yml
 
+  # The installer, and the OCR pack it downloads when asked to. Made from the
+  # two Windows builds above, so it needs both; optional like the DMG.
+  installer:
+    needs: [check, windows, windows_full]
+    uses: ./.github/workflows/build-windows-installer.yml
+    with:
+      tag: ${{ needs.check.outputs.tag }}
+
   linux:
     needs: tests
     uses: ./.github/workflows/build-linux.yml
@@ -116,7 +128,7 @@ jobs:
   # tests and the Windows and Linux builds pass; a DMG that did not build is
   # added later by build-macos-dmg.yml with attach_to: vX.Y.Z.
   publish:
-    needs: [check, tests, windows, windows_full, linux, macos]
+    needs: [check, tests, windows, windows_full, installer, linux, macos]
     if: >-
       ${{ always() && needs.check.result == 'success' && needs.tests.result == 'success'
       && needs.windows.result == 'success' && needs.linux.result == 'success' }}
@@ -146,12 +158,22 @@ jobs:
             echo "::warning::no full Windows build (windows_full job: ${{ needs.windows_full.result }}) - the release goes out with the lean build only"
             full=""
           fi
+          # The installer and its OCR pack go out together or not at all: an
+          # installer whose download is missing would fail for whoever ticks it.
+          setup=dist/ToonStudio-Setup-x64.exe
+          pack=dist/ToonStudio-ocr-pack-x64.zip
+          if [ ! -f "$setup" ] || [ ! -f "$pack" ]; then
+            echo "::warning::no Windows installer (installer job: ${{ needs.installer.result }}) - the release goes out with the zips only"
+            setup=""
+            pack=""
+          fi
           {
             echo "list<<EOF"
             echo dist/ToonStudio-Windows-x86_64.zip
             echo dist/ToonStudio-Linux-x86_64.tar.gz
             [ -n "$dmg" ] && echo "$dmg"
             [ -n "$full" ] && echo "$full"
+            [ -n "$setup" ] && echo "$setup" && echo "$pack"
             echo EOF
           } >> "$GITHUB_OUTPUT"
 
