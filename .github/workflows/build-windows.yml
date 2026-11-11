@@ -149,10 +149,65 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path dist/ToonStudio -DestinationPath dist/ToonStudio-Windows-x86_64.zip
 
+      # The installer (installer/toonstudio.iss) wraps the same folder that
+      # just passed the self-tests. Inno Setup is not on every runner image,
+      # so it is installed when missing.
+      - name: Build the installer
+        shell: pwsh
+        run: |
+          $iscc = @(
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+            "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $iscc) {
+            choco install innosetup -y --no-progress
+            $iscc = @(
+              "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+              "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+            ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          }
+          if (-not $iscc) { Write-Error "Inno Setup (ISCC.exe) not found"; exit 1 }
+          $version = ([regex]'__version__\s*=\s*"([^"]+)"').Match((Get-Content app/version.py -Raw)).Groups[1].Value
+          if (-not $version) { Write-Error "no __version__ in app/version.py"; exit 1 }
+          & $iscc "/DAppVersion=$version" installer/toonstudio.iss
+          if ($LASTEXITCODE -ne 0) { Write-Error "ISCC failed ($LASTEXITCODE)"; exit 1 }
+          Get-Item dist/ToonStudio-Windows-x86_64-Setup.exe | Format-List Name, Length
+
+      # An installer that builds is not one that installs: install it the way
+      # the in-app updater runs it (per user, no prompt), run the installed
+      # app's own self-test, then uninstall and check nothing is left.
+      - name: Install, run and uninstall the installer
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'ToonStudioInstall'
+          $log = Join-Path $env:RUNNER_TEMP 'setup.log'
+          $p = Start-Process -FilePath dist/ToonStudio-Windows-x86_64-Setup.exe `
+                 -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/DIR=$dir","/LOG=$log",'/TASKS=ctpr' `
+                 -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Get-Content $log -Tail 40; Write-Error "setup exited $($p.ExitCode)"; exit 1 }
+          $exe = Join-Path $dir 'ToonStudio.exe'
+          if (-not (Test-Path $exe)) { Write-Error "setup did not install ToonStudio.exe"; exit 1 }
+          $errFile = Join-Path $env:RUNNER_TEMP 'installed-self-test.err'
+          $proc = Start-Process -FilePath $exe -ArgumentList '--skia-self-test' -Wait -PassThru -NoNewWindow `
+                    -RedirectStandardError $errFile
+          if ($proc.ExitCode -ne 0) {
+            Write-Error "the installed app failed its self-test: $(Get-Content $errFile -Raw)"; exit 1
+          }
+          $assoc = (Get-ItemProperty 'HKCU:\Software\Classes\ToonStudio.Project\shell\open\command').'(default)'
+          if ($assoc -notlike "*ToonStudio.exe*") { Write-Error ".ctpr is not associated: $assoc"; exit 1 }
+          $un = Start-Process -FilePath (Join-Path $dir 'unins000.exe') -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -Wait -PassThru
+          Start-Sleep -Seconds 5   # the uninstaller finishes from a temp copy of itself
+          if ($un.ExitCode -ne 0) { Write-Error "uninstall exited $($un.ExitCode)"; exit 1 }
+          if (Test-Path $exe) { Write-Error "uninstall left ToonStudio.exe behind"; exit 1 }
+          if (Test-Path 'HKCU:\Software\Classes\ToonStudio.Project') { Write-Error "uninstall left the .ctpr association"; exit 1 }
+          Write-Output "Installer installs, runs and uninstalls cleanly"
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v6
         with:
           name: Comic-Translate-Windows
-          path: dist/ToonStudio-Windows-x86_64.zip
+          path: |
+            dist/ToonStudio-Windows-x86_64.zip
+            dist/ToonStudio-Windows-x86_64-Setup.exe
           if-no-files-found: error
           retention-days: 30

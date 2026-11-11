@@ -135,7 +135,7 @@ jobs:
         id: files
         run: |
           # Windows and Linux must be there; ls fails the job if either is not.
-          ls dist/ToonStudio-Windows-x86_64.zip dist/ToonStudio-Linux-x86_64.tar.gz
+          ls dist/ToonStudio-Windows-x86_64-Setup.exe dist/ToonStudio-Windows-x86_64.zip dist/ToonStudio-Linux-x86_64.tar.gz
           dmg=dist/ToonStudio-macOS-arm64.dmg
           if [ ! -f "$dmg" ]; then
             echo "::warning::no macOS DMG (macos job: ${{ needs.macos.result }}) - add it later with build-macos-dmg.yml, attach_to: ${{ needs.check.outputs.tag }}"
@@ -148,6 +148,7 @@ jobs:
           fi
           {
             echo "list<<EOF"
+            echo dist/ToonStudio-Windows-x86_64-Setup.exe
             echo dist/ToonStudio-Windows-x86_64.zip
             echo dist/ToonStudio-Linux-x86_64.tar.gz
             [ -n "$dmg" ] && echo "$dmg"
