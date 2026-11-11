@@ -90,3 +90,35 @@ def test_a_float_box_from_anywhere_still_crops(tmp_path):
     crop_mask, bounds = build_block_mask_data(image, blk, default_padding=5)
     assert crop_mask is not None
     assert all(isinstance(v, (int, np.integer)) for v in bounds)
+
+
+# -- slanted lines --------------------------------------------------------------
+#
+# Reported from 3.4.0: "float() argument must be a string or a real number, not
+# 'list'" in _shift_block_vertical. The line finder gives slanted lettering its
+# lines as four-point polygons ([[x, y], ...]) rather than [x1, y1, x2, y2]
+# boxes, and the shift read every line as a box.
+
+def test_a_slanted_line_polygon_is_moved_back_with_its_block():
+    blk = TextBlock(text_bbox=np.array([20, 120, 180, 180]), text_class="text_free")
+    blk.lines = [
+        [[20, 120], [180, 128], [180, 148], [20, 140]],      # slanted: a polygon
+        [20, 150, 180, 170],                                  # straight: a box
+    ]
+    BatchProcessor._shift_block_vertical(blk, 100, 300)
+
+    assert blk.xyxy.tolist() == [20, 20, 180, 80]
+    polygon, box = blk.lines
+    assert polygon == [[20, 20], [180, 28], [180, 48], [20, 40]]
+    assert all(isinstance(v, int) for point in polygon for v in point)
+    assert box == [20, 50, 180, 70]
+
+
+def test_a_polygon_is_clamped_to_the_page_and_dropped_when_flattened():
+    blk = TextBlock(text_bbox=np.array([20, 0, 180, 60]), text_class="text_free")
+    blk.lines = [
+        [[20, 50], [180, 50], [180, 60], [20, 60]],          # ends up above the page
+        [[20, 110], [180, 118], [180, 140], [20, 132]],      # straddles the top edge
+    ]
+    BatchProcessor._shift_block_vertical(blk, 120, 300)
+    assert blk.lines == [[[20, 0], [180, 0], [180, 20], [20, 12]]]

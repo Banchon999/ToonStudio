@@ -8,6 +8,7 @@ import traceback
 import imkit as imk
 import time
 import numpy as np
+from modules.detection.heuristic_lines.geometry import _is_polygon_line
 from typing import TYPE_CHECKING
 from datetime import datetime
 from typing import List
@@ -124,12 +125,27 @@ class BatchProcessor:
             # with "slice indices must be integers".
             return np.array([round(x1), round(y1), round(x2), round(y2)], dtype=int)
 
+        def shift_polygon(points):
+            # Slanted lettering gets its lines as four-point polygons
+            # ([[x, y], ...], heuristic_lines' _pad_polygon_line), not boxes;
+            # read as a box, float() met a point and the batch died.
+            moved = [[int(round(float(x))),
+                      int(round(min(max(float(y) - dy, 0.0), float(page_height))))]
+                     for x, y in points]
+            ys = [y for _, y in moved]
+            return moved if max(ys) - min(ys) > 2 else None
+
         blk.xyxy = shift_box(blk.xyxy)
         if getattr(blk, 'bubble_xyxy', None) is not None:
             blk.bubble_xyxy = shift_box(blk.bubble_xyxy)
         if getattr(blk, 'lines', None):
             shifted_lines = []
             for line in blk.lines:
+                if _is_polygon_line(line):
+                    shifted = shift_polygon(np.asarray(line).reshape(-1, 2).tolist())
+                    if shifted is not None:
+                        shifted_lines.append(shifted)
+                    continue
                 shifted = shift_box(line)
                 if shifted is not None and shifted[3] - shifted[1] > 2:
                     shifted_lines.append([int(v) for v in shifted])
