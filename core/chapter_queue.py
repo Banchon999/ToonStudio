@@ -158,6 +158,16 @@ def export_path(output_dir: str, chapter: Chapter, export_format: str) -> str | 
     return os.path.join(output_dir, f"{chapter.name}.{export_format}")
 
 
+def psd_path(output_dir: str, chapter: Chapter) -> str:
+    """The folder of editable PSDs, one per page, beside the chapter's other outputs.
+
+    A folder of its own: with the "folder" export the chapter's images already
+    fill <output>/<name>/, and a page's .png and .psd side by side read as two
+    copies of one page.
+    """
+    return os.path.join(output_dir, f"{chapter.name}-PSD")
+
+
 # --- progress: which chapters an earlier run finished ------------------------
 
 def _progress_file(output_dir: str) -> str:
