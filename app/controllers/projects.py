@@ -1055,7 +1055,12 @@ class ProjectController:
                 })()
 
             for group_index, group in enumerate(export_plan, start=1):
-                group_dir = os.path.join(temp_dir, f"group_{group_index:03d}")
+                # A group marked "folder" is written as plain images straight
+                # into output_path (the chapter queue's default export);
+                # every other group is packed into an archive by make().
+                as_folder = bool(group.get("folder"))
+                group_dir = group["output_path"] if as_folder else os.path.join(
+                    temp_dir, f"group_{group_index:03d}")
                 os.makedirs(group_dir, exist_ok=True)
                 for page_number, page_idx in enumerate(group["page_indices"], start=1):
                     file_path = self.main.image_files[page_idx]
@@ -1080,6 +1085,8 @@ class ProjectController:
                     sv_pth = os.path.join(group_dir, self._build_export_page_name(page_number, file_path))
                     renderer.save_image(sv_pth)
 
+                if as_folder:
+                    continue
                 os.makedirs(os.path.dirname(group["output_path"]) or ".", exist_ok=True)
                 make(group_dir, group["output_path"])
         finally:

@@ -149,10 +149,23 @@ jobs:
         shell: pwsh
         run: Compress-Archive -Path dist/ToonStudio -DestinationPath dist/ToonStudio-Windows-x86_64.zip
 
+      # The installer (installer/toonstudio.iss) wraps the same folder that
+      # just passed the self-tests, and is then installed, run and
+      # uninstalled here: one that only compiles proves nothing.
+      - name: Build the installer
+        shell: pwsh
+        run: ./installer/build_installer.ps1 -Edition lean
+
+      - name: Install, run and uninstall the installer
+        shell: pwsh
+        run: ./installer/test_installer.ps1 -Setup dist/ToonStudio-Windows-x86_64-Setup.exe
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v6
         with:
           name: Comic-Translate-Windows
-          path: dist/ToonStudio-Windows-x86_64.zip
+          path: |
+            dist/ToonStudio-Windows-x86_64.zip
+            dist/ToonStudio-Windows-x86_64-Setup.exe
           if-no-files-found: error
           retention-days: 30

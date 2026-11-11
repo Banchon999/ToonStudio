@@ -47,10 +47,14 @@ def choose_asset(assets: list[dict], system: str, full: bool = False) -> str | N
     A full build gets the full archive (``…-full.zip``) when the release has
     one and the ordinary one otherwise; an ordinary build never gets the full
     one — both match "windows" and ".zip", which is why this is decided here.
+    The Windows installer (``…-Setup.exe``) installs the ordinary build, so a
+    full build is only ever offered an installer marked full: running the
+    ordinary one would replace its bundle with one lacking its OCR engines.
     """
     installers = INSTALLER_SUFFIXES.get(system, ())
     for asset in assets:
-        if asset.get("name", "").lower().endswith(installers) and installers:
+        name = asset.get("name", "").lower()
+        if installers and name.endswith(installers) and (FULL_MARKER in name) == bool(full):
             return asset.get("browser_download_url")
     fragment, suffix = ARCHIVES.get(system, (None, None))
     if not fragment:

@@ -133,7 +133,7 @@ def _published_assets():
 
 
 @pytest.mark.parametrize("system, expected", [
-    ("Windows", "ToonStudio-Windows-x86_64.zip"),
+    ("Windows", "ToonStudio-Windows-x86_64-Setup.exe"),
     ("Linux", "ToonStudio-Linux-x86_64.tar.gz"),
     ("Darwin", "ToonStudio-macOS-arm64.dmg"),
 ])
@@ -143,7 +143,8 @@ def test_every_os_finds_its_own_archive_in_a_release(system, expected):
 
 
 def test_an_installer_wins_over_an_archive_and_macos_needs_one():
-    assets = _published_assets() + [{"name": "ToonStudio-Setup.exe", "browser_download_url": "https://dl.invalid/setup"}]
+    zips = [a for a in _published_assets() if not a["name"].lower().endswith(".exe")]
+    assets = zips + [{"name": "ToonStudio-Setup.exe", "browser_download_url": "https://dl.invalid/setup"}]
     assert update_checker.choose_asset(assets, "Windows") == "https://dl.invalid/setup"
     # A release without the DMG (v3.0.0 went out without one): macOS is told
     # there is nothing for it rather than offered another OS's archive.
@@ -151,10 +152,34 @@ def test_an_installer_wins_over_an_archive_and_macos_needs_one():
     assert update_checker.choose_asset(no_dmg, "Darwin") is None
 
 
+def test_each_build_runs_its_own_editions_installer():
+    # release.yml publishes a lean and a full installer beside the zips; a
+    # full app "updated" by the lean one would lose its PyTorch OCR engines.
+    assets = _published_assets()
+    setups = sorted(a["name"] for a in assets if a["name"].lower().endswith(".exe"))
+    assert setups == ["ToonStudio-Windows-x86_64-Setup.exe", "ToonStudio-Windows-x86_64-full-Setup.exe"]
+    # Each build runs its own edition's installer, in whichever order GitHub lists them.
+    for listed in (assets, list(reversed(assets))):
+        assert update_checker.choose_asset(listed, "Windows") == \
+            "https://dl.invalid/ToonStudio-Windows-x86_64-Setup.exe"
+        assert update_checker.choose_asset(listed, "Windows", full=True) == \
+            "https://dl.invalid/ToonStudio-Windows-x86_64-full-Setup.exe"
+    # A release whose full build did not make it: the full app keeps to
+    # zips (the lean one at worst), never the lean installer.
+    no_full = [a for a in assets if "-full" not in a["name"]]
+    assert update_checker.choose_asset(no_full, "Windows", full=True) == \
+        "https://dl.invalid/ToonStudio-Windows-x86_64.zip"
+    # The full zip, when only the full installer is missing.
+    zip_only = [a for a in assets if a["name"] != "ToonStudio-Windows-x86_64-full-Setup.exe"]
+    assert update_checker.choose_asset(zip_only, "Windows", full=True) == \
+        "https://dl.invalid/ToonStudio-Windows-x86_64-full.zip"
+
+
 def test_each_windows_build_is_updated_with_its_own_kind():
     # Both archives match "windows" and ".zip": the lean build must not be
     # offered the PyTorch one, nor the full build be "updated" into a lean one.
-    assets = _published_assets()
+    # The zips alone, as a release without the installer would have them.
+    assets = [a for a in _published_assets() if not a["name"].lower().endswith(".exe")]
     assert any("-full" in a["name"] for a in assets), "release.yml publishes the full build"
     lean = update_checker.choose_asset(assets, "Windows", full=False)
     full = update_checker.choose_asset(assets, "Windows", full=True)

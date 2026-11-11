@@ -42,6 +42,7 @@ from app.controllers.layers import LayerController
 from app.controllers.selection import SelectionController
 from app.controllers.paint import PaintController
 from app.controllers.smart_workflow import SmartWorkflowController
+from app.controllers.chapter_queue import ChapterQueueController
 
 
 # Ensure any pre-declared mandatory models
@@ -145,6 +146,7 @@ class ComicTranslate(ComicTranslateUI):
         self.selection_ctrl = SelectionController(self)
         self.paint_ctrl = PaintController(self)
         self.smart_ctrl = SmartWorkflowController(self)
+        self.chapter_queue_ctrl = ChapterQueueController(self)
         self.layers_panel.bind(self.layer_ctrl)
         self.layers_button.toggled.connect(self.show_layers_tab)
         self.editor_status_bar.bind(self)
@@ -243,6 +245,7 @@ class ComicTranslate(ComicTranslateUI):
         # Connect other buttons and widgets
         self.translate_button.clicked.connect(self.start_run)
         self.cancel_button.clicked.connect(self.cancel_run)
+        self.chapter_queue_button.clicked.connect(lambda: self.open_chapter_queue())
         self.batch_report_button.clicked.connect(self.show_latest_batch_report)
         self.set_all_button.clicked.connect(self.text_ctrl.set_src_trg_all)
         self.clear_rectangles_button.clicked.connect(self.image_viewer.clear_rectangles)
@@ -764,10 +767,23 @@ class ComicTranslate(ComicTranslateUI):
             self.start_batch_process()
 
     def cancel_run(self):
-        if self.smart_ctrl.running:
+        if self.chapter_queue_ctrl.running:
+            self.chapter_queue_ctrl.cancel()
+        elif self.smart_ctrl.running:
             self.smart_ctrl.cancel()
         else:
             self.cancel_current_task()
+
+    def open_chapter_queue(self):
+        """The chapter queue window: one instance, kept, so reopening it mid-run shows progress."""
+        from app.ui.chapter_queue_dialog import ChapterQueueDialog
+        dialog = getattr(self, "_chapter_queue_dialog", None)
+        if dialog is None:
+            dialog = self._chapter_queue_dialog = ChapterQueueDialog(self)
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+        return dialog
 
     def open_smart_workflow_settings(self):
         from app.ui.smart_workflow_dialog import SmartWorkflowDialog
@@ -991,6 +1007,9 @@ class ComicTranslate(ComicTranslateUI):
             pass
         was_cancelled = self._batch_cancel_requested
         report = self._finalize_batch_report(was_cancelled)
+        # One chapter of a chapter queue: the queue saves the project itself
+        # and reports every chapter at the end, so no toast or auto-save here.
+        in_queue = self.chapter_queue_ctrl.running
         self._batch_active = False
         self._batch_cancel_requested = False
         self.progress_bar.setVisible(False)
@@ -999,11 +1018,13 @@ class ComicTranslate(ComicTranslateUI):
         self.save_as_project_button.setEnabled(True)
         self.webtoon_toggle.setEnabled(True)
         self.selected_batch = []
-        if report and report["skipped_count"] > 0:
+        if in_queue:
+            pass
+        elif report and report["skipped_count"] > 0:
             Messages.show_batch_skipped_summary(self, report["skipped_count"])
         elif not was_cancelled:
             Messages.show_translation_complete(self)
-        if report and report.get("glossary_count"):
+        if report and report.get("glossary_count") and not in_queue:
             Messages.show_batch_glossary_summary(self, len(report["glossary_entries"]))
 
         # Drop cached models/sessions after batch to keep RAM bounded.
@@ -1014,6 +1035,13 @@ class ComicTranslate(ComicTranslateUI):
                 self._memlogger.emit("model_caches_released")
         except Exception:
             pass
+
+        if in_queue:
+            self.chapter_queue_ctrl.on_run_finished(
+                stopped=was_cancelled,
+                review=int(report["skipped_count"]) if report else 0,
+            )
+            return
 
         # Trigger autosave after batch to persist batch report
         if report:

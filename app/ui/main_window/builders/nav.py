@@ -62,6 +62,9 @@ class NavRailMixin:
         folder_action = self.tool_menu.addAction(MIcon("folder-open.svg"), self.tr("Folder"))
         folder_action.triggered.connect(self.folder_browser_button.clicked)
 
+        queue_action = self.tool_menu.addAction(MIcon("chapter-queue.svg"), self.tr("Many Chapters (Queue)…"))
+        queue_action.triggered.connect(lambda: self.open_chapter_queue())
+
         document_action = self.tool_menu.addAction(MIcon("mingcute--document-line.svg"), self.tr("Document"))
         document_action.triggered.connect(self.document_browser_button.clicked)
 
@@ -207,6 +210,15 @@ class NavRailMixin:
         )
         self.insert_button.clicked.connect(self.insert_browser_button.clicked)
 
+        # The chapter queue, reachable from the home screen too: it is where a
+        # session of many chapters starts, before any project is open.
+        self.chapter_queue_nav_button = MToolButton()
+        self.chapter_queue_nav_button.set_dayu_svg("chapter-queue.svg")
+        self.chapter_queue_nav_button.setToolTip(self.tr(
+            "Chapter Queue: translate many chapters one after another"))
+        self.chapter_queue_nav_button.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+        self.chapter_queue_nav_button.clicked.connect(lambda: self.open_chapter_queue())
+
         # Glossary lives on the working page (not buried in Settings) since it
         # is edited constantly while translating a series.
         self.glossary_button = MToolButton()
@@ -223,6 +235,7 @@ class NavRailMixin:
         nav_rail_layout.addWidget(self.save_browser)
         nav_rail_layout.addWidget(self.save_all_button)
         nav_rail_layout.addWidget(nav_divider)
+        nav_rail_layout.addWidget(self.chapter_queue_nav_button)
         nav_rail_layout.addWidget(self.search_sidebar_button)
         nav_rail_layout.addWidget(self.glossary_button)
         nav_rail_layout.addWidget(nav_tool_group)

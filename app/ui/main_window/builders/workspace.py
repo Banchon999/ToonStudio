@@ -94,6 +94,14 @@ class WorkspaceMixin:
         self.cancel_button = MPushButton(self.tr("Cancel"))
         self.cancel_button.setEnabled(True)
         self.cancel_button.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+        # Many chapters, one after another (app/ui/chapter_queue_dialog.py).
+        # Icon-only: a text button made the window's minimum width exceed
+        # 1280 px (tests/test_editor_layout.py).
+        self.chapter_queue_button = MToolButton().svg("chapter-queue.svg").icon_only()
+        self.chapter_queue_button.setToolTip(self.tr(
+            "Chapter Queue: translate many chapters one after another and come back to "
+            "a project per chapter"))
+        self.chapter_queue_button.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.batch_report_button = MPushButton(self.tr("Report"))
         self.batch_report_button.setEnabled(False)
         self.batch_report_button.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
@@ -133,6 +141,7 @@ class WorkspaceMixin:
         header_layout.addWidget(mode_switch)
         header_layout.addWidget(self.translate_button)
         header_layout.addWidget(self.cancel_button)
+        header_layout.addWidget(self.chapter_queue_button)
         header_layout.addWidget(self.batch_report_button)
 
         self.search_panel = SearchReplacePanel(self)

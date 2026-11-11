@@ -46,8 +46,8 @@ def test_the_release_publishes_exactly_what_the_builds_upload():
     for name in ("build-windows.yml", "build-windows-full.yml", "build-linux.yml", "build-macos-dmg.yml"):
         text = (WORKFLOWS / name).read_text(encoding="utf-8")
         upload = text[text.index("upload-artifact"):]
-        built |= set(re.findall(r"path:\s*dist/(ToonStudio-[\w.-]+)", upload))
-    assert published == built and len(built) == 4
+        built |= set(re.findall(r"dist/(ToonStudio-[\w.-]+)", upload))
+    assert published == built and len(built) == 6
 
 
 def test_the_release_runs_on_a_version_tag_or_by_hand_never_on_its_own():
@@ -123,7 +123,8 @@ def test_a_release_goes_out_without_the_dmg_when_only_macos_failed():
         assert f"needs.{job}.result == 'success'" in condition
     assert "needs.macos.result ==" not in condition
     # Windows and Linux are still required files; only the DMG is optional.
-    assert "ls dist/ToonStudio-Windows-x86_64.zip dist/ToonStudio-Linux-x86_64.tar.gz" in publish
+    assert ("ls dist/ToonStudio-Windows-x86_64-Setup.exe dist/ToonStudio-Windows-x86_64.zip "
+            "dist/ToonStudio-Linux-x86_64.tar.gz") in publish
     assert "fail_on_unmatched_files: true" in publish
 
 
@@ -158,3 +159,41 @@ def test_the_linux_build_runs_on_a_named_ubuntu_release():
     text = (WORKFLOWS / "build-linux.yml").read_text(encoding="utf-8")
     runner = re.search(r"^\s+runs-on:\s*(\S+)", text, re.M).group(1)
     assert re.fullmatch(r"ubuntu-\d\d\.\d\d", runner), runner
+
+
+def test_the_windows_installers_are_built_tested_and_published():
+    iss = (ROOT / "installer" / "toonstudio.iss").read_text(encoding="utf-8")
+    build_ps = (ROOT / "installer" / "build_installer.ps1").read_text(encoding="utf-8")
+    test_ps = (ROOT / "installer" / "test_installer.ps1").read_text(encoding="utf-8")
+    # One script, two editions, each named as the workflows upload it.
+    assert '#define SetupName "ToonStudio-Windows-x86_64-Setup"' in iss
+    assert '#define SetupName "ToonStudio-Windows-x86_64-full-Setup"' in iss
+    assert "OutputBaseFilename={#SetupName}" in iss
+    assert '"/DAppVersion=$version" "/DEdition=$Edition"' in build_ps
+    assert "2147483648" in build_ps                         # GitHub's asset limit
+    # Installed, run and uninstalled on the runner, not only compiled.
+    for word in ("/VERYSILENT", "/CURRENTUSER", "unins000.exe", "ToonStudio.Project"):
+        assert word in test_ps, word
+    for name, edition, setup, extra in (
+        ("build-windows.yml", "lean", "ToonStudio-Windows-x86_64-Setup.exe", None),
+        ("build-windows-full.yml", "full", "ToonStudio-Windows-x86_64-full-Setup.exe", "--optional-ocr-self-test"),
+    ):
+        build = (WORKFLOWS / name).read_text(encoding="utf-8")
+        built = build.index(f"build_installer.ps1 -Edition {edition}")
+        # Built from the folder that passed the bundle's own self-tests…
+        assert build.index("--skia-self-test") < built, name
+        # …then installed and tested as installed.
+        tested = build.index(f"test_installer.ps1 -Setup dist/{setup}")
+        assert built < tested < build.index("upload-artifact"), name
+        if extra:
+            assert extra in build[tested:build.index("upload-artifact")], name
+    # Per user, no administrator prompt, so the updater can run the next one;
+    # one AppId for both editions, so either replaces the other.
+    assert "PrivilegesRequired=lowest" in iss
+    assert iss.count("AppId=") == 1 and "AppId={{6B0E4C7A-3F2D-4B8E-9C51-7A2E8D4F1C93}" in iss
+    release = (WORKFLOWS / "release.yml").read_text(encoding="utf-8")
+    # The lean installer is required like the zip; the full one is optional
+    # like the full zip, and only goes out beside it.
+    assert "ls dist/ToonStudio-Windows-x86_64-Setup.exe" in release
+    assert 'full_setup=dist/ToonStudio-Windows-x86_64-full-Setup.exe' in release
+    assert '[ -z "$full" ] || [ ! -f "$full_setup" ]' in release
