@@ -50,6 +50,22 @@ class Messages:
         show(text=f"{head}\n{' · '.join(parts)}\n{where}", parent=parent, duration=None, closable=True)
 
     @staticmethod
+    def show_review_opening(parent, name: str):
+        MMessage.info(
+            text=QCoreApplication.translate(
+                "Messages", "Opening {0} in a second window for review…").format(name),
+            parent=parent, duration=5, closable=True)
+
+    @staticmethod
+    def show_review_refused(parent, name: str):
+        MMessage.warning(
+            text=QCoreApplication.translate(
+                "Messages",
+                "{0} cannot be opened for review right now: it is the project this window "
+                "is working on, or the file is missing.").format(name),
+            parent=parent, duration=None, closable=True)
+
+    @staticmethod
     def show_smart_workflow_invalid(parent, problems: str):
         MMessage.error(
             text=QCoreApplication.translate(

@@ -152,6 +152,11 @@ def main():
     # Create QApplication directly instead of using the context manager
     app = QApplication(sys.argv)
 
+    # Before anything reads a setting: one an older version stored in a form
+    # this PySide cannot read back closed the app during start-up.
+    from app.settings_repair import repair_settings
+    repair_settings()
+
     # The bundled UI typeface, before any widget is styled.
     from app.ui.fonts import load_ui_fonts
     load_ui_fonts()
@@ -165,13 +170,18 @@ def main():
     server_name = _single_instance_server_name()
     startup_project_file = _extract_project_file(sys.argv)
 
+    # A review window (core/review_window.py) is a second process on purpose:
+    # it neither hands its project to the first window nor answers for it.
+    from core.review_window import is_review
+    review_mode = is_review(sys.argv)
+
     # If another instance is already running, forward open/activate then exit.
-    if _try_forward_to_existing_instance(server_name, startup_project_file):
+    if not review_mode and _try_forward_to_existing_instance(server_name, startup_project_file):
         sys.exit(0)
 
     # Become the primary instance: start an IPC server for subsequent launches.
     server = QLocalServer(app)
-    if not server.listen(server_name):
+    if not review_mode and not server.listen(server_name):
         # Likely a stale server (crash). Remove and retry.
         QLocalServer.removeServer(server_name)
         server.listen(server_name)
@@ -224,6 +234,15 @@ def main():
                 return
             norm = os.path.abspath(path)
             if self._ct is not None:
+                # Busy translating: loading here would replace the pages
+                # being worked on. The project opens in a review window.
+                try:
+                    if self._ct.is_busy_translating():
+                        self._ct.open_review_window(norm)
+                        return
+                except Exception:
+                    logging.exception("Could not open a review window")
+                    return
                 try:
                     if not self._ct._confirm_start_new_project():
                         return
@@ -266,7 +285,7 @@ def main():
                     load_translation(app, selected_language)
 
                 from controller import ComicTranslate
-                self._ct = ComicTranslate()
+                self._ct = ComicTranslate(review_mode=review_mode)
                 self._ct.setWindowIcon(icon)
 
                 try:
@@ -281,6 +300,12 @@ def main():
                 # unasked. The offer comes first; declining it without
                 # discarding leaves the checkpoint for next time.
                 opening = project_file or self._pending_project_file
+                if review_mode:
+                    # Its own recovery slot is not offered at start: the
+                    # window exists to open the project it was given.
+                    if opening:
+                        self.request_open_project(opening, clear_recovery=False)
+                    return
                 restored = self._ct.project_ctrl.prompt_restore_recovery_if_available(opening=opening)
                 if opening and not restored:
                     self.request_open_project(opening, clear_recovery=False)
@@ -337,7 +362,8 @@ def main():
     # Best-effort IPC cleanup (avoids stale local server entries after crashes).
     try:
         server.close()
-        QLocalServer.removeServer(server_name)
+        if not review_mode:
+            QLocalServer.removeServer(server_name)
     except Exception:
         pass
 

@@ -62,8 +62,13 @@ class ComicTranslate(ComicTranslateUI):
     render_state_ready = QtCore.Signal(str)
     download_event = QtCore.Signal(str, str)  # status, name
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, review_mode: bool = False):
         super(ComicTranslate, self).__init__(parent)
+        # A review window (core/review_window.py): a second process opened
+        # beside one that is busy translating, to read and edit a finished
+        # project. It keeps its own recovery slot and starts no chapter queue.
+        self.review_mode = bool(review_mode)
+        self._review_processes = []
         self.setWindowTitle("Project1.ctpr[*]")
 
         # Memory logging toggle for local diagnostics.
@@ -147,6 +152,11 @@ class ComicTranslate(ComicTranslateUI):
         self.paint_ctrl = PaintController(self)
         self.smart_ctrl = SmartWorkflowController(self)
         self.chapter_queue_ctrl = ChapterQueueController(self)
+        if self.review_mode:
+            for name in ("chapter_queue_button", "chapter_queue_nav_button"):
+                button = getattr(self, name, None)
+                if button is not None:
+                    button.setVisible(False)
         self.layers_panel.bind(self.layer_ctrl)
         self.layers_button.toggled.connect(self.show_layers_tab)
         self.editor_status_bar.bind(self)
@@ -774,8 +784,47 @@ class ComicTranslate(ComicTranslateUI):
         else:
             self.cancel_current_task()
 
+    def setWindowTitle(self, title: str) -> None:
+        if getattr(self, "review_mode", False):
+            marker = self.tr("Review")
+            if not str(title).endswith(f"— {marker}"):
+                title = f"{title} — {marker}"
+        super().setWindowTitle(title)
+
+    def is_busy_translating(self) -> bool:
+        """A chapter queue, a batch or a Smart Workflow run owns the pages now."""
+        return bool(self.chapter_queue_ctrl.running or self._batch_active or self.smart_ctrl.running)
+
+    def open_review_window(self, project_path: str) -> bool:
+        """Open a saved project in a second window, to read and edit it while
+        this one keeps translating. Refused for the project this window has
+        open: two windows saving one file would overwrite each other."""
+        import subprocess
+        from core import chapter_queue as cq
+        from core.review_window import launch_command, same_file
+
+        current = self.project_file
+        queue = self.chapter_queue_ctrl
+        if queue.running and queue._current() is not None:
+            current = cq.project_path(queue.output_dir, queue._current())
+        if same_file(project_path, current) or not os.path.isfile(project_path):
+            Messages.show_review_refused(self, os.path.basename(project_path))
+            return False
+        command = launch_command(project_path)
+        try:
+            self._review_processes = [p for p in self._review_processes if p.poll() is None]
+            self._review_processes.append(subprocess.Popen(command, close_fds=True))
+        except OSError:
+            logging.getLogger(__name__).exception("Could not start a review window: %s", command)
+            Messages.show_review_refused(self, os.path.basename(project_path))
+            return False
+        Messages.show_review_opening(self, os.path.basename(project_path))
+        return True
+
     def open_chapter_queue(self):
         """The chapter queue window: one instance, kept, so reopening it mid-run shows progress."""
+        if self.review_mode:
+            return None  # the translating window owns the queue
         from app.ui.chapter_queue_dialog import ChapterQueueDialog
         dialog = getattr(self, "_chapter_queue_dialog", None)
         if dialog is None:
