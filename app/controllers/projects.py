@@ -1093,10 +1093,16 @@ class ProjectController:
             # Clean up temp directory
             shutil.rmtree(temp_dir)
 
-    def _gather_psd_pages(self, all_pages_current_state: dict[str, dict]) -> list[PsdPageData]:
-        """Collect PSD page data from the captured viewer state."""
+    def _gather_psd_pages(self, all_pages_current_state: dict[str, dict],
+                          only_paths: set[str] | None = None) -> list[PsdPageData]:
+        """Collect PSD page data from the captured viewer state.
+
+        `only_paths` limits it to those pages (the batch writes one page at a
+        time); a page keeps its index in the project either way, which the
+        webtoon layout needs to place text spanning pages.
+        """
         try:
-            if self.main.file_handler.should_pre_materialize(self.main.image_files):
+            if only_paths is None and self.main.file_handler.should_pre_materialize(self.main.image_files):
                 count = self.main.file_handler.pre_materialize(self.main.image_files)
                 logger.info("PSD export pre-materialized %d paths before writing.", count)
         except Exception:
@@ -1111,6 +1117,8 @@ class ProjectController:
 
         pages: list[PsdPageData] = []
         for page_idx, file_path in enumerate(self.main.image_files):
+            if only_paths is not None and file_path not in only_paths:
+                continue
             rgb_img = self.main.load_image(file_path)
             viewer_state = copy.deepcopy(all_pages_current_state[file_path].get('viewer_state', {}))
 

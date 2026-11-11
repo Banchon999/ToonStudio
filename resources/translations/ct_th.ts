@@ -408,85 +408,85 @@
 <context>
     <name>ComicTranslate</name>
     <message>
-        <location filename="../../controller.py" line="367"/>
+        <location filename="../../controller.py" line="370"/>
         <source>Open Folder</source>
         <translation>เปิดโฟลเดอร์</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="368"/>
+        <location filename="../../controller.py" line="371"/>
         <source>No supported images were found in the selected folder.</source>
         <translation>ไม่พบรูปภาพที่รองรับในโฟลเดอร์ที่เลือก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="587"/>
+        <location filename="../../controller.py" line="590"/>
         <source>Glossary: {0}</source>
         <translation>Glossary: {0}</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="589"/>
+        <location filename="../../controller.py" line="592"/>
         <source>Style: {0}</source>
         <translation>สไตล์: {0}</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="662"/>
+        <location filename="../../controller.py" line="665"/>
         <source>Remove this font from favourites</source>
         <translation>นำฟอนต์นี้ออกจากรายการโปรด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="663"/>
+        <location filename="../../controller.py" line="666"/>
         <source>Add this font to favourites</source>
         <translation>เพิ่มฟอนต์นี้ในรายการโปรด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="677"/>
+        <location filename="../../controller.py" line="680"/>
         <source>No favourite fonts yet</source>
         <translation>ยังไม่มีฟอนต์โปรด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="754"/>
-        <location filename="../../controller.py" line="796"/>
+        <location filename="../../controller.py" line="757"/>
+        <location filename="../../controller.py" line="799"/>
         <source>Translate All</source>
         <translation>แปลทั้งหมด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="760"/>
+        <location filename="../../controller.py" line="763"/>
         <source>Run Workflow</source>
         <translation>เริ่มเวิร์กโฟลว์</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="879"/>
-        <location filename="../../controller.py" line="889"/>
+        <location filename="../../controller.py" line="882"/>
+        <location filename="../../controller.py" line="892"/>
         <source>Error</source>
         <translation>ข้อผิดพลาด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1150"/>
-        <location filename="../../controller.py" line="1161"/>
+        <location filename="../../controller.py" line="1153"/>
+        <location filename="../../controller.py" line="1164"/>
         <source>Downloading model file: {filename}</source>
         <translation>กำลังดาวน์โหลดไฟล์โมเดล: {filename}</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1192"/>
+        <location filename="../../controller.py" line="1195"/>
         <source>Unsaved Changes</source>
         <translation>มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1193"/>
+        <location filename="../../controller.py" line="1196"/>
         <source>Save changes to this file?</source>
         <translation>บันทึกการเปลี่ยนแปลงของไฟล์นี้หรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1194"/>
+        <location filename="../../controller.py" line="1197"/>
         <source>Save</source>
         <translation>บันทึก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1195"/>
+        <location filename="../../controller.py" line="1198"/>
         <source>Don&apos;t Save</source>
         <translation>ไม่บันทึก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1196"/>
+        <location filename="../../controller.py" line="1199"/>
         <source>Cancel</source>
         <translation>ยกเลิก</translation>
     </message>
@@ -872,6 +872,11 @@ Leave empty to use the same model as translation.</source>
         <location filename="../../app/ui/settings/export_page.py" line="20"/>
         <source>Export Inpainted Image</source>
         <translation>ส่งออกภาพที่ลบข้อความแล้ว</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/settings/export_page.py" line="24"/>
+        <source>Export PSD of each page as soon as it is translated (a &quot;&lt;folder&gt;-PSD&quot; folder beside it)</source>
+        <translation>ส่งออก PSD ทีละหน้าทันทีที่แปลเสร็จ (โฟลเดอร์ &quot;&lt;ชื่อโฟลเดอร์&gt;-PSD&quot; ข้างโฟลเดอร์ตอน)</translation>
     </message>
 </context>
 <context>
@@ -2603,12 +2608,12 @@ Open Batch Report to see all skipped images and reasons.</source>
         <translation>ตัวแปล</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1115"/>
+        <location filename="../../controller.py" line="1118"/>
         <source>Processing:</source>
         <translation>กำลังประมวลผล:</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1118"/>
+        <location filename="../../controller.py" line="1121"/>
         <source>Archiving:</source>
         <translation>กำลังบีบอัด:</translation>
     </message>
@@ -3236,36 +3241,36 @@ This folder is separate from Auto-Recover snapshots.</source>
 <context>
     <name>SettingsPage</name>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="609"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="611"/>
         <source>OK</source>
         <translation>ตกลง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="618"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="691"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="620"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="693"/>
         <source>Yes</source>
         <translation>ใช่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="619"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="692"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="621"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="694"/>
         <source>No</source>
         <translation>ไม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="628"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="630"/>
         <source>Restart Required</source>
         <translation>ต้องเริ่มโปรแกรมใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="629"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="631"/>
         <source>The application needs to restart for the language changes to take effect.
 Restart now?</source>
         <translation>ต้องเริ่มโปรแกรมใหม่เพื่อให้การเปลี่ยนภาษามีผล
 เริ่มใหม่ตอนนี้หรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="736"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="738"/>
         <source>Cancel</source>
         <translation>ยกเลิก</translation>
     </message>
@@ -3346,69 +3351,69 @@ Restart now?</source>
         <translation type="vanished">รวม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="668"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="670"/>
         <source>Checking...</source>
         <translation>กำลังตรวจสอบ...</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="674"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="711"/>
-        <location filename="../../app/ui/settings/settings_page.py" line="724"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="676"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="713"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="726"/>
         <source>Check for Updates</source>
         <translation>ตรวจหาอัปเดต</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="684"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="686"/>
         <source>Update Available</source>
         <translation>มีอัปเดตใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="687"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="689"/>
         <source>A new version {version} is available.</source>
         <translation>มีเวอร์ชันใหม่ {version} พร้อมให้ใช้งาน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="688"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="690"/>
         <source>Release Notes</source>
         <translation>บันทึกการเปลี่ยนแปลง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="696"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="698"/>
         <source>Skip This Version</source>
         <translation>ข้ามเวอร์ชันนี้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="714"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="716"/>
         <source>Up to Date</source>
         <translation>เป็นเวอร์ชันล่าสุดแล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="715"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="717"/>
         <source>You are using the latest version.</source>
         <translation>คุณกำลังใช้เวอร์ชันล่าสุดอยู่แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="730"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="732"/>
         <source>Update Error</source>
         <translation>อัปเดตผิดพลาด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="736"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="738"/>
         <source>Downloading update...</source>
         <translation>กำลังดาวน์โหลดอัปเดต...</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="757"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="759"/>
         <source>Update downloaded to {path}. Show it in its folder? Unpack it and run Toon Studio from the new folder.</source>
         <translation>ดาวน์โหลดอัปเดตไว้ที่ {path} แล้ว เปิดโฟลเดอร์ที่เก็บไฟล์ไหม? แตกไฟล์แล้วเปิด Toon Studio จากโฟลเดอร์ใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="760"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="762"/>
         <source>Download Complete</source>
         <translation>ดาวน์โหลดเสร็จสิ้น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="754"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="756"/>
         <source>Installer downloaded to {path}. Run it now?</source>
         <translation>ดาวน์โหลดตัวติดตั้งไปที่ {path} แล้ว เรียกใช้เลยหรือไม่?</translation>
     </message>
@@ -3586,7 +3591,7 @@ Restart now?</source>
         <translation>Anthropic Claude</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="362"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="363"/>
         <source>Personalization</source>
         <translation>การปรับแต่งส่วนตัว</translation>
     </message>
@@ -3595,42 +3600,42 @@ Restart now?</source>
         <translation type="vanished">บัญชี</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="362"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="363"/>
         <source>Tools</source>
         <translation>เครื่องมือ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="362"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="363"/>
         <source>LLMs</source>
         <translation>โมเดลภาษา (LLM)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="363"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="364"/>
         <source>Text Rendering</source>
         <translation>การแสดงผลข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="363"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="364"/>
         <source>Project</source>
         <translation>โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="363"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="364"/>
         <source>Export</source>
         <translation>ส่งออก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="363"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="364"/>
         <source>Shortcuts</source>
         <translation>คีย์ลัด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="364"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="365"/>
         <source>Advanced</source>
         <translation>ขั้นสูง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="364"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="365"/>
         <source>About</source>
         <translation>เกี่ยวกับ</translation>
     </message>
@@ -5797,19 +5802,19 @@ Do you want to restore it?</source>
         <translation>ส่งออกคำแปลไปยัง {0} แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1315"/>
-        <location filename="../../app/controllers/projects.py" line="1325"/>
-        <location filename="../../app/controllers/projects.py" line="1395"/>
+        <location filename="../../app/controllers/projects.py" line="1323"/>
+        <location filename="../../app/controllers/projects.py" line="1333"/>
+        <location filename="../../app/controllers/projects.py" line="1403"/>
         <source>Project File</source>
         <translation>ไฟล์โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1316"/>
+        <location filename="../../app/controllers/projects.py" line="1324"/>
         <source>Choose an existing folder for the project file.</source>
         <translation>กรุณาเลือกโฟลเดอร์ที่มีอยู่จริงสำหรับไฟล์โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1327"/>
+        <location filename="../../app/controllers/projects.py" line="1335"/>
         <source>Could not create the selected project folder.
 
 {error}</source>
@@ -5818,12 +5823,12 @@ Do you want to restore it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1338"/>
+        <location filename="../../app/controllers/projects.py" line="1346"/>
         <source>Overwrite Project File</source>
         <translation>เขียนทับไฟล์โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1340"/>
+        <location filename="../../app/controllers/projects.py" line="1348"/>
         <source>A project file already exists at this location.
 
 {path}
@@ -5836,12 +5841,12 @@ Overwrite it?</source>
 ต้องการเขียนทับหรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1363"/>
+        <location filename="../../app/controllers/projects.py" line="1371"/>
         <source>Old Project File Kept</source>
         <translation>ไฟล์โปรเจกต์เดิมยังคงอยู่</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1365"/>
+        <location filename="../../app/controllers/projects.py" line="1373"/>
         <source>The project was saved to the new location, but the old file could not be removed.
 
 {path}
@@ -5854,12 +5859,12 @@ Overwrite it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1373"/>
+        <location filename="../../app/controllers/projects.py" line="1381"/>
         <source>Project file updated.</source>
         <translation>อัปเดตไฟล์โปรเจกต์แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1397"/>
+        <location filename="../../app/controllers/projects.py" line="1405"/>
         <source>Could not move the project file.
 
 {error}</source>
@@ -5868,22 +5873,22 @@ Overwrite it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1408"/>
+        <location filename="../../app/controllers/projects.py" line="1416"/>
         <source>Project file renamed.</source>
         <translation>เปลี่ยนชื่อไฟล์โปรเจกต์แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1410"/>
+        <location filename="../../app/controllers/projects.py" line="1418"/>
         <source>Project file moved.</source>
         <translation>ย้ายไฟล์โปรเจกต์แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1536"/>
+        <location filename="../../app/controllers/projects.py" line="1544"/>
         <source>Project Not Found</source>
         <translation>ไม่พบโปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1538"/>
+        <location filename="../../app/controllers/projects.py" line="1546"/>
         <source>The selected project file could not be found.
 It may have been moved, renamed, or deleted.
 
@@ -5894,12 +5899,12 @@ It may have been moved, renamed, or deleted.
 {path}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1635"/>
+        <location filename="../../app/controllers/projects.py" line="1643"/>
         <source>Auto</source>
         <translation>อัตโนมัติ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1636"/>
+        <location filename="../../app/controllers/projects.py" line="1644"/>
         <source>English</source>
         <translation>อังกฤษ</translation>
     </message>
@@ -6058,13 +6063,13 @@ It may have been moved, renamed, or deleted.
 <context>
     <name>self.ui</name>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="293"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="294"/>
         <source>Resize</source>
         <extracomment>Marks that the &quot;Skia on by default&quot; change has been applied to this profile. Bump the suffix only if a later default change needs to reach existing users again.</extracomment>
         <translation>ย่อ/ขยาย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_page.py" line="295"/>
+        <location filename="../../app/ui/settings/settings_page.py" line="296"/>
         <source>Crop</source>
         <translation>ครอบตัด</translation>
     </message>

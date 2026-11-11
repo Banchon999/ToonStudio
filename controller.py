@@ -43,6 +43,7 @@ from app.controllers.selection import SelectionController
 from app.controllers.paint import PaintController
 from app.controllers.smart_workflow import SmartWorkflowController
 from app.controllers.chapter_queue import ChapterQueueController
+from app.controllers.batch_psd import BatchPsdExporter
 
 
 # Ensure any pre-declared mandatory models
@@ -147,6 +148,7 @@ class ComicTranslate(ComicTranslateUI):
         self.paint_ctrl = PaintController(self)
         self.smart_ctrl = SmartWorkflowController(self)
         self.chapter_queue_ctrl = ChapterQueueController(self)
+        self.batch_psd_ctrl = BatchPsdExporter(self)
         self.layers_panel.bind(self.layer_ctrl)
         self.layers_button.toggled.connect(self.show_layers_tab)
         self.editor_status_bar.bind(self)
@@ -164,6 +166,7 @@ class ComicTranslate(ComicTranslateUI):
         self.blk_rendered.connect(self.text_ctrl.on_blk_rendered)
         self.render_state_ready.connect(self.image_ctrl.on_render_state_ready)
         self.render_state_ready.connect(self.project_ctrl._on_batch_page_done)
+        self.render_state_ready.connect(self.batch_psd_ctrl.on_page_done)
         self.download_event.connect(self.on_download_event)
 
         self.connect_ui_elements()

@@ -76,7 +76,7 @@ class SettingsPage(QtWidgets.QWidget):
         checkboxes = [
             ui.use_gpu_checkbox, ui.save_keys_checkbox, ui.image_checkbox,
             ui.uppercase_checkbox, ui.raw_text_checkbox,
-            ui.translated_text_checkbox, ui.inpainted_image_checkbox,
+            ui.translated_text_checkbox, ui.inpainted_image_checkbox, ui.psd_checkbox,
             ui.per_class_fonts_checkbox, ui.stitch_detection_checkbox,
             ui.text_segmentation_checkbox, ui.denoise_checkbox,
             ui.skia_text_checkbox,
@@ -256,6 +256,7 @@ class SettingsPage(QtWidgets.QWidget):
             'export_raw_text': self.ui.raw_text_checkbox.isChecked(),
             'export_translated_text': self.ui.translated_text_checkbox.isChecked(),
             'export_inpainted_image': self.ui.inpainted_image_checkbox.isChecked(),
+            'export_psd': self.ui.psd_checkbox.isChecked(),
             'project_autosave_enabled': autosave_enabled,
             'project_autosave_interval_min': int(self.ui.project_autosave_interval_spinbox.value()),
             'project_autosave_folder': autosave_folder,
@@ -546,6 +547,7 @@ class SettingsPage(QtWidgets.QWidget):
         self.ui.raw_text_checkbox.setChecked(settings.value('export_raw_text', False, type=bool))
         self.ui.translated_text_checkbox.setChecked(settings.value('export_translated_text', False, type=bool))
         self.ui.inpainted_image_checkbox.setChecked(settings.value('export_inpainted_image', False, type=bool))
+        self.ui.psd_checkbox.setChecked(settings.value('export_psd', False, type=bool))
         autosave_enabled = settings.value('project_autosave_enabled', False, type=bool)
         owner = self.parent()
         title_bar = getattr(owner, "title_bar", None)

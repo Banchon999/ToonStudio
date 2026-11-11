@@ -168,6 +168,23 @@ def psd_path(output_dir: str, chapter: Chapter) -> str:
     return os.path.join(output_dir, f"{chapter.name}-PSD")
 
 
+def page_psd_folder(original_path: str, archive_path: str | None = None) -> str:
+    """Where an Automatic run writes one page's PSD: beside its chapter.
+
+    A page from a folder goes to "<folder>-PSD" next to that folder, so a
+    workspace with several chapter folders gets one PSD folder per chapter,
+    named after it (the chapter queue's "<name>-PSD" too). A page unpacked
+    from an archive goes beside the archive, "<archive name>-PSD". Such a
+    folder holds no images, so find_chapters never takes it for a chapter.
+    """
+    if archive_path:
+        stem = os.path.splitext(os.path.basename(archive_path))[0].strip() or "chapter"
+        return os.path.join(os.path.dirname(archive_path), f"{stem}-PSD")
+    folder = os.path.dirname(os.path.abspath(original_path))
+    name = os.path.basename(folder) or "chapter"
+    return os.path.join(os.path.dirname(folder), f"{name}-PSD")
+
+
 # --- progress: which chapters an earlier run finished ------------------------
 
 def _progress_file(output_dir: str) -> str:

@@ -215,3 +215,75 @@ def test_no_psd_folder_unless_asked(window, qapp):
     _run_queue(win, qapp, chapters, out, mode="smart", export_format="none")
     assert chapters[0].status == cq.DONE
     assert not os.path.exists(cq.psd_path(out, chapters[0]))
+
+
+# -- Automatic run: a PSD per page as it finishes, one folder per chapter -----
+
+def test_page_psd_folder_sits_beside_the_chapter(tmp_path):
+    page = str(tmp_path / "series" / "ep 1" / "001.png")
+    assert cq.page_psd_folder(page) == str(tmp_path / "series" / "ep 1-PSD")
+    archive = str(tmp_path / "series" / "ep 2.cbz")
+    assert cq.page_psd_folder(str(tmp_path / "tmpx" / "01.png"), archive) == \
+        str(tmp_path / "series" / "ep 2-PSD")
+
+
+def test_an_automatic_run_writes_each_pages_psd_beside_its_chapter(window, qapp, monkeypatch):
+    """Two chapter folders in one project, as the workspace's "+ Folder" adds
+    them: each page's PSD lands in its own chapter's "-PSD" folder while the
+    batch is still running, carrying that page's translation."""
+    from psd_tools import PSDImage
+
+    win, series, out, finished = window
+    paths = cq.images_in(os.path.join(series, "ep 1")) + cq.images_in(os.path.join(series, "ep 2"))
+    win.image_ctrl.thread_load_images(paths)
+    assert _pump_until(qapp, lambda: win.image_viewer.hasPhoto() and len(win.image_files) == 4)
+    # Real rendered text items on every page, from Smart Workflow.
+    assert win.smart_ctrl.start()
+    assert _pump_until(qapp, lambda: not win.smart_ctrl.running)
+
+    win.settings_page.ui.psd_checkbox.setChecked(True)
+    seen_during_batch = []
+
+    def fake_batch(selected=None):
+        # What batch_process does per page once it is rendered.
+        for path in list(win.image_files):
+            win.render_state_ready.emit(path)
+
+    monkeypatch.setattr(win.pipeline, "batch_process", fake_batch)
+    real_finished = win.on_batch_process_finished
+
+    def finished_hook():
+        seen_during_batch.append(win._batch_active)
+        real_finished()
+
+    monkeypatch.setattr(win, "on_batch_process_finished", finished_hook)
+    win.start_batch_process()
+    assert _pump_until(qapp, lambda: seen_during_batch and win.batch_psd_ctrl.idle(), 120000)
+
+    exporter = win.batch_psd_ctrl
+    assert exporter.failures == []
+    for chapter, markers in (("ep 1", (1, 2)), ("ep 2", (3, 4))):
+        folder = os.path.join(series, f"{chapter}-PSD")
+        assert sorted(os.listdir(folder)) == ["00.psd", "01.psd"], chapter
+        for name, marker in zip(("00.psd", "01.psd"), markers):
+            psd = PSDImage.open(os.path.join(folder, name))
+            texts = [layer.text for layer in psd.descendants() if layer.kind == "type"]
+            assert texts == [f"แปล:글자{marker}"], (chapter, name, texts)
+    # The source chapters are untouched and the PSD folders are no chapters.
+    assert [os.path.basename(c) for c in cq.find_chapters(series)] == ["ep 1", "ep 2", "ep 10"]
+
+
+def test_no_page_psds_unless_the_setting_is_on(window, qapp, monkeypatch):
+    win, series, out, finished = window
+    paths = cq.images_in(os.path.join(series, "ep 1"))
+    win.image_ctrl.thread_load_images(paths)
+    assert _pump_until(qapp, lambda: win.image_viewer.hasPhoto() and len(win.image_files) == 2)
+    win.settings_page.ui.psd_checkbox.setChecked(False)
+    done = []
+    monkeypatch.setattr(win.pipeline, "batch_process",
+                        lambda selected=None: [win.render_state_ready.emit(p) for p in list(win.image_files)])
+    real_finished = win.on_batch_process_finished
+    monkeypatch.setattr(win, "on_batch_process_finished", lambda: (done.append(1), real_finished()))
+    win.start_batch_process()
+    assert _pump_until(qapp, lambda: done)
+    assert not os.path.exists(os.path.join(series, "ep 1-PSD"))
