@@ -89,6 +89,7 @@ Toon Studio ทำงานเป็นขั้นตอนเดียวก�
 | | |
 |---|---|
 | Windows 10/11 (64-bit) | **`ToonStudio-Windows-x86_64-Setup.exe`** — ดับเบิลคลิกแล้วกด Next ได้เลย ไม่ต้องใช้สิทธิ์แอดมิน มีไอคอนใน Start menu · double-click and follow the steps; no administrator rights, adds a Start menu shortcut |
+| Windows, Full (EasyOCR + PaddleOCR-VL) | `ToonStudio-Windows-x86_64-full-Setup.exe` — ตัวติดตั้งตัว Full ไฟล์ใหญ่กว่ามาก · the Full installer, much larger |
 | Windows, ไม่ต้องติดตั้ง / portable | `ToonStudio-Windows-x86_64.zip` — แตกไฟล์แล้วเปิด `ToonStudio.exe` · unzip and run `ToonStudio.exe` |
 | Linux (x86_64) | `ToonStudio-Linux-x86_64.tar.gz` — แตกไฟล์แล้วรัน `./ToonStudio/ToonStudio` · extract and run `./ToonStudio/ToonStudio` |
 | macOS 15+ (Apple Silicon) | `ToonStudio-macOS-arm64.dmg` — ลาก Toon Studio ไปที่ Applications · drag Toon Studio to Applications |

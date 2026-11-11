@@ -152,21 +152,27 @@ def test_an_installer_wins_over_an_archive_and_macos_needs_one():
     assert update_checker.choose_asset(no_dmg, "Darwin") is None
 
 
-def test_the_published_installer_updates_the_ordinary_build_only():
-    # release.yml publishes ToonStudio-Windows-x86_64-Setup.exe beside the
-    # zips: the ordinary build runs it, the full build keeps its full zip
-    # (the installer's bundle has no PyTorch OCR engines).
+def test_each_build_runs_its_own_editions_installer():
+    # release.yml publishes a lean and a full installer beside the zips; a
+    # full app "updated" by the lean one would lose its PyTorch OCR engines.
     assets = _published_assets()
-    setup = [a["name"] for a in assets if a["name"].lower().endswith(".exe")]
-    assert setup == ["ToonStudio-Windows-x86_64-Setup.exe"]
-    assert update_checker.choose_asset(assets, "Windows") == f"https://dl.invalid/{setup[0]}"
-    assert update_checker.choose_asset(assets, "Windows", full=True) == \
+    setups = sorted(a["name"] for a in assets if a["name"].lower().endswith(".exe"))
+    assert setups == ["ToonStudio-Windows-x86_64-Setup.exe", "ToonStudio-Windows-x86_64-full-Setup.exe"]
+    # Each build runs its own edition's installer, in whichever order GitHub lists them.
+    for listed in (assets, list(reversed(assets))):
+        assert update_checker.choose_asset(listed, "Windows") == \
+            "https://dl.invalid/ToonStudio-Windows-x86_64-Setup.exe"
+        assert update_checker.choose_asset(listed, "Windows", full=True) == \
+            "https://dl.invalid/ToonStudio-Windows-x86_64-full-Setup.exe"
+    # A release whose full build did not make it: the full app keeps to
+    # zips (the lean one at worst), never the lean installer.
+    no_full = [a for a in assets if "-full" not in a["name"]]
+    assert update_checker.choose_asset(no_full, "Windows", full=True) == \
+        "https://dl.invalid/ToonStudio-Windows-x86_64.zip"
+    # The full zip, when only the full installer is missing.
+    zip_only = [a for a in assets if a["name"] != "ToonStudio-Windows-x86_64-full-Setup.exe"]
+    assert update_checker.choose_asset(zip_only, "Windows", full=True) == \
         "https://dl.invalid/ToonStudio-Windows-x86_64-full.zip"
-    # A full installer, if one is ever published, is the full build's.
-    with_full = assets + [{"name": "ToonStudio-Windows-x86_64-full-Setup.exe",
-                           "browser_download_url": "https://dl.invalid/full-setup"}]
-    assert update_checker.choose_asset(with_full, "Windows", full=True) == "https://dl.invalid/full-setup"
-    assert update_checker.choose_asset(with_full, "Windows") == f"https://dl.invalid/{setup[0]}"
 
 
 def test_each_windows_build_is_updated_with_its_own_kind():

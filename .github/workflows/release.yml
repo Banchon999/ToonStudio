@@ -146,6 +146,10 @@ jobs:
             echo "::warning::no full Windows build (windows_full job: ${{ needs.windows_full.result }}) - the release goes out with the lean build only"
             full=""
           fi
+          full_setup=dist/ToonStudio-Windows-x86_64-full-Setup.exe
+          if [ -z "$full" ] || [ ! -f "$full_setup" ]; then
+            full_setup=""
+          fi
           {
             echo "list<<EOF"
             echo dist/ToonStudio-Windows-x86_64-Setup.exe
@@ -153,6 +157,7 @@ jobs:
             echo dist/ToonStudio-Linux-x86_64.tar.gz
             [ -n "$dmg" ] && echo "$dmg"
             [ -n "$full" ] && echo "$full"
+            [ -n "$full_setup" ] && echo "$full_setup"
             echo EOF
           } >> "$GITHUB_OUTPUT"
 

@@ -5,7 +5,8 @@
 # Kept as a separate build rather than folded into the normal one because
 # torch multiplies the download several times over, and most people never
 # touch those engines. release.yml publishes it beside the lean build as an
-# optional asset (ToonStudio-Windows-x86_64-full.zip): a release goes out
+# optional asset (ToonStudio-Windows-x86_64-full.zip and
+# ToonStudio-Windows-x86_64-full-Setup.exe): a release goes out
 # without it if this build fails or the archive is over GitHub's 2 GB asset
 # limit, and the update checker keeps each build on its own kind.
 #
@@ -210,10 +211,22 @@ jobs:
             exit 1
           }
 
+      # The same installer as the lean build, with this bundle in it; the
+      # installed copy must still run the PyTorch OCR engines.
+      - name: Build the installer
+        shell: pwsh
+        run: ./installer/build_installer.ps1 -Edition full
+
+      - name: Install, run and uninstall the installer
+        shell: pwsh
+        run: ./installer/test_installer.ps1 -Setup dist/ToonStudio-Windows-x86_64-full-Setup.exe -SelfTests --skia-self-test,--optional-ocr-self-test
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v6
         with:
           name: Comic-Translate-Windows-Full
-          path: dist/ToonStudio-Windows-x86_64-full.zip
+          path: |
+            dist/ToonStudio-Windows-x86_64-full.zip
+            dist/ToonStudio-Windows-x86_64-full-Setup.exe
           if-no-files-found: error
           retention-days: 30

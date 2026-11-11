@@ -4,7 +4,7 @@
 ; dist\ToonStudio, after that folder has passed its self-tests, and published
 ; by release.yml as ToonStudio-Windows-x86_64-Setup.exe beside the zip.
 ;
-;   iscc /DAppVersion=3.4.0 installer\toonstudio.iss
+;   iscc /DAppVersion=3.4.0 /DEdition=lean installer\toonstudio.iss   (installer\build_installer.ps1)
 ;
 ; It installs for the current user by default (%LOCALAPPDATA%\Programs, no
 ; administrator prompt), so the in-app updater can run the next one without
@@ -15,13 +15,26 @@
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
+; lean (build-windows.yml) or full (build-windows-full.yml: + EasyOCR and
+; PaddleOCR-VL). Both are one app with one AppId: installing either over the
+; other switches the installation to it.
+#ifndef Edition
+  #define Edition "lean"
+#endif
+#if Edition == "full"
+  #define SetupName "ToonStudio-Windows-x86_64-full-Setup"
+  #define EditionLabel " (Full)"
+#else
+  #define SetupName "ToonStudio-Windows-x86_64-Setup"
+  #define EditionLabel ""
+#endif
 
 [Setup]
 ; Never change AppId: it is how an upgrade finds the installation it replaces.
 AppId={{6B0E4C7A-3F2D-4B8E-9C51-7A2E8D4F1C93}
 AppName=Toon Studio
 AppVersion={#AppVersion}
-AppVerName=Toon Studio {#AppVersion}
+AppVerName=Toon Studio {#AppVersion}{#EditionLabel}
 AppPublisher=Toon Studio
 AppPublisherURL=https://github.com/Banchon999/ToonStudio
 AppSupportURL=https://github.com/Banchon999/ToonStudio/issues
@@ -29,7 +42,7 @@ AppUpdatesURL=https://github.com/Banchon999/ToonStudio/releases
 VersionInfoVersion={#AppVersion}
 SourceDir=..
 OutputDir=dist
-OutputBaseFilename=ToonStudio-Windows-x86_64-Setup
+OutputBaseFilename={#SetupName}
 SetupIconFile=resources\icons\icon.ico
 UninstallDisplayIcon={app}\ToonStudio.exe
 UninstallDisplayName=Toon Studio
