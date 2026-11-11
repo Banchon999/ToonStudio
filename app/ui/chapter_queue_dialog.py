@@ -127,6 +127,14 @@ class ChapterQueueDialog(QtWidgets.QDialog):
             self.export_combo.addItem(label, value)
         form.addRow(self.tr("Translated pages"), self.export_combo)
 
+        self.psd_check = QtWidgets.QCheckBox(self.tr(
+            "Also export PSD for editing (a \"<chapter>-PSD\" folder per chapter)"), self)
+        self.psd_check.setToolTip(self.tr(
+            "One PSD per page with the translation as editable text layers, written as soon as "
+            "each chapter finishes: review and fix it in Photoshop or Photopea while the next "
+            "chapter translates."))
+        form.addRow("", self.psd_check)
+
         self.skip_done_check = QtWidgets.QCheckBox(self.tr(
             "Skip chapters an earlier run already finished"), self)
         self.skip_done_check.setToolTip(self.tr(
@@ -173,6 +181,7 @@ class ChapterQueueDialog(QtWidgets.QDialog):
         export = s.value("export_format", "folder")
         self.export_combo.setCurrentIndex(max(0, self.export_combo.findData(export)))
         self.skip_done_check.setChecked(str(s.value("skip_done", "true")).lower() != "false")
+        self.psd_check.setChecked(str(s.value("export_psd", "false")).lower() == "true")
         s.endGroup()
 
     def _save_settings(self) -> None:
@@ -182,6 +191,7 @@ class ChapterQueueDialog(QtWidgets.QDialog):
         s.setValue("output_dir", self.output_edit.text().strip())
         s.setValue("export_format", self.export_combo.currentData())
         s.setValue("skip_done", "true" if self.skip_done_check.isChecked() else "false")
+        s.setValue("export_psd", "true" if self.psd_check.isChecked() else "false")
         s.endGroup()
 
     # --- the list ---------------------------------------------------------------
@@ -293,7 +303,7 @@ class ChapterQueueDialog(QtWidgets.QDialog):
         running = self.ctrl.running
         for widget in (self.add_folder_button, self.add_files_button, self.up_button, self.down_button,
                        self.remove_button, self.clear_button, self.mode_combo, self.output_edit,
-                       self.output_browse, self.export_combo, self.skip_done_check):
+                       self.output_browse, self.export_combo, self.skip_done_check, self.psd_check):
             widget.setEnabled(not running)
         self.table.setEditTriggers(
             QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers if running else
@@ -330,6 +340,7 @@ class ChapterQueueDialog(QtWidgets.QDialog):
             export_format=self.export_combo.currentData(),
             mode=self.mode_combo.currentData(),
             skip_done=self.skip_done_check.isChecked(),
+            export_psd=self.psd_check.isChecked(),
         ):
             QtWidgets.QMessageBox.warning(self, self.tr("Chapter Queue"), self.tr(
                 "The queue did not start. Check the settings the message named, or that the "

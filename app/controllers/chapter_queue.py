@@ -56,6 +56,7 @@ class ChapterQueueController(QtCore.QObject):
         self.export_format = "folder"
         self.mode = MODE_BATCH
         self.skip_done = True
+        self.export_psd = False
         self.running = False
         self.cancel_requested = False
         self._index = -1
@@ -71,7 +72,7 @@ class ChapterQueueController(QtCore.QObject):
     # --- public ------------------------------------------------------------
 
     def start(self, chapters: list[cq.Chapter], output_dir: str, export_format: str = "folder",
-              mode: str = MODE_BATCH, skip_done: bool = True) -> bool:
+              mode: str = MODE_BATCH, skip_done: bool = True, export_psd: bool = False) -> bool:
         if self.running or not chapters:
             return False
         output_dir = os.path.abspath(os.path.expanduser(output_dir or ""))
@@ -87,6 +88,7 @@ class ChapterQueueController(QtCore.QObject):
         self.export_format = export_format if export_format in cq.EXPORT_FORMATS else "folder"
         self.mode = mode
         self.skip_done = skip_done
+        self.export_psd = bool(export_psd)
         self.running, self.cancel_requested = True, False
         self._failures_in_a_row = 0
         self._previous_project = None
@@ -283,8 +285,10 @@ class ChapterQueueController(QtCore.QObject):
     def _export(self) -> None:
         chapter = self._current()
         destination = cq.export_path(self.output_dir, chapter, self.export_format)
-        if not destination or self._run_result.get("failed"):
+        if self._run_result.get("failed"):
             return self._chapter_finished()
+        if not destination:
+            return self._export_psd()
         main = self.main
         plan = [{
             "output_path": destination,
@@ -304,12 +308,54 @@ class ChapterQueueController(QtCore.QObject):
                 self._step_failed = True
                 return self._chapter_finished(translate("ChapterQueue", "could not be exported: {0}").format(
                     failed["error"]))
-            self._chapter_finished()
+            self._export_psd()
 
         self._status(translate("ChapterQueue", "Chapter {0}/{1}: {2} — exporting").format(
             self._index + 1, len(self.chapters), chapter.name))
         main.run_threaded(main.project_ctrl.save_and_make_worker, None, on_error, on_finished,
                           plan, pages_state)
+
+    def _export_psd(self) -> None:
+        """Editable PSDs of the chapter, one per page, when asked for.
+
+        Written right after the chapter, so a finished chapter can be reviewed
+        and fixed in Photoshop or Photopea while the queue works on the next.
+        """
+        if not self.export_psd:
+            return self._chapter_finished()
+        from app.controllers.psd_exporter import export_psd_pages, warm_font_cache
+
+        chapter = self._current()
+        main = self.main
+        destination = cq.psd_path(self.output_dir, chapter)
+        pages_state = main.project_ctrl._build_all_pages_current_state()
+        # The fonts are resolved here, on the GUI thread: the worker must
+        # never read the font database (Qt's font objects are thread-local).
+        try:
+            warm_font_cache(pages_state)
+        except Exception:
+            logger.debug("Chapter queue: could not pre-resolve PSD fonts", exc_info=True)
+        failed = {"error": ""}
+
+        def write():
+            pages = main.project_ctrl._gather_psd_pages(pages_state)
+            export_psd_pages(output_folder=destination, pages=pages, bundle_name=chapter.name)
+
+        def on_error(error_tuple):
+            _exctype, value, _tb = error_tuple
+            failed["error"] = str(value)
+            logger.error("Chapter queue: PSD export of %s failed: %s", destination, value)
+
+        def on_finished():
+            if failed["error"]:
+                self._step_failed = True
+                return self._chapter_finished(translate("ChapterQueue", "PSD could not be exported: {0}").format(
+                    failed["error"]))
+            self._chapter_finished()
+
+        self._status(translate("ChapterQueue", "Chapter {0}/{1}: {2} — exporting PSD").format(
+            self._index + 1, len(self.chapters), chapter.name))
+        main.run_threaded(write, None, on_error, on_finished)
 
     def _chapter_finished(self, error: str = "") -> None:
         result = self._run_result

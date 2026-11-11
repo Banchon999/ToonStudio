@@ -185,3 +185,33 @@ def test_stop_saves_the_current_chapter_and_leaves_the_rest(window, qapp):
     assert os.path.isfile(os.path.join(out, "ep 1.ctpr"))
     assert not cq.already_done(out, chapters[0])
     assert finished[-1][1].get("stopped") is True
+
+
+def test_each_chapter_also_gets_editable_psds_when_asked(window, qapp):
+    # Read back with psd-tools, not the PhotoshopAPI that wrote them: the
+    # writer agreeing with itself proves nothing (CLAUDE.md, PSD export).
+    from psd_tools import PSDImage
+
+    win, series, out, finished = window
+    chapters = cq.make_chapters(cq.find_chapters(series))[:2]
+    _run_queue(win, qapp, chapters, out, mode="smart", export_format="folder", export_psd=True)
+
+    assert [c.status for c in chapters] == [cq.DONE, cq.DONE], [(c.status, c.detail) for c in chapters]
+    for chapter, first_marker in zip(chapters, (1, 3)):
+        folder = cq.psd_path(out, chapter)
+        assert sorted(os.listdir(folder)) == ["00.psd", "01.psd"], chapter.name
+        # The images still go to their own folder, not mixed with the PSDs.
+        assert sorted(os.listdir(os.path.join(out, chapter.name))) == ["00.png", "01.png"]
+        psd = PSDImage.open(os.path.join(folder, "00.psd"))
+        assert (psd.width, psd.height) == (300, 200)
+        texts = [layer.text for layer in psd.descendants() if layer.kind == "type"]
+        # The chapter's own translation, as an editable text layer.
+        assert texts == [f"แปล:글자{first_marker}"], (chapter.name, texts)
+
+
+def test_no_psd_folder_unless_asked(window, qapp):
+    win, series, out, finished = window
+    chapters = cq.make_chapters(cq.find_chapters(series))[:1]
+    _run_queue(win, qapp, chapters, out, mode="smart", export_format="none")
+    assert chapters[0].status == cq.DONE
+    assert not os.path.exists(cq.psd_path(out, chapters[0]))

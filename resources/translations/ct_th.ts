@@ -73,72 +73,82 @@
 <context>
     <name>ChapterQueue</name>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="127"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="129"/>
         <source>Chapter queue: stopping…</source>
         <translation>คิวแปลหลายตอน: กำลังหยุด…</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="168"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="170"/>
         <source>finished in an earlier run</source>
         <translation>รอบก่อนทำเสร็จแล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="180"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="182"/>
         <source>Chapter {0}/{1}: {2} — loading</source>
         <translation>ตอน {0}/{1}: {2} — กำลังโหลด</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="190"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="192"/>
         <source>no images found</source>
         <translation>ไม่พบรูป</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="206"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="208"/>
         <source>could not be opened</source>
         <translation>เปิดไม่ได้</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="229"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="231"/>
         <source>Chapter {0}/{1}: {2} — translating</source>
         <translation>ตอน {0}/{1}: {2} — กำลังแปล</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="250"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="252"/>
         <source>the run did not start — check the settings</source>
         <translation>ไม่เริ่มรัน — ตรวจการตั้งค่า</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="271"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="273"/>
         <source>could not be saved: {0}</source>
         <translation>บันทึกไม่ได้: {0}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="279"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="281"/>
         <source>Chapter {0}/{1}: {2} — saving</source>
         <translation>ตอน {0}/{1}: {2} — กำลังบันทึก</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="305"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="309"/>
         <source>could not be exported: {0}</source>
         <translation>ส่งออกไม่ได้: {0}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="309"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="313"/>
         <source>Chapter {0}/{1}: {2} — exporting</source>
         <translation>ตอน {0}/{1}: {2} — กำลังส่งออก</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="317"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="352"/>
+        <source>PSD could not be exported: {0}</source>
+        <translation>ส่งออก PSD ไม่ได้: {0}</translation>
+    </message>
+    <message>
+        <location filename="../../app/controllers/chapter_queue.py" line="356"/>
+        <source>Chapter {0}/{1}: {2} — exporting PSD</source>
+        <translation>ตอน {0}/{1}: {2} — กำลังส่งออก PSD</translation>
+    </message>
+    <message>
+        <location filename="../../app/controllers/chapter_queue.py" line="363"/>
         <source>a step failed — open the project</source>
         <translation>มีขั้นตอนล้มเหลว — เปิดโปรเจกต์ดู</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="320"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="366"/>
         <source>stopped — saved as far as it got</source>
         <translation>หยุดแล้ว — บันทึกเท่าที่ทำได้</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/chapter_queue.py" line="322"/>
+        <location filename="../../app/controllers/chapter_queue.py" line="368"/>
         <source>{0} page(s) skipped — see its Report</source>
         <translation>ข้าม {0} หน้า — ดูในรายงาน</translation>
     </message>
@@ -182,10 +192,10 @@
     </message>
     <message>
         <location filename="../../app/ui/chapter_queue_dialog.py" line="50"/>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="207"/>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="318"/>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="322"/>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="334"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="217"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="328"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="332"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="345"/>
         <source>Chapter Queue</source>
         <translation>คิวแปลหลายตอน</translation>
     </message>
@@ -316,71 +326,81 @@
     </message>
     <message>
         <location filename="../../app/ui/chapter_queue_dialog.py" line="131"/>
+        <source>Also export PSD for editing (a &quot;&lt;chapter&gt;-PSD&quot; folder per chapter)</source>
+        <translation>ส่งออกเป็น PSD ด้วยเพื่อแก้ไขต่อ (โฟลเดอร์ &quot;&lt;ชื่อตอน&gt;-PSD&quot; แยกตามตอน)</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="133"/>
+        <source>One PSD per page with the translation as editable text layers, written as soon as each chapter finishes: review and fix it in Photoshop or Photopea while the next chapter translates.</source>
+        <translation>PSD หน้าละไฟล์ คำแปลเป็นเลเยอร์ข้อความที่แก้ได้ เขียนทันทีที่แต่ละตอนเสร็จ ตรวจและแก้ใน Photoshop หรือ Photopea ได้ระหว่างที่ตอนถัดไปกำลังแปล</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="139"/>
         <source>Skip chapters an earlier run already finished</source>
         <translation>ข้ามตอนที่รอบก่อนทำเสร็จแล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="133"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="141"/>
         <source>Run the same queue again after stopping it, or after the app closed, and only the unfinished chapters run. With Smart Workflow an interrupted chapter carries on from its saved project.</source>
         <translation>รันคิวเดิมอีกครั้งหลังหยุด หรือหลังปิดแอป จะทำเฉพาะตอนที่ยังไม่เสร็จ ถ้าใช้ Smart Workflow ตอนที่ค้างจะทำต่อจากโปรเจกต์ที่บันทึกไว้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="142"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="150"/>
         <source>Start</source>
         <translation>เริ่ม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="145"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="153"/>
         <source>Stop</source>
         <translation>หยุด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="146"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="154"/>
         <source>Stop after saving what the current chapter has so far</source>
         <translation>หยุดหลังบันทึกงานของตอนปัจจุบันเท่าที่ทำได้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="148"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="156"/>
         <source>Close</source>
         <translation>ปิด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="204"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="214"/>
         <source>Add Chapter or Series Folder</source>
         <translation>เพิ่มโฟลเดอร์ตอนหรือโฟลเดอร์เรื่อง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="208"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="218"/>
         <source>No chapters were found there (no images, and no subfolders or archives with images).</source>
         <translation>ไม่พบตอนในโฟลเดอร์นี้ (ไม่มีรูป และไม่มีโฟลเดอร์ย่อยหรือไฟล์บีบอัดที่มีรูป)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="214"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="224"/>
         <source>Add Chapter Files</source>
         <translation>เพิ่มไฟล์ตอน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="290"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="300"/>
         <source>{0} chapter(s)</source>
         <translation>{0} ตอน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="309"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="319"/>
         <source>Choose Output Folder</source>
         <translation>เลือกโฟลเดอร์ผลลัพธ์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="318"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="328"/>
         <source>Choose an output folder.</source>
         <translation>เลือกโฟลเดอร์ผลลัพธ์ก่อน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="323"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="333"/>
         <source>The output folder is one of the chapters. Choose another folder.</source>
         <translation>โฟลเดอร์ผลลัพธ์เป็นโฟลเดอร์ของตอนหนึ่งในคิว เลือกโฟลเดอร์อื่น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="335"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="346"/>
         <source>The queue did not start. Check the settings the message named, or that the output folder can be created.</source>
         <translation>คิวไม่เริ่ม ตรวจการตั้งค่าตามที่ข้อความแจ้ง หรือดูว่าสร้างโฟลเดอร์ผลลัพธ์ได้หรือไม่</translation>
     </message>
@@ -2535,8 +2555,8 @@ Please select a different tool in Settings.</source>
     </message>
     <message>
         <location filename="../../app/ui/messages.py" line="209"/>
-        <location filename="../../pipeline/batch_processor.py" line="353"/>
-        <location filename="../../pipeline/batch_processor.py" line="405"/>
+        <location filename="../../pipeline/batch_processor.py" line="369"/>
+        <location filename="../../pipeline/batch_processor.py" line="421"/>
         <location filename="../../pipeline/webtoon_batch/chunk.py" line="108"/>
         <source>Unable to connect to the server.
 Please check your internet connection.</source>
