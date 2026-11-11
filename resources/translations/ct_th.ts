@@ -2717,32 +2717,37 @@ Open Batch Report to see all skipped images and reasons.</source>
         <translation>แทรกไฟล์เข้าโปรเจกต์ปัจจุบัน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/nav.py" line="217"/>
+        <location filename="../../app/ui/main_window/builders/nav.py" line="218"/>
+        <source>Chapter Queue: translate many chapters one after another</source>
+        <translation>คิวแปลหลายตอน: แปลหลายตอนต่อกันอัตโนมัติ</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/main_window/builders/nav.py" line="226"/>
         <source>Glossary — terms for this series</source>
         <translation>คลังคำศัพท์ — คำศัพท์ของเรื่องนี้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/nav.py" line="293"/>
+        <location filename="../../app/ui/main_window/builders/nav.py" line="303"/>
         <source>Start New Project</source>
         <translation>เริ่มโปรเจกต์ใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/nav.py" line="294"/>
+        <location filename="../../app/ui/main_window/builders/nav.py" line="304"/>
         <source>Your current project has unsaved changes. Start a new project?</source>
         <translation>โปรเจกต์ปัจจุบันมีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก ต้องการเริ่มโปรเจกต์ใหม่หรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/nav.py" line="295"/>
+        <location filename="../../app/ui/main_window/builders/nav.py" line="305"/>
         <source>Yes</source>
         <translation>ใช่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/nav.py" line="296"/>
+        <location filename="../../app/ui/main_window/builders/nav.py" line="306"/>
         <source>No</source>
         <translation>ไม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/nav.py" line="344"/>
+        <location filename="../../app/ui/main_window/builders/nav.py" line="354"/>
         <source>Glossary</source>
         <translation>คลังคำศัพท์</translation>
     </message>
@@ -4602,17 +4607,16 @@ then do inpainting on the resized image.</source>
         <translation>ยกเลิก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="98"/>
         <source>Chapters</source>
-        <translation>หลายตอน</translation>
+        <translation type="vanished">หลายตอน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="100"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="102"/>
         <source>Chapter Queue: translate many chapters one after another and come back to a project per chapter</source>
         <translation>คิวแปลหลายตอน: แปลหลายตอนต่อกันอัตโนมัติ แล้วกลับมาตรวจทีละโปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="103"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="105"/>
         <source>Report</source>
         <translation>รายงาน</translation>
     </message>
@@ -4637,7 +4641,7 @@ then do inpainting on the resized image.</source>
         <translation type="vanished">แสดง/ซ่อนแผ่นปะจากการเติมภาพ (บริเวณที่ลบข้อความแล้ว)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="809"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="811"/>
         <source>Text</source>
         <translation>ข้อความ</translation>
     </message>
@@ -4654,379 +4658,379 @@ then do inpainting on the resized image.</source>
         <translation type="vanished">แสดงรายการเลเยอร์ของแต่ละชิ้น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="109"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="111"/>
         <source>Show the Layers panel</source>
         <translation>แสดงแผงเลเยอร์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="114"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="116"/>
         <source>Group the pages by the folder they came from</source>
         <translation>จัดกลุ่มหน้าตามโฟลเดอร์ต้นทาง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="178"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="180"/>
         <source>Click or drag files here</source>
         <translation>คลิกหรือลากไฟล์มาที่นี่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="200"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="202"/>
         <source>Import Images, PDFs, Epubs or Comic Book Archive Files(cbr, cbz, etc)</source>
         <translation>นำเข้ารูปภาพ, PDF, EPUB หรือไฟล์อาร์ไคฟ์การ์ตูน (cbr, cbz ฯลฯ)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="215"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="217"/>
         <source>Source Language</source>
         <translation>ภาษาต้นทาง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="225"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="227"/>
         <source>Target Language</source>
         <translation>ภาษาปลายทาง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="236"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="238"/>
         <source>Font</source>
         <translation>ฟอนต์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="244"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="246"/>
         <source>Add this font to favourites</source>
         <translation>เพิ่มฟอนต์นี้ในรายการโปรด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="248"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="250"/>
         <source>Pick a favourite font</source>
         <translation>เลือกฟอนต์โปรด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="255"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="257"/>
         <source>Font Size</source>
         <translation>ขนาดฟอนต์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="264"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="266"/>
         <source>Line Spacing</source>
         <translation>ระยะห่างบรรทัด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="270"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="272"/>
         <source>Letter Spacing</source>
         <translation>ระยะห่างตัวอักษร</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="277"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="279"/>
         <source>Horizontal Scale (%): below 100 condenses the letters, so more fits on a line</source>
         <translation>ความกว้างตัวอักษร (%): ต่ำกว่า 100 จะบีบตัวอักษรให้แคบลง ทำให้ใส่ข้อความได้มากขึ้นในหนึ่งบรรทัด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="304"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="306"/>
         <source>Font Color</source>
         <translation>สีฟอนต์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="319"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="321"/>
         <source>Bold</source>
         <translation>ตัวหนา</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="321"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="323"/>
         <source>Italic</source>
         <translation>ตัวเอียง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="323"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="325"/>
         <source>Underline</source>
         <translation>ขีดเส้นใต้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="334"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="336"/>
         <source>Outline</source>
         <translation>เส้นขอบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="338"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="340"/>
         <source>Outline Color</source>
         <translation>สีเส้นขอบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="345"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="347"/>
         <source>Outline Width</source>
         <translation>ความหนาเส้นขอบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="351"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="353"/>
         <source>+ Strokes</source>
         <translation>+ เส้นขอบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="353"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="355"/>
         <source>Stack extra strokes outside the outline, e.g. white then black.</source>
         <translation>ซ้อนเส้นขอบเพิ่มนอกเส้นขอบหลัก เช่น ขาวแล้วดำ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="364"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="366"/>
         <source>Shadow</source>
         <translation>เงา</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="367"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="369"/>
         <source>Shadow Color</source>
         <translation>สีเงา</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="373"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="375"/>
         <source>Shadow Offset X</source>
         <translation>ระยะเงาแนวนอน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="380"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="382"/>
         <source>Shadow Offset Y</source>
         <translation>ระยะเงาแนวตั้ง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="387"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="389"/>
         <source>Shadow Blur</source>
         <translation>ความฟุ้งของเงา</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="394"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="396"/>
         <source>Shadow Opacity (%)</source>
         <translation>ความทึบเงา (%)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="410"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="412"/>
         <source>Gradient</source>
         <translation>ไล่เฉดสี</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="412"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="414"/>
         <source>Fade the fill from the text colour to a second one, across the whole text.</source>
         <translation>ไล่สีพื้นข้อความจากสีข้อความไปยังอีกสีหนึ่ง ต่อเนื่องทั้งก้อนข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="416"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="418"/>
         <source>Gradient End Color</source>
         <translation>สีปลายทางของการไล่เฉด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="422"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="424"/>
         <source>Gradient Angle</source>
         <translation>มุมการไล่เฉดสี</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="428"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="430"/>
         <source>Curve</source>
         <translation>ความโค้ง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="430"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="432"/>
         <source>Bend the baseline into an arc: positive arches up, negative sags.</source>
         <translation>ดัดเส้นฐานข้อความให้เป็นส่วนโค้ง ค่าบวกโค้งขึ้น ค่าลบโค้งลง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="433"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="435"/>
         <source>Text Curve</source>
         <translation>ความโค้งของข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="445"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="447"/>
         <source>Perspective</source>
         <translation>มุมมอง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="448"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="450"/>
         <source>Drag a corner handle to move that corner on its own, or an edge handle to skew.</source>
         <translation>ลากจุดมุมเพื่อย้ายมุมนั้นอย่างอิสระ หรือลากจุดขอบเพื่อเอียง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="450"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="452"/>
         <source>Reset</source>
         <translation>รีเซ็ต</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="451"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="453"/>
         <source>Remove the perspective and skew from the selected text.</source>
         <translation>ลบมุมมองและการเอียงออกจากข้อความที่เลือก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="454"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="456"/>
         <source>Warp Style</source>
         <translation>รูปแบบการบิด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="456"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="458"/>
         <source>Arc</source>
         <translation>โค้ง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="456"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="458"/>
         <source>Arch</source>
         <translation>ซุ้ม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="456"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="458"/>
         <source>Bulge</source>
         <translation>โป่ง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="457"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="459"/>
         <source>Flag</source>
         <translation>ธง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="457"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="459"/>
         <source>Wave</source>
         <translation>คลื่น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="457"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="459"/>
         <source>Rise</source>
         <translation>ลาดขึ้น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="471"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="473"/>
         <source>Style</source>
         <translation>สไตล์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="474"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="476"/>
         <source>Apply a saved text style to the selected text: font, colours, strokes, shadow and warp.</source>
         <translation>ใช้สไตล์ที่บันทึกไว้กับข้อความที่เลือก: ฟอนต์ สี เส้นขอบ เงา และการบิดรูป</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="477"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="479"/>
         <source>Save…</source>
         <translation>บันทึก…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="478"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="480"/>
         <source>Save the selected text&apos;s look as a new style.</source>
         <translation>บันทึกรูปลักษณ์ของข้อความที่เลือกเป็นสไตล์ใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="479"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="481"/>
         <source>Delete</source>
         <translation>ลบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="480"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="482"/>
         <source>Delete the chosen style (built-in styles cannot be deleted).</source>
         <translation>ลบสไตล์ที่เลือก (สไตล์ในตัวลบไม่ได้)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="498"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="500"/>
         <source>Pan Image</source>
         <translation>เลื่อนภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="502"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="504"/>
         <source>Set for all</source>
         <translation>ใช้กับทุกหน้า</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="504"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="506"/>
         <source>Sets the Source and Target Language on the current page for all pages</source>
         <translation>ตั้งภาษาต้นทางและปลายทางของหน้าปัจจุบันให้กับทุกหน้า</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="509"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="511"/>
         <source>Draw or Select Text Boxes</source>
         <translation>วาดหรือเลือกกล่องข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="515"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="517"/>
         <source>Type your own text: click on the page to place a text box and start typing</source>
         <translation>พิมพ์ข้อความเอง: คลิกบนหน้าเพื่อวางกล่องข้อความแล้วเริ่มพิมพ์ได้ทันที</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="521"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="523"/>
         <source>Delete Selected Box</source>
         <translation>ลบกล่องที่เลือก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="524"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="526"/>
         <source>Remove all the Boxes on the Image</source>
         <translation>ลบกล่องทั้งหมดบนภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="529"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="531"/>
         <source>Draws all the Text Blocks in the existing Text Block List
 back on the Image (for further editing)</source>
         <translation>วาดกล่องข้อความทั้งหมดในรายการกลับลงบนภาพ
 (เพื่อแก้ไขต่อ)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="536"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="538"/>
         <source>Reduce the size of all blocks</source>
         <translation>ลดขนาดกล่องทั้งหมด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="547"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="549"/>
         <source>Increase the size of all blocks</source>
         <translation>เพิ่มขนาดกล่องทั้งหมด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="551"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="553"/>
         <source>Draw Brush Strokes for Cleaning Image</source>
         <translation>วาดเส้นแปรงเพื่อลบข้อความออกจากภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="556"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="558"/>
         <source>Erase Brush Strokes</source>
         <translation>ลบเส้นแปรง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="562"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="564"/>
         <source>Paint over the page in a colour — to touch up what cleaning left behind.
 Alt+click picks a colour from the page. Stays inside the selection if there is one.</source>
         <translation>ระบายสีลงบนหน้า — ใช้เก็บงานส่วนที่การลบข้อความยังเหลือไว้
 Alt+คลิกเพื่อดูดสีจากหน้า ถ้ามีพื้นที่เลือก จะระบายอยู่ในพื้นที่นั้นเท่านั้น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="570"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="572"/>
         <source>Brush the original page back where cleaning or painting went too far.</source>
         <translation>ระบายเพื่อคืนภาพต้นฉบับในส่วนที่ลบหรือระบายเกินไป</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="577"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="579"/>
         <source>Fill a flat area with the paint colour in one click — lettering inside it is left alone.
 Ctrl fills every area of that colour; Alt+click picks the colour.</source>
         <translation>เทสีพื้นเรียบด้วยคลิกเดียว — ตัวอักษรที่อยู่ข้างในจะไม่ถูกทับ
 กด Ctrl เพื่อเททุกพื้นที่ที่สีเดียวกัน กด Alt+คลิกเพื่อดูดสี</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="585"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="587"/>
         <source>Paint over anything to remove it with the inpainter, right away — no Clean step.</source>
         <translation>ระบายทับสิ่งที่ต้องการลบ แล้วตัวลบภาพจะลบให้ทันที — ไม่ต้องกดขั้นลบข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="592"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="594"/>
         <source>Clone stamp: paint the page with a copy of another part of it.
 Alt+click where to copy from, then paint.</source>
         <translation>ตราประทับโคลน: ระบายหน้าด้วยสำเนาจากส่วนอื่นของหน้าเดียวกัน
 กด Alt แล้วคลิกจุดที่จะคัดลอกมา จากนั้นระบาย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="600"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="602"/>
         <source>Healing brush: like the clone stamp, but the copy takes on the brightness and colour around where you paint.
 Alt+click where to copy from, then paint.</source>
         <translation>แปรงซ่อมภาพ: เหมือนตราประทับโคลน แต่สำเนาจะปรับความสว่างและสีให้เข้ากับบริเวณที่ระบาย
 กด Alt แล้วคลิกจุดที่จะคัดลอกมา จากนั้นระบาย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="608"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="610"/>
         <source>Pick the paint colour from the page.</source>
         <translation>ดูดสีสำหรับระบายจากหน้า</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="614"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="616"/>
         <source>Select a rectangle: drag across the area.
 Shift adds to the selection, Alt takes away; a click without dragging deselects.</source>
         <translation>เลือกเป็นสี่เหลี่ยม: ลากคลุมพื้นที่
 กด Shift เพื่อเพิ่มพื้นที่เลือก กด Alt เพื่อตัดออก คลิกโดยไม่ลากเพื่อยกเลิกการเลือก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="622"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="624"/>
         <source>Select a speech bubble with one click: its inside and its lettering, never its outline.
 Works best after Detect, which finds where each bubble ends.
 Shift adds to the selection, Alt takes away.</source>
@@ -5035,7 +5039,7 @@ Shift adds to the selection, Alt takes away.</source>
 กด Shift เพื่อเพิ่มพื้นที่เลือก กด Alt เพื่อตัดออก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="632"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="634"/>
         <source>Select a whole region with one click — the inside of a bubble, a panel gutter, a flat area behind a sound effect.
 Hold Ctrl to take every region of that colour on the page at once;
 Shift adds to the selection, Alt takes away.</source>
@@ -5044,7 +5048,7 @@ Shift adds to the selection, Alt takes away.</source>
 กด Shift เพื่อเพิ่มพื้นที่เลือก กด Alt เพื่อตัดออก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="642"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="644"/>
         <source>Draw around an irregular shape a round brush cannot follow.
 Drag to trace it freehand, or click corner to corner for straight edges.
 Double-click or press Enter to close it; Escape to start over.
@@ -5055,184 +5059,184 @@ Shift adds to the selection, Alt takes away.</source>
 กด Shift เพื่อเพิ่มพื้นที่เลือก กด Alt เพื่อตัดออก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="653"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="655"/>
         <source>Clean white balloons: paint over the lettering of every plain white speech bubble on this page, in one step and without the AI.
 Runs Detect first if the page has not been detected. Bubbles that are not plain white are skipped.</source>
         <translation>ล้างบอลลูนขาว: ลบตัวอักษรในบอลลูนคำพูดสีขาวเรียบทุกอันในหน้านี้ในขั้นตอนเดียว โดยไม่ใช้ AI
 ถ้าหน้านี้ยังไม่ได้ตรวจจับ จะตรวจจับให้ก่อน บอลลูนที่ไม่ใช่สีขาวเรียบจะถูกข้าม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="874"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="876"/>
         <source>Pick into</source>
         <translation>ผลลัพธ์เป็น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="880"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="882"/>
         <source>Selection</source>
         <translation>พื้นที่เลือก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="882"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="884"/>
         <source>The magic wand and the lasso make a selection (marching ants); choose what to do with it from the buttons beside.</source>
         <translation>ไม้กายสิทธิ์และบ่วงบาศสร้างพื้นที่เลือก (เส้นประวิ่ง) แล้วเลือกว่าจะทำอะไรกับมันจากปุ่มข้างๆ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="886"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="888"/>
         <source>Mask</source>
         <translation>มาสก์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="888"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="890"/>
         <source>The magic wand and the lasso paint a red mask straight onto the page, for the Clean step.</source>
         <translation>ไม้กายสิทธิ์และบ่วงบาศระบายมาสก์สีแดงลงบนหน้าโดยตรง สำหรับขั้นลบข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="899"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="901"/>
         <source>Clean Selection</source>
         <translation>ลบในพื้นที่เลือก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="901"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="903"/>
         <source>Inpaint what is inside the selection with the current inpainter. Mask strokes on the page are left alone.</source>
         <translation>ลบข้อความในพื้นที่เลือกด้วยตัวลบภาพที่ตั้งไว้ มาสก์ที่ระบายไว้บนหน้าจะไม่ถูกแตะต้อง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="904"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="906"/>
         <source>To Mask</source>
         <translation>เป็นมาสก์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="906"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="908"/>
         <source>Turn the selection into a red mask stroke for the Clean step.</source>
         <translation>แปลงพื้นที่เลือกเป็นมาสก์สีแดงสำหรับขั้นลบข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="908"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="910"/>
         <source>Invert</source>
         <translation>กลับด้าน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="909"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="911"/>
         <source>Select everything that is not selected (Ctrl+Shift+I).</source>
         <translation>เลือกทุกส่วนที่ยังไม่ได้เลือก (Ctrl+Shift+I)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="910"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="912"/>
         <source>Deselect</source>
         <translation>ยกเลิกเลือก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="911"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="913"/>
         <source>Drop the selection (Ctrl+Shift+A).</source>
         <translation>ยกเลิกพื้นที่เลือก (Ctrl+Shift+A)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="913"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="915"/>
         <source>Modify</source>
         <translation>ปรับแต่ง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="915"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="917"/>
         <source>Grow, shrink, smooth or feather the selection by a number of pixels.</source>
         <translation>ขยาย หด ปรับเรียบ หรือเบลอขอบพื้นที่เลือกตามจำนวนพิกเซล</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="919"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="921"/>
         <source>Grow…</source>
         <translation>ขยาย…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="920"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="922"/>
         <source>Shrink…</source>
         <translation>หด…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="921"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="923"/>
         <source>Smooth…</source>
         <translation>ปรับเรียบ…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="922"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="924"/>
         <source>Feather…</source>
         <translation>เบลอขอบ…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="941"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="943"/>
         <source>Paint colour (Alt+click the page to pick one)</source>
         <translation>สีสำหรับระบาย (Alt+คลิกบนหน้าเพื่อดูดสี)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="944"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="946"/>
         <source>Hardness</source>
         <translation>ความแข็งขอบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="950"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="952"/>
         <source>Soft edge (left) to hard edge (right)</source>
         <translation>ขอบนุ่ม (ซ้าย) ถึงขอบคม (ขวา)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="952"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="954"/>
         <source>Opacity</source>
         <translation>ความทึบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="960"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="962"/>
         <source>Tolerance</source>
         <translation>ช่วงสี</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="966"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="968"/>
         <source>How different a colour may be and still be filled</source>
         <translation>สีที่ต่างกันได้มากแค่ไหนแล้วยังถูกเทด้วย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="968"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="970"/>
         <source>Aligned</source>
         <translation>จัดแนว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="970"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="972"/>
         <source>On: every stroke keeps the same distance to where it copies from.
 Off: every stroke starts copying from the Alt+clicked point again.</source>
         <translation>เปิด: ทุกเส้นรักษาระยะห่างเดิมจากจุดที่คัดลอก
 ปิด: ทุกเส้นเริ่มคัดลอกจากจุดที่กด Alt+คลิกใหม่ทุกครั้ง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="974"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="976"/>
         <source>Lock offset</source>
         <translation>ล็อกระยะ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="976"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="978"/>
         <source>Keep the distance to the source across pages, until the next Alt+click —
 for the same mark in the same place on every page.</source>
         <translation>คงระยะห่างจากจุดคัดลอกไว้แม้เปลี่ยนหน้า จนกว่าจะกด Alt+คลิกใหม่ —
 สำหรับรอยเดียวกันที่อยู่ตำแหน่งเดิมทุกหน้า</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="984"/>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="988"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="986"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="990"/>
         <source>Pen pressure</source>
         <translation>แรงกดปากกา</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="989"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="991"/>
         <source>Size</source>
         <translation>ขนาด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="991"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="993"/>
         <source>A lighter touch paints a thinner line (tablet only)</source>
         <translation>กดเบาได้เส้นบางลง (เฉพาะเมาส์ปากกา)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="992"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="994"/>
         <source>Flow</source>
         <translation>ความเข้ม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="994"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="996"/>
         <source>A lighter touch paints more faintly (tablet only)</source>
         <translation>กดเบาได้สีจางลง (เฉพาะเมาส์ปากกา)</translation>
     </message>
@@ -5251,32 +5255,32 @@ Double-click or press Enter to close it; Escape to start over.</source>
 ดับเบิลคลิกหรือกด Enter เพื่อปิดรูป กด Escape เพื่อเริ่มใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="658"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="660"/>
         <source>Remove all the brush strokes on the Image</source>
         <translation>ลบเส้นแปรงทั้งหมดบนภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="665"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="667"/>
         <source>Brush/Eraser Size Slider</source>
         <translation>แถบปรับขนาดแปรง/ยางลบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="723"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="725"/>
         <source>Box size</source>
         <translation>ขนาดกล่อง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="742"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="744"/>
         <source>Brush size</source>
         <translation>ขนาดแปรง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="812"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="814"/>
         <source>Layers</source>
         <translation>เลเยอร์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="813"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="815"/>
         <source>Glossary</source>
         <translation>คลังคำศัพท์</translation>
     </message>
