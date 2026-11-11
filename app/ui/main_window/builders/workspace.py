@@ -95,7 +95,9 @@ class WorkspaceMixin:
         self.cancel_button.setEnabled(True)
         self.cancel_button.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         # Many chapters, one after another (app/ui/chapter_queue_dialog.py).
-        self.chapter_queue_button = MPushButton(self.tr("Chapters"))
+        # Icon-only: a text button made the window's minimum width exceed
+        # 1280 px (tests/test_editor_layout.py).
+        self.chapter_queue_button = MToolButton().svg("list_view.svg").icon_only()
         self.chapter_queue_button.setToolTip(self.tr(
             "Chapter Queue: translate many chapters one after another and come back to "
             "a project per chapter"))
