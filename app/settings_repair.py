@@ -44,8 +44,10 @@ def unreadable_keys(settings: QSettings) -> list[str]:
     return empty if failed else []
 
 
-def repair_settings(organization: str = "ComicLabs", application: str = "ComicTranslate") -> list[str]:
-    settings = QSettings(organization, application)
+def repair_settings() -> list[str]:
+    # The storage identity is spelled out, as everywhere (tests/test_brand.py):
+    # renaming it would silently reset every existing user's settings.
+    settings = QSettings("ComicLabs", "ComicTranslate")
     try:
         bad = unreadable_keys(settings)
     except Exception:
