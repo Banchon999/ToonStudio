@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import enum
 import logging
 import os
 import re
@@ -16,7 +17,7 @@ from PySide6.QtCore import QSettings
 from PySide6.QtGui import QUndoStack
 
 from app.thread_worker import GenericWorker
-from core import recovery
+from core import recovery, review_window
 from app.ui.dayu_widgets.message import MMessage
 from app.ui.canvas.text_item import TextBlockItem
 from app.ui.canvas.text.text_item_properties import TextItemProperties
@@ -255,7 +256,11 @@ class ProjectController:
         return os.path.join(get_user_data_dir(), "autosave")
 
     def _recovery_project_path(self) -> str:
-        return os.path.join(self._autosave_dir(), "project_recovery.ctpr")
+        # A review window keeps its own slot: writing or clearing the main
+        # one would lose the checkpoint of the window that is translating.
+        name = review_window.RECOVERY_NAME if getattr(self.main, "review_mode", False) \
+            else "project_recovery.ctpr"
+        return os.path.join(self._autosave_dir(), name)
 
     def _configured_project_autosave_dir(self) -> str:
         export_settings = self.main.settings_page.get_export_settings()
@@ -1734,5 +1739,10 @@ class ProjectController:
         else:
             # Convert value to English using mappings if available
             mapped_value = self.main.settings_page.ui.value_mappings.get(group_value, group_value)
+            # An enum goes in as its plain value: QSettings pickles any other
+            # Python object, and PySide 6.12 refuses to read a pickle back,
+            # which closed the app at its next start (app/settings_repair.py).
+            if isinstance(mapped_value, enum.Enum):
+                mapped_value = mapped_value.value
             settings_obj.setValue(group_key, mapped_value)
 

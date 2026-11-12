@@ -192,10 +192,11 @@
     </message>
     <message>
         <location filename="../../app/ui/chapter_queue_dialog.py" line="50"/>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="217"/>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="328"/>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="332"/>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="345"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="223"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="334"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="338"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="351"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="375"/>
         <source>Chapter Queue</source>
         <translation>คิวแปลหลายตอน</translation>
     </message>
@@ -361,132 +362,152 @@
     </message>
     <message>
         <location filename="../../app/ui/chapter_queue_dialog.py" line="156"/>
+        <source>Open for Review</source>
+        <translation>เปิดตรวจงาน</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="158"/>
+        <source>Open the selected finished chapter to read and edit it. While the queue is running it opens in a second window, and the queue carries on.</source>
+        <translation>เปิดตอนที่เสร็จแล้วที่เลือกไว้เพื่ออ่านและแก้ไข ระหว่างที่คิวกำลังรัน จะเปิดในหน้าต่างที่สอง และคิวทำงานต่อไป</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="161"/>
         <source>Close</source>
         <translation>ปิด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="214"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="220"/>
         <source>Add Chapter or Series Folder</source>
         <translation>เพิ่มโฟลเดอร์ตอนหรือโฟลเดอร์เรื่อง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="218"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="224"/>
         <source>No chapters were found there (no images, and no subfolders or archives with images).</source>
         <translation>ไม่พบตอนในโฟลเดอร์นี้ (ไม่มีรูป และไม่มีโฟลเดอร์ย่อยหรือไฟล์บีบอัดที่มีรูป)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="224"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="230"/>
         <source>Add Chapter Files</source>
         <translation>เพิ่มไฟล์ตอน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="300"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="306"/>
         <source>{0} chapter(s)</source>
         <translation>{0} ตอน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="319"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="325"/>
         <source>Choose Output Folder</source>
         <translation>เลือกโฟลเดอร์ผลลัพธ์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="328"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="334"/>
         <source>Choose an output folder.</source>
         <translation>เลือกโฟลเดอร์ผลลัพธ์ก่อน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="333"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="339"/>
         <source>The output folder is one of the chapters. Choose another folder.</source>
         <translation>โฟลเดอร์ผลลัพธ์เป็นโฟลเดอร์ของตอนหนึ่งในคิว เลือกโฟลเดอร์อื่น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/chapter_queue_dialog.py" line="346"/>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="352"/>
         <source>The queue did not start. Check the settings the message named, or that the output folder can be created.</source>
         <translation>คิวไม่เริ่ม ตรวจการตั้งค่าตามที่ข้อความแจ้ง หรือดูว่าสร้างโฟลเดอร์ผลลัพธ์ได้หรือไม่</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/chapter_queue_dialog.py" line="376"/>
+        <source>Select a chapter that has finished. The one being translated can be opened once it is done.</source>
+        <translation>เลือกตอนที่เสร็จแล้ว ตอนที่กำลังแปลอยู่จะเปิดได้เมื่อแปลเสร็จ</translation>
     </message>
 </context>
 <context>
     <name>ComicTranslate</name>
     <message>
-        <location filename="../../controller.py" line="367"/>
+        <location filename="../../controller.py" line="377"/>
         <source>Open Folder</source>
         <translation>เปิดโฟลเดอร์</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="368"/>
+        <location filename="../../controller.py" line="378"/>
         <source>No supported images were found in the selected folder.</source>
         <translation>ไม่พบรูปภาพที่รองรับในโฟลเดอร์ที่เลือก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="587"/>
+        <location filename="../../controller.py" line="597"/>
         <source>Glossary: {0}</source>
         <translation>Glossary: {0}</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="589"/>
+        <location filename="../../controller.py" line="599"/>
         <source>Style: {0}</source>
         <translation>สไตล์: {0}</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="662"/>
+        <location filename="../../controller.py" line="672"/>
         <source>Remove this font from favourites</source>
         <translation>นำฟอนต์นี้ออกจากรายการโปรด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="663"/>
+        <location filename="../../controller.py" line="673"/>
         <source>Add this font to favourites</source>
         <translation>เพิ่มฟอนต์นี้ในรายการโปรด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="677"/>
+        <location filename="../../controller.py" line="687"/>
         <source>No favourite fonts yet</source>
         <translation>ยังไม่มีฟอนต์โปรด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="754"/>
-        <location filename="../../controller.py" line="796"/>
+        <location filename="../../controller.py" line="764"/>
+        <location filename="../../controller.py" line="845"/>
         <source>Translate All</source>
         <translation>แปลทั้งหมด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="760"/>
+        <location filename="../../controller.py" line="770"/>
         <source>Run Workflow</source>
         <translation>เริ่มเวิร์กโฟลว์</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="879"/>
-        <location filename="../../controller.py" line="889"/>
+        <location filename="../../controller.py" line="789"/>
+        <source>Review</source>
+        <translation>ตรวจงาน</translation>
+    </message>
+    <message>
+        <location filename="../../controller.py" line="928"/>
+        <location filename="../../controller.py" line="938"/>
         <source>Error</source>
         <translation>ข้อผิดพลาด</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1150"/>
-        <location filename="../../controller.py" line="1161"/>
+        <location filename="../../controller.py" line="1199"/>
+        <location filename="../../controller.py" line="1210"/>
         <source>Downloading model file: {filename}</source>
         <translation>กำลังดาวน์โหลดไฟล์โมเดล: {filename}</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1192"/>
+        <location filename="../../controller.py" line="1241"/>
         <source>Unsaved Changes</source>
         <translation>มีการเปลี่ยนแปลงที่ยังไม่ได้บันทึก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1193"/>
+        <location filename="../../controller.py" line="1242"/>
         <source>Save changes to this file?</source>
         <translation>บันทึกการเปลี่ยนแปลงของไฟล์นี้หรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1194"/>
+        <location filename="../../controller.py" line="1243"/>
         <source>Save</source>
         <translation>บันทึก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1195"/>
+        <location filename="../../controller.py" line="1244"/>
         <source>Don&apos;t Save</source>
         <translation>ไม่บันทึก</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1196"/>
+        <location filename="../../controller.py" line="1245"/>
         <source>Cancel</source>
         <translation>ยกเลิก</translation>
     </message>
@@ -2286,16 +2307,26 @@ Each series is a tab of the sheet, named after the series.</source>
     </message>
     <message>
         <location filename="../../app/ui/messages.py" line="55"/>
+        <source>Opening {0} in a second window for review…</source>
+        <translation>กำลังเปิด {0} ในหน้าต่างที่สองเพื่อตรวจงาน…</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/messages.py" line="62"/>
+        <source>{0} cannot be opened for review right now: it is the project this window is working on, or the file is missing.</source>
+        <translation>ยังเปิด {0} เพื่อตรวจงานไม่ได้: เป็นโปรเจกต์ที่หน้าต่างนี้กำลังทำอยู่ หรือไม่พบไฟล์</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/messages.py" line="71"/>
         <source>The Smart Workflow steps are in an order that cannot run: {0}</source>
         <translation>ลำดับขั้นตอน Smart Workflow ใช้ไม่ได้: {0}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="57"/>
+        <location filename="../../app/ui/messages.py" line="73"/>
         <source>no step is switched on</source>
         <translation>ไม่ได้เปิดขั้นตอนใดเลย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="66"/>
+        <location filename="../../app/ui/messages.py" line="82"/>
         <source>No Font selected.
 Go to Settings &gt; Text Rendering &gt; Font to select or import one </source>
         <translation>ยังไม่ได้เลือกฟอนต์
@@ -2306,12 +2337,12 @@ Go to Settings &gt; Text Rendering &gt; Font to select or import one </source>
         <translation type="vanished">กรุณาเข้าสู่ระบบหรือสมัครสมาชิกที่ ตั้งค่า &gt; บัญชี เพื่อดำเนินการต่อ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="78"/>
+        <location filename="../../app/ui/messages.py" line="94"/>
         <source>The translator does not support the selected target language. Please choose a different language or tool.</source>
         <translation>ตัวแปลไม่รองรับภาษาปลายทางที่เลือก กรุณาเลือกภาษาอื่นหรือเปลี่ยนเครื่องมือ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="90"/>
+        <location filename="../../app/ui/messages.py" line="106"/>
         <source>No {} selected. Please select a {} in Settings &gt; Tools.</source>
         <translation>ยังไม่ได้เลือก{} กรุณาเลือก{}ที่ ตั้งค่า &gt; เครื่องมือ</translation>
     </message>
@@ -2326,7 +2357,7 @@ Go to Settings &gt; Account to buy more credits.</source>
 ไปที่ ตั้งค่า &gt; บัญชี เพื่อซื้อเครดิตเพิ่ม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="155"/>
+        <location filename="../../app/ui/messages.py" line="171"/>
         <source>OK</source>
         <translation>ตกลง</translation>
     </message>
@@ -2337,98 +2368,98 @@ Please sign in via Settings &gt; Account to use credits, or configure Custom API
 กรุณาเข้าสู่ระบบที่ ตั้งค่า &gt; บัญชี เพื่อใช้เครดิต หรือตั้งค่า Custom API ที่ ตั้งค่า &gt; ขั้นสูง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="103"/>
+        <location filename="../../app/ui/messages.py" line="119"/>
         <source>Custom needs an API key, an endpoint URL and a model.
 Fill them in under Settings &gt; Advanced.</source>
         <translation>&quot;กำหนดเอง&quot; ต้องมี API key, URL ปลายทาง และชื่อโมเดล
 กรอกได้ที่ ตั้งค่า &gt; ขั้นสูง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="117"/>
+        <location filename="../../app/ui/messages.py" line="133"/>
         <source>No OpenRouter API key is set.
 Enter it under Settings &gt; Advanced &gt; OpenRouter, and tick Save Keys to keep it after restarting.</source>
         <translation>ยังไม่ได้ใส่คีย์ API ของ OpenRouter
 ใส่ได้ที่ ตั้งค่า &gt; ขั้นสูง &gt; OpenRouter และติ๊ก บันทึกคีย์ เพื่อให้คีย์ยังอยู่หลังเปิดโปรแกรมใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="154"/>
+        <location filename="../../app/ui/messages.py" line="170"/>
         <source>Copy</source>
         <translation>คัดลอก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="156"/>
+        <location filename="../../app/ui/messages.py" line="172"/>
         <source>Close</source>
         <translation>ปิด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="246"/>
+        <location filename="../../app/ui/messages.py" line="262"/>
         <source>Nothing is marked to clean.
 Draw a box over the leftover text, or paint it with the brush, lasso or magic wand, then press Clean.</source>
         <translation>ยังไม่ได้ทำเครื่องหมายส่วนที่จะลบข้อความ
 ลากกล่องครอบข้อความที่เหลือ หรือระบายด้วยแปรง บ่วงบาศ หรือไม้กายสิทธิ์ แล้วกด ลบข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="279"/>
+        <location filename="../../app/ui/messages.py" line="295"/>
         <source>both ครับ and ค่ะ/คะ in one bubble</source>
         <translation>มีทั้ง ครับ และ ค่ะ/คะ ในบอลลูนเดียว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="282"/>
+        <location filename="../../app/ui/messages.py" line="298"/>
         <source>says ผม but ends with ค่ะ/คะ</source>
         <translation>แทนตัวว่า ผม แต่ลงท้าย ค่ะ/คะ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="285"/>
+        <location filename="../../app/ui/messages.py" line="301"/>
         <source>says ดิฉัน but ends with ครับ</source>
         <translation>แทนตัวว่า ดิฉัน แต่ลงท้าย ครับ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="288"/>
+        <location filename="../../app/ui/messages.py" line="304"/>
         <source>the AI says {0} (female) speaks, but the line uses ครับ/กระผม</source>
         <translation>AI บอกว่า {0} (หญิง) เป็นคนพูด แต่ใช้ ครับ/กระผม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="291"/>
+        <location filename="../../app/ui/messages.py" line="307"/>
         <source>the AI says {0} (male) speaks, but the line uses ค่ะ/คะ/ดิฉัน</source>
         <translation>AI บอกว่า {0} (ชาย) เป็นคนพูด แต่ใช้ ค่ะ/คะ/ดิฉัน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="294"/>
+        <location filename="../../app/ui/messages.py" line="310"/>
         <source>modern ครับ/ค่ะ/ดิฉัน in a historical series (use ขอรับ/เจ้าค่ะ/ข้า)</source>
         <translation>ใช้ ครับ/ค่ะ/ดิฉัน แบบปัจจุบันในเรื่องย้อนยุค (ควรเป็น ขอรับ/เจ้าค่ะ/ข้า)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="297"/>
+        <location filename="../../app/ui/messages.py" line="313"/>
         <source>period ขอรับ/เจ้าค่ะ/ข้าน้อย in a present-day series</source>
         <translation>ใช้ ขอรับ/เจ้าค่ะ/ข้าน้อย แบบย้อนยุคในเรื่องยุคปัจจุบัน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="304"/>
+        <location filename="../../app/ui/messages.py" line="320"/>
         <source>the speaker</source>
         <translation>ผู้พูด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="312"/>
+        <location filename="../../app/ui/messages.py" line="328"/>
         <source>«{0}»: {1}</source>
         <translation>«{0}»: {1}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="328"/>
+        <location filename="../../app/ui/messages.py" line="344"/>
         <source>{0} glossary term(s) were not translated as set in the glossary:</source>
         <translation>มี {0} คำที่แปลไม่ตรงกับที่ตั้งไว้ใน Glossary:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="333"/>
+        <location filename="../../app/ui/messages.py" line="349"/>
         <source>«{0}» should be «{1}»</source>
         <translation>«{0}» ควรเป็น «{1}»</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="346"/>
+        <location filename="../../app/ui/messages.py" line="362"/>
         <source>{0} bubble(s) with ครับ/ค่ะ that need checking:</source>
         <translation>มี {0} บอลลูนที่ต้องตรวจ ครับ/ค่ะ:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="363"/>
+        <location filename="../../app/ui/messages.py" line="379"/>
         <source>Auto-save could not save the project.
 Your latest changes are not on disk yet: use Save As to keep them.</source>
         <translation>บันทึกอัตโนมัติไม่สามารถบันทึกโปรเจกต์ได้
@@ -2439,7 +2470,7 @@ Your latest changes are not on disk yet: use Save As to keep them.</source>
         <translation type="vanished">{0} บอลลูนใช้คำพูดชาย/หญิงปนกัน (ครับ/ค่ะ):</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="387"/>
+        <location filename="../../app/ui/messages.py" line="403"/>
         <source>{0} page(s) have translations that do not follow the glossary.
 Open Batch Report to see which terms.</source>
         <translation>มี {0} หน้าที่คำแปลไม่ตรงกับ Glossary
@@ -2554,7 +2585,7 @@ Please select a different tool in Settings.</source>
 กรุณาเลือกเครื่องมืออื่นในหน้าตั้งค่า</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="209"/>
+        <location filename="../../app/ui/messages.py" line="225"/>
         <location filename="../../pipeline/batch_processor.py" line="369"/>
         <location filename="../../pipeline/batch_processor.py" line="421"/>
         <location filename="../../pipeline/webtoon_batch/chunk.py" line="108"/>
@@ -2586,7 +2617,7 @@ Please try a different tool.</source>
 กรุณาลองใช้เครื่องมืออื่น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/messages.py" line="262"/>
+        <location filename="../../app/ui/messages.py" line="278"/>
         <source>{0} image(s) were skipped in this batch.
 Open Batch Report to see all skipped images and reasons.</source>
         <translation>มีรูปภาพถูกข้าม {0} รูปในชุดนี้
@@ -2603,12 +2634,12 @@ Open Batch Report to see all skipped images and reasons.</source>
         <translation>ตัวแปล</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1115"/>
+        <location filename="../../controller.py" line="1164"/>
         <source>Processing:</source>
         <translation>กำลังประมวลผล:</translation>
     </message>
     <message>
-        <location filename="../../controller.py" line="1118"/>
+        <location filename="../../controller.py" line="1167"/>
         <source>Archiving:</source>
         <translation>กำลังบีบอัด:</translation>
     </message>
@@ -5705,65 +5736,65 @@ It may have already been moved, renamed, or deleted.
         <translation>รายงานการประมวลผลชุด</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="498"/>
+        <location filename="../../app/controllers/projects.py" line="503"/>
         <source>Project Recovery</source>
         <translation>การกู้คืนโปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="499"/>
+        <location filename="../../app/controllers/projects.py" line="504"/>
         <source>An autosaved project from a previous session was found.</source>
         <translation>พบโปรเจกต์ที่บันทึกอัตโนมัติไว้จากการใช้งานครั้งก่อน</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="502"/>
+        <location filename="../../app/controllers/projects.py" line="507"/>
         <source>Project: {name}</source>
         <translation>โปรเจกต์: {name}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="504"/>
+        <location filename="../../app/controllers/projects.py" line="509"/>
         <source>Pages: {count}</source>
         <translation>จำนวนหน้า: {count}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="505"/>
+        <location filename="../../app/controllers/projects.py" line="510"/>
         <source>Last autosave: {saved_at}
 Do you want to restore it?</source>
         <translation>บันทึกอัตโนมัติล่าสุด: {saved_at}
 ต้องการกู้คืนหรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="507"/>
+        <location filename="../../app/controllers/projects.py" line="512"/>
         <source>Restore</source>
         <translation>กู้คืน</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="508"/>
+        <location filename="../../app/controllers/projects.py" line="513"/>
         <source>Discard</source>
         <translation>ทิ้งไป</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="511"/>
+        <location filename="../../app/controllers/projects.py" line="516"/>
         <source>Not Now</source>
         <translation>ไว้ทีหลัง</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="533"/>
+        <location filename="../../app/controllers/projects.py" line="538"/>
         <source>RecoveredProject.ctpr</source>
         <translation>RecoveredProject.ctpr</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="719"/>
-        <location filename="../../app/controllers/projects.py" line="728"/>
+        <location filename="../../app/controllers/projects.py" line="724"/>
+        <location filename="../../app/controllers/projects.py" line="733"/>
         <source>Export Folder</source>
         <translation>โฟลเดอร์ส่งออก</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="720"/>
+        <location filename="../../app/controllers/projects.py" line="725"/>
         <source>Choose a folder path, not an existing file.</source>
         <translation>กรุณาเลือกพาธของโฟลเดอร์ ไม่ใช่ไฟล์ที่มีอยู่</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="730"/>
+        <location filename="../../app/controllers/projects.py" line="735"/>
         <source>Could not create the selected export folder.
 
 {error}</source>
@@ -5772,18 +5803,18 @@ Do you want to restore it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="750"/>
-        <location filename="../../app/controllers/projects.py" line="802"/>
+        <location filename="../../app/controllers/projects.py" line="755"/>
+        <location filename="../../app/controllers/projects.py" line="807"/>
         <source>Export Translations</source>
         <translation>ส่งออกคำแปล</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="777"/>
+        <location filename="../../app/controllers/projects.py" line="782"/>
         <source>There are no texts or translations to export yet.</source>
         <translation>ยังไม่มีข้อความหรือคำแปลให้ส่งออก</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="803"/>
+        <location filename="../../app/controllers/projects.py" line="808"/>
         <source>Could not write the export file.
 
 {error}</source>
@@ -5792,24 +5823,24 @@ Do you want to restore it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="808"/>
+        <location filename="../../app/controllers/projects.py" line="813"/>
         <source>Translations exported to {0}</source>
         <translation>ส่งออกคำแปลไปยัง {0} แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1315"/>
-        <location filename="../../app/controllers/projects.py" line="1325"/>
-        <location filename="../../app/controllers/projects.py" line="1395"/>
+        <location filename="../../app/controllers/projects.py" line="1320"/>
+        <location filename="../../app/controllers/projects.py" line="1330"/>
+        <location filename="../../app/controllers/projects.py" line="1400"/>
         <source>Project File</source>
         <translation>ไฟล์โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1316"/>
+        <location filename="../../app/controllers/projects.py" line="1321"/>
         <source>Choose an existing folder for the project file.</source>
         <translation>กรุณาเลือกโฟลเดอร์ที่มีอยู่จริงสำหรับไฟล์โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1327"/>
+        <location filename="../../app/controllers/projects.py" line="1332"/>
         <source>Could not create the selected project folder.
 
 {error}</source>
@@ -5818,12 +5849,12 @@ Do you want to restore it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1338"/>
+        <location filename="../../app/controllers/projects.py" line="1343"/>
         <source>Overwrite Project File</source>
         <translation>เขียนทับไฟล์โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1340"/>
+        <location filename="../../app/controllers/projects.py" line="1345"/>
         <source>A project file already exists at this location.
 
 {path}
@@ -5836,12 +5867,12 @@ Overwrite it?</source>
 ต้องการเขียนทับหรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1363"/>
+        <location filename="../../app/controllers/projects.py" line="1368"/>
         <source>Old Project File Kept</source>
         <translation>ไฟล์โปรเจกต์เดิมยังคงอยู่</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1365"/>
+        <location filename="../../app/controllers/projects.py" line="1370"/>
         <source>The project was saved to the new location, but the old file could not be removed.
 
 {path}
@@ -5854,12 +5885,12 @@ Overwrite it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1373"/>
+        <location filename="../../app/controllers/projects.py" line="1378"/>
         <source>Project file updated.</source>
         <translation>อัปเดตไฟล์โปรเจกต์แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1397"/>
+        <location filename="../../app/controllers/projects.py" line="1402"/>
         <source>Could not move the project file.
 
 {error}</source>
@@ -5868,22 +5899,22 @@ Overwrite it?</source>
 {error}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1408"/>
+        <location filename="../../app/controllers/projects.py" line="1413"/>
         <source>Project file renamed.</source>
         <translation>เปลี่ยนชื่อไฟล์โปรเจกต์แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1410"/>
+        <location filename="../../app/controllers/projects.py" line="1415"/>
         <source>Project file moved.</source>
         <translation>ย้ายไฟล์โปรเจกต์แล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1536"/>
+        <location filename="../../app/controllers/projects.py" line="1541"/>
         <source>Project Not Found</source>
         <translation>ไม่พบโปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1538"/>
+        <location filename="../../app/controllers/projects.py" line="1543"/>
         <source>The selected project file could not be found.
 It may have been moved, renamed, or deleted.
 
@@ -5894,12 +5925,12 @@ It may have been moved, renamed, or deleted.
 {path}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1635"/>
+        <location filename="../../app/controllers/projects.py" line="1640"/>
         <source>Auto</source>
         <translation>อัตโนมัติ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/projects.py" line="1636"/>
+        <location filename="../../app/controllers/projects.py" line="1641"/>
         <source>English</source>
         <translation>อังกฤษ</translation>
     </message>

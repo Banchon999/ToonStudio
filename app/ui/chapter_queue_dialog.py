@@ -153,8 +153,14 @@ class ChapterQueueDialog(QtWidgets.QDialog):
         self.stop_button = QtWidgets.QPushButton(self.tr("Stop"), self)
         self.stop_button.setToolTip(self.tr("Stop after saving what the current chapter has so far"))
         self.stop_button.clicked.connect(self.ctrl.cancel)
+        self.review_button = QtWidgets.QPushButton(self.tr("Open for Review"), self)
+        self.review_button.setToolTip(self.tr(
+            "Open the selected finished chapter to read and edit it. While the queue is "
+            "running it opens in a second window, and the queue carries on."))
+        self.review_button.clicked.connect(self._review_selected)
         self.close_button = QtWidgets.QPushButton(self.tr("Close"), self)
         self.close_button.clicked.connect(self.close)
+        bottom.addWidget(self.review_button)
         bottom.addWidget(self.start_button)
         bottom.addWidget(self.stop_button)
         bottom.addWidget(self.close_button)
@@ -347,6 +353,33 @@ class ChapterQueueDialog(QtWidgets.QDialog):
                 "output folder can be created."))
             return
         self._update_buttons()
+
+    def reviewable_project(self, row: int) -> str | None:
+        """The saved project of the chapter in `row`, unless it is being translated."""
+        if not (0 <= row < len(self.chapters)):
+            return None
+        chapter = self.chapters[row]
+        if chapter.status in (cq.RUNNING, cq.PENDING):
+            return None
+        output_dir = self.ctrl.output_dir if self.ctrl.chapters is self.chapters and self.ctrl.output_dir \
+            else self.output_edit.text().strip()
+        if not output_dir:
+            return None
+        path = cq.project_path(os.path.abspath(os.path.expanduser(output_dir)), chapter)
+        return path if os.path.isfile(path) else None
+
+    def _review_selected(self) -> None:
+        rows = self._selected_rows()
+        path = self.reviewable_project(rows[0]) if rows else None
+        if not path:
+            QtWidgets.QMessageBox.information(self, self.tr("Chapter Queue"), self.tr(
+                "Select a chapter that has finished. The one being translated can be opened "
+                "once it is done."))
+            return
+        if self.main.is_busy_translating():
+            self.main.open_review_window(path)
+        elif self.main._confirm_start_new_project():
+            self.main.project_ctrl.thread_load_project(path)
 
     def _on_chapter_changed(self, row: int) -> None:
         if self.ctrl.chapters is not self.chapters or not (0 <= row < len(self.chapters)):
