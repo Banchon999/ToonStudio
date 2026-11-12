@@ -279,17 +279,23 @@ class TextBlockManager:
             
             # Create a temporary text block with scene coordinates
             temp_blk = blk.deep_copy() if hasattr(blk, 'deep_copy') else blk
-            temp_blk.xyxy = [scene_top_left.x(), scene_top_left.y(), 
+            temp_blk.xyxy = [scene_top_left.x(), scene_top_left.y(),
                            scene_top_left.x() + (blk.xyxy[2] - blk.xyxy[0]),
                            scene_top_left.y() + (blk.xyxy[3] - blk.xyxy[1])]
-            
+            # The bubble too: clipping reads it as scene coordinates, and left
+            # page-local it fell outside its own page on every page after the
+            # first and was dropped — text was then fitted to the box alone.
+            if temp_blk.bubble_xyxy is not None:
+                temp_blk.bubble_xyxy = list(temp_blk.bubble_xyxy)
+                self._convert_bbox_coordinates(temp_blk.bubble_xyxy, original_page_idx, to_scene=True)
+
             # Add clipped version to each intersecting page (following save_text_blocks_to_states pattern)
             for page_idx in intersecting_pages:
                 if 0 <= page_idx < len(self.image_loader.image_file_paths):
                     clipped_xyxy = self.coordinate_converter.clip_textblock_to_page(temp_blk, page_idx)
                     if clipped_xyxy and clipped_xyxy[2] > clipped_xyxy[0] and clipped_xyxy[3] > clipped_xyxy[1]:
                         # Create a clipped copy of the text block for this page
-                        clipped_blk = self._create_clipped_textblock(blk, clipped_xyxy, page_idx)
+                        clipped_blk = self._create_clipped_textblock(temp_blk, clipped_xyxy, page_idx)
                         scene_items_by_page[page_idx]['text_blocks'].append(clipped_blk)
 
     def is_duplicate_text_block(self, new_blk, existing_blks, margin=5):

@@ -51,8 +51,6 @@ class ManualWorkflowController:
         choosing; without on_done these are the step's usual callbacks.
         """
         error = error or self.main.default_error_handler
-        if on_done is None:
-            return error, finished
         failed: list = []
 
         def on_error(error_tuple):
@@ -60,9 +58,13 @@ class ManualWorkflowController:
             error(error_tuple)
 
         def on_finished():
+            # Every page a webtoon step set aside comes back, from the state
+            # it wrote, also after an error (finished runs either way).
+            self._reload_parked_webtoon_pages()
             if finished is not None:
                 finished()
-            on_done(not failed)
+            if on_done is not None:
+                on_done(not failed)
 
         return on_error, on_finished
 
@@ -85,13 +87,14 @@ class ManualWorkflowController:
             scene_mgr = getattr(manager, "scene_item_manager", None) if manager is not None else None
             if scene_mgr is not None:
                 scene_mgr.save_all_scene_items_to_states()
-                if (
-                    current_file in selected_paths
-                    and 0 <= self.main.curr_img_idx < len(self.main.image_files)
-                    and self.main.curr_img_idx in manager.loaded_pages
-                ):
-                    scene_mgr.unload_page_scene_items(self.main.curr_img_idx)
-                    current_page_unloaded = True
+                # Every page on screen that the step will rewrite is set aside,
+                # not only the one in view: the others' stale items would be
+                # saved over the step's results by the next step.
+                selected = set(selected_paths)
+                for page_idx in sorted(manager.loaded_pages):
+                    if 0 <= page_idx < len(self.main.image_files) and self.main.image_files[page_idx] in selected:
+                        scene_mgr.park_page(page_idx)
+                current_page_unloaded = self.main.curr_img_idx in scene_mgr.parked_pages
         else:
             self.main.image_ctrl.save_current_image_state()
 
@@ -100,21 +103,31 @@ class ManualWorkflowController:
             "current_page_unloaded": current_page_unloaded,
         }
 
-    def _reload_current_webtoon_page(self) -> None:
+    def _webtoon_scene_manager(self):
         if not self.main.webtoon_mode:
-            return
+            return None
         manager = getattr(self.main.image_viewer, "webtoon_manager", None)
-        if manager is None:
-            return
-        scene_mgr = getattr(manager, "scene_item_manager", None)
+        return getattr(manager, "scene_item_manager", None) if manager is not None else None
+
+    def _reload_current_webtoon_page(self) -> None:
+        """Put the page in view back on the canvas once its state is written.
+        The other pages a step set aside come back when the step finishes
+        (`_step_callbacks`): a result handler that writes pages one by one
+        must not bring back a page whose state it has not written yet."""
+        scene_mgr = self._webtoon_scene_manager()
         if scene_mgr is None:
             return
         page_idx = self.main.curr_img_idx
         if not (0 <= page_idx < len(self.main.image_files)):
             return
-        if page_idx not in manager.loaded_pages:
+        scene_mgr.unpark_page(page_idx)
+        self.main.text_ctrl.clear_text_edits()
+
+    def _reload_parked_webtoon_pages(self) -> None:
+        scene_mgr = self._webtoon_scene_manager()
+        if scene_mgr is None or not getattr(scene_mgr, "parked_pages", None):
             return
-        scene_mgr.load_page_scene_items(page_idx)
+        scene_mgr.unpark_pages()
         self.main.text_ctrl.clear_text_edits()
 
     def _copy_blocks_for_current_webtoon_page(self, blk_list: list[TextBlock]) -> list[TextBlock]:

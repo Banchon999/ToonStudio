@@ -1225,8 +1225,12 @@ class TextController:
                     if not blk_list:
                         continue
 
+                    # Page state keeps the English name, the fallback is the
+                    # combo's label; lang_mapping is keyed by the interface's
+                    # label, so a Thai interface found no "Thai" in it, and
+                    # Thai was wrapped as if it broke only at spaces.
                     target_lang = state.get("target_lang", target_lang_fallback)
-                    target_lang_en = self.main.lang_mapping.get(target_lang, None)
+                    target_lang_en = to_canonical_language_name(target_lang, self.main.lang_mapping)
                     trg_lng_cd = get_language_code(target_lang_en)
                     format_translations(blk_list, trg_lng_cd, upper_case=upper)
 
