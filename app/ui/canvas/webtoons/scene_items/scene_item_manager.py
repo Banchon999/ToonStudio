@@ -33,6 +33,11 @@ class SceneItemManager:
         self.brush_stroke_manager = BrushStrokeManager(viewer, layout_manager, coordinate_converter, image_loader)
         self.text_block_manager = TextBlockManager(viewer, layout_manager, coordinate_converter, image_loader)
         self.patch_manager = PatchManager(viewer, layout_manager, coordinate_converter, image_loader)
+
+        # Loaded pages whose items are off the canvas while a step rewrites
+        # their state on a worker (park_page). Their state is the truth until
+        # they are put back: nothing on the canvas may be saved over it.
+        self.parked_pages: set[int] = set()
     
     def initialize(self):
         """Initialize all specialized scene item managers."""
@@ -76,8 +81,38 @@ class SceneItemManager:
         # Freshly loaded items take the page's layer state (hidden, locked...).
         self.viewer.refresh_layers()
     
+    def park_page(self, page_idx: int):
+        """Save a loaded page's items to its state and take them off the canvas,
+        so a step can rewrite that state; `unpark_page` puts them back.
+
+        Only the page in view used to be set aside. The other pages on screen
+        kept their old items, the next save of the strip took those as the
+        truth, and whatever the step had found for those pages was lost.
+        """
+        if page_idx in self.parked_pages:
+            return
+        self.unload_page_scene_items(page_idx)
+        self.parked_pages.add(page_idx)
+
+    def unpark_page(self, page_idx: int):
+        """Put a parked page's items back on the canvas, from its state."""
+        if page_idx not in self.parked_pages:
+            return
+        self.parked_pages.discard(page_idx)
+        if self.image_loader.is_page_loaded(page_idx):
+            self.load_page_scene_items(page_idx)
+
+    def unpark_pages(self):
+        for page_idx in sorted(self.parked_pages):
+            self.unpark_page(page_idx)
+
     def unload_page_scene_items(self, page_idx: int):
         """Unload scene items for a specific page (saving state if needed)."""
+        if page_idx in self.parked_pages:
+            # Its items are already in its state and off the canvas; saving
+            # the empty canvas now would wipe what the step is writing.
+            self.parked_pages.discard(page_idx)
+            return
         print(f"Unloading scene items for page {page_idx}")
         
         if not self.main_controller or page_idx >= len(self.image_loader.image_file_paths):
@@ -129,7 +164,7 @@ class SceneItemManager:
             
             # Only collect existing items if the page is NOT loaded.
             # For loaded pages, the live scene items are the authoritative source.
-            if not self.image_loader.is_page_loaded(page_idx):   
+            if not self.image_loader.is_page_loaded(page_idx) or page_idx in self.parked_pages:
                 for rect in viewer_state.get('rectangles', []): all_existing_rects.append((rect, page_idx))
                 for stroke in state.get('brush_strokes', []): all_existing_brush_strokes.append((stroke, page_idx))
                 for blk in state.get('blk_list', []): all_existing_blk_list.append((blk, page_idx))
@@ -251,6 +286,7 @@ class SceneItemManager:
     
     def clear(self):
         """Clear all scene item management state."""
+        self.parked_pages.clear()
         self.rectangle_manager.clear()
         self.text_item_manager.clear()
         self.brush_stroke_manager.clear()
