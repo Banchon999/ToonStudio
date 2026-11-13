@@ -1,4 +1,4 @@
-"""A stroke of a pixel tool (paint, restore, AI, clone, heal), from press to patch.
+"""A stroke of a pixel tool (paint, restore, AI, clone, heal, spot heal), from press to patch.
 
 The session reads everything it needs on the press: the page composite as
 the user sees it, the source it paints from (a flat colour, or the raw page for
@@ -21,6 +21,7 @@ from PySide6.QtGui import QColor, QImage, QPainterPath
 from PySide6.QtWidgets import QGraphicsItem
 
 from core import paint
+from core.spot_heal import spot_heal
 from core.selection import blend
 
 PAINT = "paint"
@@ -32,12 +33,20 @@ AI = "aibrush"
 CLONE = "clone"
 HEAL = "heal"
 CLONE_MODES = (CLONE, HEAL)
+#: The spot healing brush: paint over a mark and it is healed from texture
+#: found nearby (`core.spot_heal`) — no source to Alt+click, no model.
+SPOT = "spotheal"
+#: Strokes that mark pixels to be filled rather than paint them: shown as a
+#: tint while drawn, solid (hardness 1, full opacity).
+MARK_MODES = (AI, SPOT)
 #: The pixel tools that paint a stroke with the brush (press, drag, release).
-BRUSH_TOOLS = (PAINT, RESTORE, AI, CLONE, HEAL)
+BRUSH_TOOLS = (PAINT, RESTORE, AI, CLONE, HEAL, SPOT)
 
 #: How strongly the AI brush's preview tints what it covers (the mask
 #: brush's translucent red), so it reads as "to be removed", not as paint.
 AI_PREVIEW_ALPHA = 0.45
+#: The spot healing brush's preview colour (a dark grey wash, as in Photoshop).
+SPOT_PREVIEW_COLOUR = (40, 40, 40)
 
 #: Above inpaint patches (0.5), below mask strokes (0.8) and text (1): where
 #: the result will live once it is a patch.
@@ -140,7 +149,7 @@ class PixelSession:
         self.diameter = max(1.0, float(diameter))
         # The AI brush marks pixels in or out: a soft edge would only make the
         # mask's boundary depend on a threshold.
-        self.hardness = 1.0 if mode == AI else float(hardness)
+        self.hardness = 1.0 if mode in MARK_MODES else float(hardness)
         self.opacity = min(1.0, max(0.0, float(opacity)))
         self.pressure_size = pressure_size
         self.pressure_flow = pressure_flow
@@ -177,6 +186,9 @@ class PixelSession:
             # Sampled from the page as it was at the press, so the stroke
             # never clones what it has just painted.
             self.source, self.source_valid = paint.shifted(self.composite, *self.clone_offset)
+        elif self.mode == SPOT:
+            self.source = None
+            self._colour = np.array(SPOT_PREVIEW_COLOUR, np.uint8)
         else:
             colour = QColor(255, 0, 0) if self.mode == AI else self.colour
             self.source = None
@@ -238,7 +250,14 @@ class PixelSession:
             mask[region] = (alpha > 0).astype(np.uint8) * 255
             return PixelEdit(image=self.composite, mask=mask, mappings=self.mappings, mode=self.mode)
         original = self.composite[region]
-        source = self._source(region)
+        if self.mode == SPOT:
+            # Healed from texture found nearby; the search reads the page
+            # around the box, so it gets the whole stroke mask, not the box.
+            stroke = np.zeros((height, width), bool)
+            stroke[region] = alpha > 0
+            source = spot_heal(self.composite, stroke)[region]
+        else:
+            source = self._source(region)
         if self.mode == HEAL:
             valid = None if self.source_valid is None else self.source_valid[region]
             source = paint.heal(original, source, alpha > 0, valid=valid)
@@ -278,7 +297,7 @@ class PixelSession:
         return self.source[region]
 
     def _alpha(self, region) -> np.ndarray:
-        opacity = 1.0 if self.mode == AI else self.opacity
+        opacity = 1.0 if self.mode in MARK_MODES else self.opacity
         alpha = self.coverage[region] * opacity
         if self.selection_alpha is not None:
             alpha = alpha * self.selection_alpha[region]
@@ -300,7 +319,7 @@ class PixelSession:
             return
         region = np.s_[y0:y1, x0:x1]
         alpha = self._alpha(region)
-        shown = alpha * AI_PREVIEW_ALPHA if self.mode == AI else alpha
+        shown = alpha * AI_PREVIEW_ALPHA if self.mode in MARK_MODES else alpha
         rgb = blend(self.composite[region], self._source(region), shown)
         try:
             self.preview.put(x0, y0, rgb, alpha)

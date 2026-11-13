@@ -13,6 +13,7 @@ import imkit as imk
 from core import clean_triage
 from core.balloons import MIN_LIGHT
 from core.paint import smooth_fill
+from core.spot_heal import spot_heal
 
 from .base import InpaintModel
 from .mask_fitting import pick_best_mask
@@ -57,9 +58,9 @@ class SmartFill(InpaintModel):
     3. **Textured** — the surroundings have texture. What happens then is
        `Config.smart_fill_textured`, the user's choice of speed over quality:
        ``"model"`` (default) sends the region to LaMa; ``"heal"`` fills it
-       from its surroundings as the healing brush does — no model, a fraction
-       of the time, but a smooth patch where there was screentone or
-       hatching; ``"leave"`` does not touch it, so the lettering stays for the
+       with the spot healing brush (`core.spot_heal`): texture copied from
+       the best-matching place nearby that is not lettering, in the tone of
+       the region's own surroundings — no model, a fraction of the time; ``"leave"`` does not touch it, so the lettering stays for the
        user to fix by hand (what PanelCleaner does without inpainting).
 
     `last_report` says how many regions each took (``"left"`` for the
@@ -114,6 +115,9 @@ class SmartFill(InpaintModel):
         # page) cost more than judging them did.
         num_labels, labels, stats, _centroids = imk.connected_components_with_stats(binary_mask)
         residual_mask = np.zeros_like(binary_mask)
+        # Textured regions healed without the model: done together at the end,
+        # each from texture found nearby that is not itself lettering.
+        spot_mask = np.zeros(binary_mask.shape, bool)
         height, width = binary_mask.shape[:2]
         max_region_area = int(height * width * self.MAX_REGION_AREA_RATIO)
 
@@ -129,7 +133,7 @@ class SmartFill(InpaintModel):
                 method = self._fill_component(result, component, bounds, stats[label])
             if method == clean_triage.MODEL:
                 if textured == TEXTURED_HEAL:
-                    self._heal_component(result, component, bounds)
+                    self._grow_for_heal(spot_mask, component, bounds)
                     method = clean_triage.HEAL
                 elif textured == TEXTURED_LEAVE:
                     method = LEFT
@@ -142,6 +146,8 @@ class SmartFill(InpaintModel):
             report[clean_triage.COLOUR], report[clean_triage.HEAL], report[clean_triage.MODEL], report[LEFT],
         )
 
+        if spot_mask.any():
+            result = spot_heal(result, spot_mask, avoid=binary_mask > 0)
         if residual_mask.any():
             result = self._get_fallback_model()(result, residual_mask, config)
         return result
@@ -161,18 +167,17 @@ class SmartFill(InpaintModel):
         bottom = top + int(stat[imk.CC_STAT_HEIGHT])
         return max(0, top - margin), min(height, bottom + margin), max(0, left - margin), min(width, right + margin)
 
-    def _heal_component(self, result: np.ndarray, component: np.ndarray, bounds) -> None:
-        """Fill a textured region from its surroundings, with no model.
+    def _grow_for_heal(self, spot_mask: np.ndarray, component: np.ndarray, bounds) -> None:
+        """Mark a textured region for spot healing (`core.spot_heal`).
 
         `component` is the region inside `bounds` (y1, y2, x1, x2). It is grown
         past the glyphs' anti-aliased rim first, as the heal branch of
         `_fill_component` does when mask fitting found nothing, so no dark
         fringe is carried into the fill."""
         y1, y2, x1, x2 = bounds
-        image_crop = result[y1:y2, x1:x2]
-        region = imk.dilate(component.astype(np.uint8), np.ones((3, 3), np.uint8),
-                            iterations=max(1, self.masker_conf.min_mask_thickness // 2)) > 0
-        image_crop[...] = smooth_fill(image_crop, region)
+        grown = imk.dilate(component.astype(np.uint8), np.ones((3, 3), np.uint8),
+                           iterations=max(1, self.masker_conf.min_mask_thickness // 2)) > 0
+        spot_mask[y1:y2, x1:x2] |= grown
 
     def _fill_component(self, result: np.ndarray, component: np.ndarray, bounds, stat) -> str:
         """Clean one mask region in place if no model is needed; returns the

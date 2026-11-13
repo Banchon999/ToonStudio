@@ -2958,16 +2958,21 @@ the page image when &quot;Provide Image as Input to AI&quot; is on.</source>
     </message>
     <message>
         <location filename="../../app/controllers/paint.py" line="226"/>
+        <source>Spot Healing Brush</source>
+        <translation>แปรงซ่อมจุด</translation>
+    </message>
+    <message>
+        <location filename="../../app/controllers/paint.py" line="227"/>
         <source>Clean White Balloons</source>
         <translation>ล้างบอลลูนขาว</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/paint.py" line="228"/>
+        <location filename="../../app/controllers/paint.py" line="229"/>
         <source>Paint</source>
         <translation>ระบายสี</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/paint.py" line="244"/>
+        <location filename="../../app/controllers/paint.py" line="245"/>
         <source>Paint Colour</source>
         <translation>สีสำหรับระบาย</translation>
     </message>
@@ -4513,8 +4518,25 @@ why tight boxes around short lines get clipped. This is the floor in pixels.</so
     </message>
     <message>
         <location filename="../../app/ui/settings/tools_page.py" line="162"/>
-        <source>Heal from the surroundings — no model, fast</source>
-        <translation>เกลี่ยจากสีรอบ ๆ — ไม่ใช้โมเดล เร็ว</translation>
+        <source>Spot heal — copy texture from nearby, no model, fast</source>
+        <translation>ซ่อมจุด — คัดลอกลายจากบริเวณใกล้ ๆ ไม่ใช้โมเดล เร็ว</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/settings/tools_page.py" line="173"/>
+        <source>Smart Fill paints white bubbles and heals smooth backgrounds without any model.
+This decides what happens to lettering over texture:
+• AI model — LaMa rebuilds the texture. Best result, the slow part of Clean.
+• Spot heal — screentone, hatching or artwork copied from the best match nearby,
+  in the colour around it, like the spot healing brush. Fast; an edge or line
+  running through the text may come out slightly broken.
+• Leave as is — the text stays, to fix with the healing or clone brush.</source>
+        <translation>Smart Fill ระบายบับเบิลสีขาวและเกลี่ยพื้นเรียบโดยไม่ใช้โมเดลใด ๆ
+ตัวเลือกนี้กำหนดว่าตัวอักษรที่อยู่บนพื้นมีลายจะถูกจัดการอย่างไร:
+• โมเดล AI — LaMa สร้างลายขึ้นใหม่ ผลดีที่สุด แต่เป็นส่วนที่ช้าของการลบคำ
+• ซ่อมจุด — คัดลอกสกรีนโทน เส้นแรเงา หรือลายภาพจากจุดที่เข้ากันที่สุดใกล้ ๆ
+  ปรับสีให้เข้ากับรอบ ๆ แบบแปรงซ่อมจุด เร็ว แต่ขอบหรือเส้นที่พาดผ่านตัวอักษร
+  อาจขาดเล็กน้อย
+• ปล่อยไว้ — ตัวอักษรยังอยู่ ให้ลบเองด้วยแปรงซ่อมภาพหรือ clone</translation>
     </message>
     <message>
         <location filename="../../app/ui/settings/tools_page.py" line="163"/>
@@ -4527,85 +4549,70 @@ why tight boxes around short lines get clipped. This is the floor in pixels.</so
         <translation>Smart Fill: ตัวอักษรบนสกรีนโทนหรือลายภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="173"/>
-        <source>Smart Fill paints white bubbles and heals smooth backgrounds without any model.
-This decides what happens to lettering over texture:
-• AI model — LaMa rebuilds the texture. Best result, the slow part of Clean.
-• Heal — filled smoothly from the colours around it, like the healing brush.
-  Fast, but screentone or hatching under the text becomes a smooth patch.
-• Leave as is — the text stays, to fix with the healing or clone brush.</source>
-        <translation>Smart Fill ระบายบับเบิลสีขาวและเกลี่ยพื้นเรียบโดยไม่ใช้โมเดลใด ๆ
-ตัวเลือกนี้กำหนดว่าตัวอักษรที่อยู่บนพื้นมีลายจะถูกจัดการอย่างไร:
-• โมเดล AI — LaMa สร้างลายขึ้นใหม่ ผลดีที่สุด แต่เป็นส่วนที่ช้าของการลบคำ
-• เกลี่ย — เติมให้เรียบจากสีรอบ ๆ แบบแปรง healing
-  เร็ว แต่สกรีนโทนหรือเส้นแรเงาใต้ตัวอักษรจะกลายเป็นพื้นเรียบ
-• ปล่อยไว้ — ตัวอักษรยังอยู่ ให้ลบเองด้วยแปรง healing หรือ clone</translation>
-    </message>
-    <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="182"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="183"/>
         <source>HD Strategy</source>
         <translation>กลยุทธ์สำหรับภาพความละเอียดสูง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="184"/>
-        <location filename="../../app/ui/settings/tools_page.py" line="322"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="185"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="323"/>
         <source>Resize</source>
         <translation>ย่อ/ขยาย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="194"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="195"/>
         <source>Resize Limit:</source>
         <translation>ขีดจำกัดการย่อขนาด:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="195"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="196"/>
         <source>Resize the longer side of the image to a specific size,
 then do inpainting on the resized image.</source>
         <translation>ย่อด้านที่ยาวกว่าของภาพให้เหลือขนาดที่กำหนด
 แล้วจึงเติมภาพบนภาพที่ย่อแล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="211"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="212"/>
         <source>Crop masking area from the original image to do inpainting.</source>
         <translation>ครอบตัดเฉพาะบริเวณมาสก์จากภาพต้นฉบับเพื่อนำไปเติมภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="213"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="214"/>
         <source>Crop Margin:</source>
         <translation>ระยะขอบการครอบตัด:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="223"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="224"/>
         <source>Crop Trigger Size:</source>
         <translation>ขนาดที่เริ่มครอบตัด:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="245"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="246"/>
         <source>Use GPU</source>
         <translation>ใช้ GPU</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="303"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="304"/>
         <source>{0} needs: {1}</source>
         <translation>{0} ต้องใช้: {1}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="305"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="306"/>
         <source>Install with: {0}</source>
         <translation>ติดตั้งด้วย: {0}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="306"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="307"/>
         <source>Restart the app afterwards.</source>
         <translation>ติดตั้งเสร็จแล้วเปิดแอปใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="323"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="324"/>
         <source>Crop</source>
         <translation>ครอบตัด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="324"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="325"/>
         <source>Original</source>
         <translation>ขนาดเดิม</translation>
     </message>
@@ -4727,7 +4734,7 @@ then do inpainting on the resized image.</source>
         <translation type="vanished">แสดง/ซ่อนแผ่นปะจากการเติมภาพ (บริเวณที่ลบข้อความแล้ว)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="811"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="821"/>
         <source>Text</source>
         <translation>ข้อความ</translation>
     </message>
@@ -5104,19 +5111,30 @@ Alt+click where to copy from, then paint.</source>
 กด Alt แล้วคลิกจุดที่จะคัดลอกมา จากนั้นระบาย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="610"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="611"/>
+        <source>Spot healing brush: paint over a mark and it is filled with texture
+found nearby (screentone, hatching, artwork), in the colour around it.
+No source to choose, no AI model. For a mark across the edge of a shape,
+the AI inpaint brush rebuilds the edge better.</source>
+        <translation>แปรงซ่อมจุด: ระบายทับจุดที่ต้องการลบ แล้วจะเติมด้วยลายจากบริเวณใกล้ ๆ
+(สกรีนโทน เส้นแรเงา ลายภาพ) ในสีที่เข้ากับรอบ ๆ
+ไม่ต้องเลือกจุดคัดลอก ไม่ใช้โมเดล AI ถ้าจุดที่ลบพาดผ่านขอบของรูปทรง
+แปรง AI จะสร้างขอบกลับมาได้ดีกว่า</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="620"/>
         <source>Pick the paint colour from the page.</source>
         <translation>ดูดสีสำหรับระบายจากหน้า</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="616"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="626"/>
         <source>Select a rectangle: drag across the area.
 Shift adds to the selection, Alt takes away; a click without dragging deselects.</source>
         <translation>เลือกเป็นสี่เหลี่ยม: ลากคลุมพื้นที่
 กด Shift เพื่อเพิ่มพื้นที่เลือก กด Alt เพื่อตัดออก คลิกโดยไม่ลากเพื่อยกเลิกการเลือก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="624"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="634"/>
         <source>Select a speech bubble with one click: its inside and its lettering, never its outline.
 Works best after Detect, which finds where each bubble ends.
 Shift adds to the selection, Alt takes away.</source>
@@ -5125,7 +5143,7 @@ Shift adds to the selection, Alt takes away.</source>
 กด Shift เพื่อเพิ่มพื้นที่เลือก กด Alt เพื่อตัดออก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="634"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="644"/>
         <source>Select a whole region with one click — the inside of a bubble, a panel gutter, a flat area behind a sound effect.
 Hold Ctrl to take every region of that colour on the page at once;
 Shift adds to the selection, Alt takes away.</source>
@@ -5134,7 +5152,7 @@ Shift adds to the selection, Alt takes away.</source>
 กด Shift เพื่อเพิ่มพื้นที่เลือก กด Alt เพื่อตัดออก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="644"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="654"/>
         <source>Draw around an irregular shape a round brush cannot follow.
 Drag to trace it freehand, or click corner to corner for straight edges.
 Double-click or press Enter to close it; Escape to start over.
@@ -5145,184 +5163,184 @@ Shift adds to the selection, Alt takes away.</source>
 กด Shift เพื่อเพิ่มพื้นที่เลือก กด Alt เพื่อตัดออก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="655"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="665"/>
         <source>Clean white balloons: paint over the lettering of every plain white speech bubble on this page, in one step and without the AI.
 Runs Detect first if the page has not been detected. Bubbles that are not plain white are skipped.</source>
         <translation>ล้างบอลลูนขาว: ลบตัวอักษรในบอลลูนคำพูดสีขาวเรียบทุกอันในหน้านี้ในขั้นตอนเดียว โดยไม่ใช้ AI
 ถ้าหน้านี้ยังไม่ได้ตรวจจับ จะตรวจจับให้ก่อน บอลลูนที่ไม่ใช่สีขาวเรียบจะถูกข้าม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="876"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="886"/>
         <source>Pick into</source>
         <translation>ผลลัพธ์เป็น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="882"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="892"/>
         <source>Selection</source>
         <translation>พื้นที่เลือก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="884"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="894"/>
         <source>The magic wand and the lasso make a selection (marching ants); choose what to do with it from the buttons beside.</source>
         <translation>ไม้กายสิทธิ์และบ่วงบาศสร้างพื้นที่เลือก (เส้นประวิ่ง) แล้วเลือกว่าจะทำอะไรกับมันจากปุ่มข้างๆ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="888"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="898"/>
         <source>Mask</source>
         <translation>มาสก์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="890"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="900"/>
         <source>The magic wand and the lasso paint a red mask straight onto the page, for the Clean step.</source>
         <translation>ไม้กายสิทธิ์และบ่วงบาศระบายมาสก์สีแดงลงบนหน้าโดยตรง สำหรับขั้นลบข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="901"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="911"/>
         <source>Clean Selection</source>
         <translation>ลบในพื้นที่เลือก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="903"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="913"/>
         <source>Inpaint what is inside the selection with the current inpainter. Mask strokes on the page are left alone.</source>
         <translation>ลบข้อความในพื้นที่เลือกด้วยตัวลบภาพที่ตั้งไว้ มาสก์ที่ระบายไว้บนหน้าจะไม่ถูกแตะต้อง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="906"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="916"/>
         <source>To Mask</source>
         <translation>เป็นมาสก์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="908"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="918"/>
         <source>Turn the selection into a red mask stroke for the Clean step.</source>
         <translation>แปลงพื้นที่เลือกเป็นมาสก์สีแดงสำหรับขั้นลบข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="910"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="920"/>
         <source>Invert</source>
         <translation>กลับด้าน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="911"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="921"/>
         <source>Select everything that is not selected (Ctrl+Shift+I).</source>
         <translation>เลือกทุกส่วนที่ยังไม่ได้เลือก (Ctrl+Shift+I)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="912"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="922"/>
         <source>Deselect</source>
         <translation>ยกเลิกเลือก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="913"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="923"/>
         <source>Drop the selection (Ctrl+Shift+A).</source>
         <translation>ยกเลิกพื้นที่เลือก (Ctrl+Shift+A)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="915"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="925"/>
         <source>Modify</source>
         <translation>ปรับแต่ง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="917"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="927"/>
         <source>Grow, shrink, smooth or feather the selection by a number of pixels.</source>
         <translation>ขยาย หด ปรับเรียบ หรือเบลอขอบพื้นที่เลือกตามจำนวนพิกเซล</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="921"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="931"/>
         <source>Grow…</source>
         <translation>ขยาย…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="922"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="932"/>
         <source>Shrink…</source>
         <translation>หด…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="923"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="933"/>
         <source>Smooth…</source>
         <translation>ปรับเรียบ…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="924"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="934"/>
         <source>Feather…</source>
         <translation>เบลอขอบ…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="943"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="953"/>
         <source>Paint colour (Alt+click the page to pick one)</source>
         <translation>สีสำหรับระบาย (Alt+คลิกบนหน้าเพื่อดูดสี)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="946"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="956"/>
         <source>Hardness</source>
         <translation>ความแข็งขอบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="952"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="962"/>
         <source>Soft edge (left) to hard edge (right)</source>
         <translation>ขอบนุ่ม (ซ้าย) ถึงขอบคม (ขวา)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="954"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="964"/>
         <source>Opacity</source>
         <translation>ความทึบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="962"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="972"/>
         <source>Tolerance</source>
         <translation>ช่วงสี</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="968"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="978"/>
         <source>How different a colour may be and still be filled</source>
         <translation>สีที่ต่างกันได้มากแค่ไหนแล้วยังถูกเทด้วย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="970"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="980"/>
         <source>Aligned</source>
         <translation>จัดแนว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="972"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="982"/>
         <source>On: every stroke keeps the same distance to where it copies from.
 Off: every stroke starts copying from the Alt+clicked point again.</source>
         <translation>เปิด: ทุกเส้นรักษาระยะห่างเดิมจากจุดที่คัดลอก
 ปิด: ทุกเส้นเริ่มคัดลอกจากจุดที่กด Alt+คลิกใหม่ทุกครั้ง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="976"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="986"/>
         <source>Lock offset</source>
         <translation>ล็อกระยะ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="978"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="988"/>
         <source>Keep the distance to the source across pages, until the next Alt+click —
 for the same mark in the same place on every page.</source>
         <translation>คงระยะห่างจากจุดคัดลอกไว้แม้เปลี่ยนหน้า จนกว่าจะกด Alt+คลิกใหม่ —
 สำหรับรอยเดียวกันที่อยู่ตำแหน่งเดิมทุกหน้า</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="986"/>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="990"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="996"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="1000"/>
         <source>Pen pressure</source>
         <translation>แรงกดปากกา</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="991"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="1001"/>
         <source>Size</source>
         <translation>ขนาด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="993"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="1003"/>
         <source>A lighter touch paints a thinner line (tablet only)</source>
         <translation>กดเบาได้เส้นบางลง (เฉพาะเมาส์ปากกา)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="994"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="1004"/>
         <source>Flow</source>
         <translation>ความเข้ม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="996"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="1006"/>
         <source>A lighter touch paints more faintly (tablet only)</source>
         <translation>กดเบาได้สีจางลง (เฉพาะเมาส์ปากกา)</translation>
     </message>
@@ -5341,32 +5359,32 @@ Double-click or press Enter to close it; Escape to start over.</source>
 ดับเบิลคลิกหรือกด Enter เพื่อปิดรูป กด Escape เพื่อเริ่มใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="660"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="670"/>
         <source>Remove all the brush strokes on the Image</source>
         <translation>ลบเส้นแปรงทั้งหมดบนภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="667"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="677"/>
         <source>Brush/Eraser Size Slider</source>
         <translation>แถบปรับขนาดแปรง/ยางลบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="725"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="735"/>
         <source>Box size</source>
         <translation>ขนาดกล่อง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="744"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="754"/>
         <source>Brush size</source>
         <translation>ขนาดแปรง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="814"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="824"/>
         <source>Layers</source>
         <translation>เลเยอร์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/main_window/builders/workspace.py" line="815"/>
+        <location filename="../../app/ui/main_window/builders/workspace.py" line="825"/>
         <source>Glossary</source>
         <translation>คลังคำศัพท์</translation>
     </message>

@@ -159,7 +159,7 @@ class ToolsPage(QtWidgets.QWidget):
         # interface language.
         self.smart_fill_textured_options = [
             ("model", self.tr("Send to the AI model (LaMa) — best, slowest")),
-            ("heal", self.tr("Heal from the surroundings — no model, fast")),
+            ("heal", self.tr("Spot heal — copy texture from nearby, no model, fast")),
             ("leave", self.tr("Leave as is — fix by hand")),
         ]
         self.smart_fill_textured_widget, self.smart_fill_textured_combo = create_title_and_combo(
@@ -173,8 +173,9 @@ class ToolsPage(QtWidgets.QWidget):
             "Smart Fill paints white bubbles and heals smooth backgrounds without any model.\n"
             "This decides what happens to lettering over texture:\n"
             "• AI model — LaMa rebuilds the texture. Best result, the slow part of Clean.\n"
-            "• Heal — filled smoothly from the colours around it, like the healing brush.\n"
-            "  Fast, but screentone or hatching under the text becomes a smooth patch.\n"
+            "• Spot heal — screentone, hatching or artwork copied from the best match nearby,\n"
+            "  in the colour around it, like the spot healing brush. Fast; an edge or line\n"
+            "  running through the text may come out slightly broken.\n"
             "• Leave as is — the text stays, to fix with the healing or clone brush."
         ))
         self.inpainter_combo.currentTextChanged.connect(self._update_smart_fill_widgets)
