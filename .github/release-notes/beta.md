@@ -17,6 +17,10 @@
 - สกรีนโทนและเส้นแรเงากลับมาเหมือนเดิม · Screentone and hatching come back as they were.
 - **ข้อจำกัด:** ถ้าจุดที่ลบพาดผ่านขอบของรูปทรง ขอบอาจออกมาเป็นฟันเลื่อย กรณีนี้ใช้แปรง AI ดีกว่า · **Limit:** across the edge of a shape the edge may come back jagged; use the AI brush for that.
 
+## แก้ไข / Fixed
+
+- **เส้นขอบตัวอักษรหายหลัง Smart Workflow แปะคำ** จนกว่าจะไปขยับตัวอักษร — ตอนนี้แสดงทันที และหน้าที่แปะไว้ด้วยตัวทดลองก่อน (beta.19) จะได้เส้นขอบกลับมาเองเมื่อเปิดหรือส่งออก · Text rendered by Smart Workflow had no outline until it was moved; it now shows at once, and pages rendered with the previous test build get theirs back when opened or exported.
+
 ## อยากให้ช่วยลอง / Please try
 
 - แปรงซ่อมจุดบนหน้ามังงะ/เว็บตูนจริง โดยเฉพาะตัวอักษรบนสกรีนโทน · The spot healing brush on real pages, especially text over screentone.
