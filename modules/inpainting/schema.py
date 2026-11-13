@@ -45,6 +45,11 @@ class Config:
     hd_strategy_crop_trigger_size: int = 512
     hd_strategy_resize_limit: int = 512
 
+    # Smart Fill only: what to do with a region whose surroundings have
+    # texture — "model" (LaMa), "heal" (smooth fill, no model) or "leave"
+    # (untouched, for the user to fix). See modules/inpainting/smart_fill.py.
+    smart_fill_textured: str = "model"
+
     # # Configs for ldm model
     # ldm_steps: int = 2
     # ldm_sampler: str = LDMSampler.plms

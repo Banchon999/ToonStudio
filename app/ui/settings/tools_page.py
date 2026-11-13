@@ -153,6 +153,32 @@ class ToolsPage(QtWidgets.QWidget):
         set_combo_box_width(self.inpainter_combo, self.inpainters)
         self.inpainter_combo.setCurrentText(self.tr("AOT"))
 
+        # Smart Fill paints white and heals smooth backgrounds with no model;
+        # this says what happens to lettering over texture. Items carry their
+        # internal value as data, so the stored setting never depends on the
+        # interface language.
+        self.smart_fill_textured_options = [
+            ("model", self.tr("Send to the AI model (LaMa) — best, slowest")),
+            ("heal", self.tr("Heal from the surroundings — no model, fast")),
+            ("leave", self.tr("Leave as is — fix by hand")),
+        ]
+        self.smart_fill_textured_widget, self.smart_fill_textured_combo = create_title_and_combo(
+            self.tr("Smart Fill: text over screentone or artwork"),
+            [label for _value, label in self.smart_fill_textured_options], h4=False)
+        for index, (value, _label) in enumerate(self.smart_fill_textured_options):
+            self.smart_fill_textured_combo.setItemData(index, value)
+        set_combo_box_width(self.smart_fill_textured_combo,
+                            [label for _value, label in self.smart_fill_textured_options])
+        self.smart_fill_textured_combo.setToolTip(self.tr(
+            "Smart Fill paints white bubbles and heals smooth backgrounds without any model.\n"
+            "This decides what happens to lettering over texture:\n"
+            "• AI model — LaMa rebuilds the texture. Best result, the slow part of Clean.\n"
+            "• Heal — filled smoothly from the colours around it, like the healing brush.\n"
+            "  Fast, but screentone or hatching under the text becomes a smooth patch.\n"
+            "• Leave as is — the text stays, to fix with the healing or clone brush."
+        ))
+        self.inpainter_combo.currentTextChanged.connect(self._update_smart_fill_widgets)
+
         inpaint_strategy_widget, self.inpaint_strategy_combo = create_title_and_combo(self.tr("HD Strategy"), self.inpaint_strategy, h4=False)
         set_combo_box_width(self.inpaint_strategy_combo, self.inpaint_strategy)
         self.inpaint_strategy_combo.setCurrentText(self.tr("Resize"))
@@ -237,6 +263,7 @@ class ToolsPage(QtWidgets.QWidget):
         layout.addLayout(mask_padding_layout)
         layout.addLayout(bubble_inset_layout)
         layout.addWidget(inpainter_widget)
+        layout.addWidget(self.smart_fill_textured_widget)
         layout.addWidget(inpaint_strategy_widget)
         layout.addWidget(self.hd_strategy_widgets)
         layout.addSpacing(10)
@@ -244,6 +271,7 @@ class ToolsPage(QtWidgets.QWidget):
         layout.addStretch(1)
 
         self._update_hd_strategy_widgets(self.inpaint_strategy_combo.currentIndex())
+        self._update_smart_fill_widgets(self.inpainter_combo.currentText())
 
     # How to install what each optional engine needs, keyed by the package that
     # is missing. Naming the command is the whole point — "unavailable" alone
@@ -277,6 +305,17 @@ class ToolsPage(QtWidgets.QWidget):
                 tooltip += "\n" + self.tr("Install with: {0}").format(command)
             tooltip += "\n" + self.tr("Restart the app afterwards.")
             self.ocr_combo.setItemData(index, tooltip, QtCore.Qt.ItemDataRole.ToolTipRole)
+
+    def _update_smart_fill_widgets(self, inpainter: str):
+        self.smart_fill_textured_widget.setVisible(inpainter == "Smart Fill")
+
+    def smart_fill_textured(self) -> str:
+        value = self.smart_fill_textured_combo.currentData()
+        return value if value in {v for v, _ in self.smart_fill_textured_options} else "model"
+
+    def set_smart_fill_textured(self, value: str) -> None:
+        index = self.smart_fill_textured_combo.findData(value)
+        self.smart_fill_textured_combo.setCurrentIndex(index if index >= 0 else 0)
 
     def _update_hd_strategy_widgets(self, index: int):
         strategy = self.inpaint_strategy_combo.itemText(index)

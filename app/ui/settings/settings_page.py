@@ -69,6 +69,7 @@ class SettingsPage(QtWidgets.QWidget):
         combos = [
             ui.lang_combo, ui.theme_combo, ui.translator_combo, ui.ocr_combo,
             ui.detector_combo, ui.inpainter_combo, ui.inpaint_strategy_combo,
+            ui.smart_fill_textured_combo,
         ]
         for combo in combos:
             combo.currentTextChanged.connect(self._mark_settings_dirty)
@@ -169,6 +170,10 @@ class SettingsPage(QtWidgets.QWidget):
 
     def get_denoise_cleaned_areas(self) -> bool:
         return self.ui.denoise_checkbox.isChecked()
+
+    def get_smart_fill_textured(self) -> str:
+        """What Smart Fill does with text over texture: "model", "heal" or "leave"."""
+        return self.ui.tools_page.smart_fill_textured()
 
     #: Marks that the "Skia on by default" change has been applied to this
     #: profile. Bump the suffix only if a later default change needs to reach
@@ -316,6 +321,7 @@ class SettingsPage(QtWidgets.QWidget):
                 'stitch_detection': self.ui.stitch_detection_checkbox.isChecked(),
                 'text_segmentation_model': self.get_use_text_segmentation_model(),
                 'denoise_cleaned_areas': self.get_denoise_cleaned_areas(),
+                'smart_fill_textured': self.get_smart_fill_textured(),
                 # The checkbox, not the resolved engine: get_text_engine()
                 # answers Qt when skia-python is missing, and persisting
                 # that would silently turn the preference off for good.
@@ -503,6 +509,9 @@ class SettingsPage(QtWidgets.QWidget):
         )
         self.ui.denoise_checkbox.setChecked(
             settings.value('denoise_cleaned_areas', True, type=bool)
+        )
+        self.ui.tools_page.set_smart_fill_textured(
+            str(settings.value('smart_fill_textured', 'model'))
         )
         # Off unless skia-python is present: restoring a saved "on" on a
         # machine without it would silently mean Qt anyway, and the checkbox
