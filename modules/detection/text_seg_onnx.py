@@ -49,6 +49,7 @@ from PIL import Image
 from modules.utils.device import get_providers
 from modules.utils.download import ModelDownloader, ModelID
 from modules.utils.onnx import make_session
+from modules.utils.openvino_cpu import compile_cpu
 
 INPUT_SIZE = 1024
 
@@ -94,9 +95,10 @@ class _OpenVINORunner:
     backend = "openvino"
 
     def __init__(self, file_path: str):
-        import openvino as ov  # optional dependency: ImportError means "not here"
-
-        self.compiled = ov.Core().compile_model(file_path, "CPU")
+        # f32 pinned: on a CPU with bf16 OpenVINO would otherwise quietly
+        # change the mask (see modules/utils/openvino_cpu.py). ImportError
+        # means openvino is not here.
+        self.compiled = compile_cpu(file_path)
         self.input = self.compiled.input(0)
         self.output = self.compiled.output("seg")
         # One request, used under a lock: segmentation is called from worker

@@ -1097,6 +1097,10 @@ class ImageStateController:
             # In regular mode, get the current single image
             final_rgb = self.main.image_viewer.get_image_array(paint_all=True)
 
+        # Saving the page is an export too: it carries the watermark.
+        watermark = self.main.project_ctrl.watermark_stamp()
+        if watermark is not None and final_rgb is not None:
+            final_rgb = watermark.apply(final_rgb)
         imk.write_image(file_path, final_rgb)
 
     def save_image_state(self, file: str):

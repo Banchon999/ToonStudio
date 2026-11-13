@@ -8,6 +8,7 @@ from ..utils.inpainting import (
 )
 from ..utils.download import ModelDownloader, ModelID
 from modules.utils.onnx import make_session
+from modules.utils.openvino_cpu import make_cpu_session
 from modules.utils.torch_autocast import TorchAutocastMixin
 from .base import InpaintModel
 from .schema import Config
@@ -29,7 +30,11 @@ class LaMa(TorchAutocastMixin, InpaintModel):
             ModelDownloader.get(ModelID.LAMA_ONNX)
             onnx_path = ModelDownloader.primary_path(ModelID.LAMA_ONNX)
             providers = get_providers(device)
-            self.session = make_session(onnx_path, providers=providers)
+            self.session = make_cpu_session(
+                onnx_path, device,
+                lambda: make_session(onnx_path, providers=providers),
+                "LaMa inpainter",
+            )
         else:
             import torch
             ModelDownloader.get(ModelID.LAMA_JIT)

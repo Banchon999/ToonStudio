@@ -50,6 +50,7 @@ def build_text_item(text_block: dict) -> TextBlockItem:
         # abandon the whole render, not just this item's colour.
         text_item.set_color(text_props.text_color)
     text_item.selection_outlines = text_props.selection_outlines.copy()
+    text_item.restore_missing_outline()
     if text_props.letter_spacing:
         text_item.set_letter_spacing(text_props.letter_spacing)
     if text_props.horizontal_scale != 100.0:

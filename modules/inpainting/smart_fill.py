@@ -13,12 +13,21 @@ import imkit as imk
 from core import clean_triage
 from core.balloons import MIN_LIGHT
 from core.paint import smooth_fill
+from core.spot_heal import spot_heal
 
 from .base import InpaintModel
 from .mask_fitting import pick_best_mask
 from .schema import Config
 
 logger = logging.getLogger(__name__)
+
+#: `Config.smart_fill_textured` values: what a region with texture around it gets.
+TEXTURED_MODEL = "model"
+TEXTURED_HEAL = "heal"
+TEXTURED_LEAVE = "leave"
+TEXTURED_MODES = (TEXTURED_MODEL, TEXTURED_HEAL, TEXTURED_LEAVE)
+#: `last_report` key for regions left untouched.
+LEFT = "left"
 
 
 @dataclass
@@ -46,10 +55,16 @@ class SmartFill(InpaintModel):
     2. **Heal** — the surroundings are smooth but not one white (a gradient, a
        tinted caption box, a flat panel): the region is filled from the pixels
        just outside it, as the healing brush does, with no model.
-    3. **Model** — the surroundings have texture: the region is left for LaMa.
+    3. **Textured** — the surroundings have texture. What happens then is
+       `Config.smart_fill_textured`, the user's choice of speed over quality:
+       ``"model"`` (default) sends the region to LaMa; ``"heal"`` fills it
+       with the spot healing brush (`core.spot_heal`): texture copied from
+       the best-matching place nearby that is not lettering, in the tone of
+       the region's own surroundings — no model, a fraction of the time; ``"leave"`` does not touch it, so the lettering stays for the
+       user to fix by hand (what PanelCleaner does without inpainting).
 
-    `last_report` says how many regions each took, so a caller can tell the
-    user what was done.
+    `last_report` says how many regions each took (``"left"`` for the
+    untouched ones), so a caller can tell the user what was done.
     """
 
     name = "smart_fill"
@@ -65,7 +80,11 @@ class SmartFill(InpaintModel):
         self._fill_device = device
         self._fallback_model = None
         self.masker_conf = kwargs.get("masker_conf") or MaskerConfig()
-        self.last_report = {clean_triage.COLOUR: 0, clean_triage.HEAL: 0, clean_triage.MODEL: 0}
+        self.last_report = self._empty_report()
+
+    @staticmethod
+    def _empty_report() -> dict:
+        return {clean_triage.COLOUR: 0, clean_triage.HEAL: 0, clean_triage.MODEL: 0, LEFT: 0}
 
     @staticmethod
     def is_downloaded() -> bool:
@@ -82,54 +101,95 @@ class SmartFill(InpaintModel):
         return: RGB image
         """
         result = image.copy()
-        report = {clean_triage.COLOUR: 0, clean_triage.HEAL: 0, clean_triage.MODEL: 0}
+        report = self._empty_report()
         self.last_report = report
+        textured = getattr(config, "smart_fill_textured", TEXTURED_MODEL)
+        if textured not in TEXTURED_MODES:
+            textured = TEXTURED_MODEL
         binary_mask = np.where(mask > 127, 255, 0).astype(np.uint8)
         if not binary_mask.any():
             return result
 
-        num_labels, labels = imk.connected_components(binary_mask)
+        # Every region is worked on inside its own padded box: comparing and
+        # scanning the whole page once per region (a letter, often 100+ on a
+        # page) cost more than judging them did.
+        num_labels, labels, stats, _centroids = imk.connected_components_with_stats(binary_mask)
         residual_mask = np.zeros_like(binary_mask)
+        # Textured regions healed without the model: done together at the end,
+        # each from texture found nearby that is not itself lettering.
+        spot_mask = np.zeros(binary_mask.shape, bool)
         height, width = binary_mask.shape[:2]
         max_region_area = int(height * width * self.MAX_REGION_AREA_RATIO)
 
         for label in range(1, num_labels):
-            component = labels == label
-            area = int(component.sum())
+            area = int(stats[label, imk.CC_STAT_AREA])
             if area == 0:
                 continue
+            bounds = self._crop_bounds(stats[label], (height, width))
+            y1, y2, x1, x2 = bounds
+            component = labels[y1:y2, x1:x2] == label
             method = clean_triage.MODEL
             if area <= max_region_area:
-                method = self._fill_component(result, component)
+                method = self._fill_component(result, component, bounds, stats[label])
             if method == clean_triage.MODEL:
-                residual_mask[component] = 255
+                if textured == TEXTURED_HEAL:
+                    self._grow_for_heal(spot_mask, component, bounds)
+                    method = clean_triage.HEAL
+                elif textured == TEXTURED_LEAVE:
+                    method = LEFT
+                else:
+                    residual_mask[y1:y2, x1:x2][component] = 255
             report[method] += 1
 
         logger.info(
-            "Smart Fill: %d regions painted white, %d healed, %d sent to the model",
-            report[clean_triage.COLOUR], report[clean_triage.HEAL], report[clean_triage.MODEL],
+            "Smart Fill: %d regions painted white, %d healed, %d sent to the model, %d left as they are",
+            report[clean_triage.COLOUR], report[clean_triage.HEAL], report[clean_triage.MODEL], report[LEFT],
         )
 
+        if spot_mask.any():
+            result = spot_heal(result, spot_mask, avoid=binary_mask > 0)
         if residual_mask.any():
             result = self._get_fallback_model()(result, residual_mask, config)
         return result
 
-    def _fill_component(self, result: np.ndarray, component: np.ndarray) -> str:
-        """Clean one mask region in place if no model is needed; returns the
-        method that suits it (clean_triage.COLOUR, HEAL or MODEL)."""
+    def _crop_bounds(self, stat, shape) -> tuple[int, int, int, int]:
+        """(y1, y2, x1, x2): a component's box (from its connected-component
+        `stat`) plus room for the grown masks, within an image of `shape`."""
         conf = self.masker_conf
-        ys, xs = np.nonzero(component)
         margin = (
             conf.min_mask_thickness
             + conf.mask_growth_step_pixels * conf.mask_growth_steps
             + 2
         )
-        height, width = component.shape[:2]
-        y1 = max(0, ys.min() - margin); y2 = min(height, ys.max() + 1 + margin)
-        x1 = max(0, xs.min() - margin); x2 = min(width, xs.max() + 1 + margin)
+        height, width = shape
+        left, top = int(stat[imk.CC_STAT_LEFT]), int(stat[imk.CC_STAT_TOP])
+        right = left + int(stat[imk.CC_STAT_WIDTH])
+        bottom = top + int(stat[imk.CC_STAT_HEIGHT])
+        return max(0, top - margin), min(height, bottom + margin), max(0, left - margin), min(width, right + margin)
+
+    def _grow_for_heal(self, spot_mask: np.ndarray, component: np.ndarray, bounds) -> None:
+        """Mark a textured region for spot healing (`core.spot_heal`).
+
+        `component` is the region inside `bounds` (y1, y2, x1, x2). It is grown
+        past the glyphs' anti-aliased rim first, as the heal branch of
+        `_fill_component` does when mask fitting found nothing, so no dark
+        fringe is carried into the fill."""
+        y1, y2, x1, x2 = bounds
+        grown = imk.dilate(component.astype(np.uint8), np.ones((3, 3), np.uint8),
+                           iterations=max(1, self.masker_conf.min_mask_thickness // 2)) > 0
+        spot_mask[y1:y2, x1:x2] |= grown
+
+    def _fill_component(self, result: np.ndarray, component: np.ndarray, bounds, stat) -> str:
+        """Clean one mask region in place if no model is needed; returns the
+        method that suits it (clean_triage.COLOUR, HEAL or MODEL).
+
+        `component` is the region inside `bounds` (y1, y2, x1, x2) and `stat`
+        its connected-component statistics."""
+        conf = self.masker_conf
+        y1, y2, x1, x2 = bounds
 
         image_crop = result[y1:y2, x1:x2]
-        mask_crop = np.where(component[y1:y2, x1:x2], 255, 0).astype(np.uint8)
+        mask_crop = np.where(component, 255, 0).astype(np.uint8)
 
         # The filled bounding box is offered alongside the grown masks: masks
         # derived from connected components are ragged, so on a flat bubble the
@@ -153,7 +213,7 @@ class SmartFill(InpaintModel):
         else:
             region = imk.dilate(mask_crop, np.ones((3, 3), np.uint8),
                                 iterations=max(1, conf.min_mask_thickness // 2)) > 0
-        if min(int(ys.max() - ys.min()), int(xs.max() - xs.min())) + 1 > self.MAX_HEAL_THICKNESS:
+        if min(int(stat[imk.CC_STAT_WIDTH]), int(stat[imk.CC_STAT_HEIGHT])) > self.MAX_HEAL_THICKNESS:
             return clean_triage.MODEL
         method, _colour, _texture = clean_triage.triage(image_crop, clean_triage.ring_of(region, 3))
         if method == clean_triage.MODEL:

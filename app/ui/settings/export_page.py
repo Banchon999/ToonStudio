@@ -25,4 +25,10 @@ class ExportPage(QtWidgets.QWidget):
         layout.addWidget(self.translated_text_checkbox)
         layout.addWidget(self.inpainted_image_checkbox)
 
+        from .watermark_section import WatermarkSection
+
+        layout.addSpacing(16)
+        self.watermark_section = WatermarkSection(self)
+        layout.addWidget(self.watermark_section)
+
         layout.addStretch(1)

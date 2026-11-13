@@ -69,6 +69,7 @@ class SettingsPage(QtWidgets.QWidget):
         combos = [
             ui.lang_combo, ui.theme_combo, ui.translator_combo, ui.ocr_combo,
             ui.detector_combo, ui.inpainter_combo, ui.inpaint_strategy_combo,
+            ui.smart_fill_textured_combo,
         ]
         for combo in combos:
             combo.currentTextChanged.connect(self._mark_settings_dirty)
@@ -85,6 +86,7 @@ class SettingsPage(QtWidgets.QWidget):
         for checkbox in checkboxes:
             checkbox.stateChanged.connect(self._mark_settings_dirty)
 
+        ui.export_page.watermark_section.changed.connect(self._mark_settings_dirty)
         ui.bubble_font_combo.currentTextChanged.connect(self._mark_settings_dirty)
         ui.free_font_combo.currentTextChanged.connect(self._mark_settings_dirty)
         ui.default_outline_width_combo.currentTextChanged.connect(self._mark_settings_dirty)
@@ -169,6 +171,10 @@ class SettingsPage(QtWidgets.QWidget):
 
     def get_denoise_cleaned_areas(self) -> bool:
         return self.ui.denoise_checkbox.isChecked()
+
+    def get_smart_fill_textured(self) -> str:
+        """What Smart Fill does with text over texture: "model", "heal" or "leave"."""
+        return self.ui.tools_page.smart_fill_textured()
 
     #: Marks that the "Skia on by default" change has been applied to this
     #: profile. Bump the suffix only if a later default change needs to reach
@@ -262,6 +268,10 @@ class SettingsPage(QtWidgets.QWidget):
         }
         return settings
 
+    def get_watermark_settings(self):
+        """The export watermark (Settings > Export), as `core.watermark.WatermarkSettings`."""
+        return self.ui.export_page.watermark_section.settings()
+
     def get_credentials(self, service: str = ""):
         save_keys = self.ui.save_keys_checkbox.isChecked()
 
@@ -316,6 +326,7 @@ class SettingsPage(QtWidgets.QWidget):
                 'stitch_detection': self.ui.stitch_detection_checkbox.isChecked(),
                 'text_segmentation_model': self.get_use_text_segmentation_model(),
                 'denoise_cleaned_areas': self.get_denoise_cleaned_areas(),
+                'smart_fill_textured': self.get_smart_fill_textured(),
                 # The checkbox, not the resolved engine: get_text_engine()
                 # answers Qt when skia-python is missing, and persisting
                 # that would silently turn the preference off for good.
@@ -402,6 +413,13 @@ class SettingsPage(QtWidgets.QWidget):
 
         for key, value in all_settings.items():
             process_group(key, value, settings)
+
+        # Written directly, not through process_group: value_mappings would
+        # rewrite a watermark text that happens to equal a mapped label.
+        settings.beginGroup('watermark')
+        for key, value in self.get_watermark_settings().to_dict().items():
+            settings.setValue(key, value)
+        settings.endGroup()
 
         # Remove deprecated export keys from older versions.
         settings.beginGroup('export')
@@ -504,6 +522,9 @@ class SettingsPage(QtWidgets.QWidget):
         self.ui.denoise_checkbox.setChecked(
             settings.value('denoise_cleaned_areas', True, type=bool)
         )
+        self.ui.tools_page.set_smart_fill_textured(
+            str(settings.value('smart_fill_textured', 'model'))
+        )
         # Off unless skia-python is present: restoring a saved "on" on a
         # machine without it would silently mean Qt anyway, and the checkbox
         # would be lying about what is drawing the page.
@@ -542,6 +563,12 @@ class SettingsPage(QtWidgets.QWidget):
         settings.endGroup()
 
         # Load export settings
+        settings.beginGroup('watermark')
+        from core.watermark import WatermarkSettings
+        stored = {key: settings.value(key) for key in settings.childKeys()}
+        settings.endGroup()
+        self.ui.export_page.watermark_section.set_settings(WatermarkSettings.from_dict(stored))
+
         settings.beginGroup('export')
         self.ui.raw_text_checkbox.setChecked(settings.value('export_raw_text', False, type=bool))
         self.ui.translated_text_checkbox.setChecked(settings.value('export_translated_text', False, type=bool))

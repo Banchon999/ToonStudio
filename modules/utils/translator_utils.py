@@ -1,9 +1,12 @@
 import base64
 import json
+import logging
 import re
 import numpy as np
 from .textblock import TextBlock
 import imkit as imk
+
+logger = logging.getLogger(__name__)
 
 
 MODEL_MAP = {
@@ -97,6 +100,154 @@ def normalise_gender(value) -> str:
     return _GENDERS.get(str(value or "").strip().lower(), "")
 
 
+class ReplyParseError(ValueError):
+    """The model's reply held no translation the app could read."""
+
+
+_FENCE = re.compile(r"```(?:json)?\s*|```", re.IGNORECASE)
+_BLOCK_KEY = re.compile(r'"(block_\d+)"\s*:\s*')
+
+
+def _repair_json(text: str) -> str:
+    """The reply with the faults models make in JSON mended.
+
+    Both faults that give "Expecting ',' delimiter" are handled: a double
+    quote inside a string is escaped unless what follows it can end a string
+    (``, : } ]``, the end, or a new line starting the next key) — models
+    quote speech inside a translation (เขาพูดว่า "ไป") without escaping it —
+    and a comma missing between two fields on separate lines is put back.
+    A raw line break inside a string becomes ``\\n``, and a comma before
+    ``}`` or ``]`` is dropped.
+    """
+    out = []
+    in_string = False
+    escaped = False
+    length = len(text)
+    for i, ch in enumerate(text):
+        if in_string:
+            if escaped:
+                escaped = False
+                out.append(ch)
+            elif ch == "\\":
+                escaped = True
+                out.append(ch)
+            elif ch == '"':
+                j = i + 1
+                while j < length and text[j] in " \t\r\n":
+                    j += 1
+                if j >= length or text[j] in ",:}]":
+                    in_string = False
+                    out.append(ch)
+                elif text[j] == '"' and "\n" in text[i + 1:j]:
+                    # The next key on a new line: the string ended and the
+                    # comma between the fields is missing.
+                    in_string = False
+                    out.append('",')
+                else:
+                    out.append('\\"')
+            elif ch == "\n":
+                out.append("\\n")
+            elif ch == "\r":
+                continue
+            else:
+                out.append(ch)
+        else:
+            if ch == '"':
+                in_string = True
+                out.append(ch)
+            elif ch == ",":
+                j = i + 1
+                while j < length and text[j] in " \t\r\n":
+                    j += 1
+                if j < length and text[j] in "}]":
+                    continue
+                out.append(ch)
+            elif ch in "}]":
+                out.append(ch)
+                j = i + 1
+                while j < length and text[j] in " \t\r\n":
+                    j += 1
+                if j < length and text[j] in '"{' and "\n" in text[i + 1:j]:
+                    out.append(",")   # a missing comma between two values
+            else:
+                out.append(ch)
+    return "".join(out)
+
+
+def _unquote(raw: str) -> str:
+    try:
+        return json.loads('"' + raw + '"')
+    except json.JSONDecodeError:
+        return raw.replace('\\"', '"').replace("\\n", "\n")
+
+
+def _salvage_blocks(text: str) -> dict:
+    """Each block's value read on its own, when the reply as a whole is not
+    JSON even after repair: one broken bubble then costs that bubble at most,
+    not the page."""
+    keys = list(_BLOCK_KEY.finditer(text))
+    found: dict = {}
+    for n, key in enumerate(keys):
+        segment = text[key.end(): keys[n + 1].start() if n + 1 < len(keys) else len(text)]
+        segment = segment.rstrip().rstrip(",}").rstrip()
+        if segment.startswith("{"):
+            value = {}
+            for field in ("speaker", "gender", "mode"):
+                m = re.search(r'"%s"\s*:\s*"([^"]*)"' % field, segment)
+                if m:
+                    value[field] = m.group(1)
+            m = re.search(r'"translation"\s*:\s*"', segment)
+            if not m:
+                continue
+            rest = segment[m.end():]
+            # The translation runs to the quote that ends the field: the one
+            # before another field's name, or else the last one.
+            nxt = re.search(r'"\s*,\s*"(?:speaker|gender|mode|text)"\s*:', rest)
+            end = nxt.start() if nxt else rest.rfind('"')
+            if end < 0:
+                continue
+            value["translation"] = _unquote(rest[:end])
+            found[key.group(1)] = value
+        elif segment.startswith('"'):
+            end = segment.rfind('"')
+            if end <= 0:
+                continue
+            found[key.group(1)] = _unquote(segment[1:end])
+    return found
+
+
+def parse_reply_json(reply: str) -> dict:
+    """The block → translation object in a model's reply, as tolerantly as
+    the reply allows; raises ReplyParseError when nothing can be read.
+
+    In order: the first JSON object as written (text before or after it, a
+    code fence, braces in a closing remark all ignored); the same object
+    with `_repair_json`'s mends; and finally `_salvage_blocks`, block by
+    block.
+    """
+    text = _FENCE.sub("", reply or "")
+    start = text.find("{")
+    if start < 0:
+        raise ReplyParseError("the reply contains no JSON object")
+    text = text[start:]
+    decoder = json.JSONDecoder()
+    error = None
+    for candidate in (text, _repair_json(text)):
+        try:
+            value, _end = decoder.raw_decode(candidate)
+        except json.JSONDecodeError as exc:
+            error = error or exc
+            continue
+        if isinstance(value, dict):
+            return value
+    salvaged = _salvage_blocks(text)
+    if salvaged:
+        logger.warning("Translation reply was not valid JSON (%s); read %d block(s) one by one",
+                       error, len(salvaged))
+        return salvaged
+    raise ReplyParseError(str(error) if error else "the reply could not be read")
+
+
 def set_texts_from_json(blk_list: list[TextBlock], json_string: str):
     """Fill each block's translation from the model's JSON reply.
 
@@ -106,12 +257,8 @@ def set_texts_from_json(blk_list: list[TextBlock], json_string: str):
     whatever was asked for: a model that answers in the plain shape still
     gets its translation used, it just reports no speaker.
     """
-    match = re.search(r"\{[\s\S]*\}", json_string)
-    if match:
-        # Extract the JSON string from the matched regular expression
-        json_string = match.group(0)
-        translation_dict = json.loads(json_string)
-        
+    translation_dict = parse_reply_json(json_string)
+    if translation_dict:
         for idx, blk in enumerate(blk_list):
             block_key = f"block_{idx}"
             if block_key in translation_dict:
