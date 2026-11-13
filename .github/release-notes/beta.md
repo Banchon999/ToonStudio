@@ -29,6 +29,8 @@
 
 - **แปลแล้วขึ้น error `JSONDecodeError: Expecting ',' delimiter`** — เกิดเมื่อ AI ตอบกลับมาในรูปแบบที่ผิดเล็กน้อย (เช่นมีเครื่องหมายคำพูดในคำแปล) ตอนนี้แอปซ่อมและอ่านได้เอง ถ้าอ่านไม่ได้จริง ๆ จะถาม AI ใหม่อีก 1 ครั้ง และถ้ายังไม่ได้จะบอกเป็นข้อความว่าต้องทำอะไร แทนหน้าต่าง error · A translation reply that is not quite valid JSON is now repaired and read; if it cannot be, the model is asked once more, and a second failure is a plain message instead of a traceback.
 
+- **ลบคำหน้ายาวมากแล้วขึ้น `MemoryError: Unable to allocate 600. MiB`** — การลบคำหนึ่งหน้าขนาด 32767×800 เคยใช้หน่วยความจำถึง ~1.9 GB ตอนนี้ใช้ ~250 MB ผลลัพธ์เหมือนเดิมทุกพิกเซล และเร็วขึ้นเล็กน้อย · Cleaning a very tall page ran out of memory: one 32767×800 page peaked at ~1.9 GB, now ~250 MB, with the same pixels.
+
 ## อยากให้ช่วยลอง / Please try
 
 - แปรงซ่อมจุดบนหน้ามังงะ/เว็บตูนจริง โดยเฉพาะตัวอักษรบนสกรีนโทน · The spot healing brush on real pages, especially text over screentone.
