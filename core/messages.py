@@ -49,8 +49,8 @@ def api_error_text(error) -> str:
     """
     # The kinds are modules.utils.api_errors' constants, spelt out so core
     # does not import modules.
-    AUTH, CREDIT, RATE_LIMIT, MODEL, TOO_LONG, BLOCKED, SERVER = (
-        "auth", "credit", "rate_limit", "model", "too_long", "blocked", "server",
+    AUTH, CREDIT, RATE_LIMIT, MODEL, TOO_LONG, BLOCKED, SERVER, BAD_REPLY = (
+        "auth", "credit", "rate_limit", "model", "too_long", "blocked", "server", "bad_reply",
     )
     provider = getattr(error, "provider", "") or "The AI provider"
     model = getattr(error, "model", "") or "?"
@@ -87,6 +87,12 @@ def api_error_text(error) -> str:
             "Messages",
             "{0} refused this content.\nTry a different model.",
         ).format(provider)
+    elif kind == BAD_REPLY:
+        text = translate(
+            "Messages",
+            "The model \"{0}\" answered twice in a form the app could not read.\n"
+            "Translate again, or choose another model.",
+        ).format(model)
     elif kind == SERVER:
         text = translate(
             "Messages",

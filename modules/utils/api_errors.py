@@ -22,6 +22,7 @@ MODEL = "model"            # the model id does not exist or has no provider
 TOO_LONG = "too_long"      # the request is more than the model accepts
 BLOCKED = "blocked"        # the provider refused the content
 SERVER = "server"          # the provider (or the model's host) is failing
+BAD_REPLY = "bad_reply"    # the model answered, but not in a form the app can read
 OTHER = "other"
 
 
@@ -92,6 +93,14 @@ class APIError(RuntimeError):
             + (f" for model {self.model}" if self.model else "")
             + (f": {self.detail}" if self.detail else "")
         )
+
+    @classmethod
+    def bad_reply(cls, provider: str, model: str, detail: str) -> "APIError":
+        """The model answered twice with a translation the app could not read
+        (`translator_utils.parse_reply_json` gave up on both)."""
+        error = cls(provider, 0, detail, model)
+        error.kind = BAD_REPLY
+        return error
 
     @classmethod
     def from_response(cls, provider: str, response, model: str = "") -> "APIError":

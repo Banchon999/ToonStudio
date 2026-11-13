@@ -2548,18 +2548,25 @@ Try a different model.</source>
     </message>
     <message>
         <location filename="../../core/messages.py" line="91"/>
+        <source>The model &quot;{0}&quot; answered twice in a form the app could not read.
+Translate again, or choose another model.</source>
+        <translation>โมเดล &quot;{0}&quot; ตอบกลับมาในรูปแบบที่แอปอ่านไม่ได้ 2 ครั้งติดกัน
+ลองกดแปลอีกครั้ง หรือเลือกโมเดลอื่น</translation>
+    </message>
+    <message>
+        <location filename="../../core/messages.py" line="97"/>
         <source>{0} is having problems (HTTP {1}).
 Try again later, or choose another model.</source>
         <translation>{0} กำลังมีปัญหา (HTTP {1})
 ลองใหม่ภายหลัง หรือเลือกโมเดลอื่น</translation>
     </message>
     <message>
-        <location filename="../../core/messages.py" line="96"/>
+        <location filename="../../core/messages.py" line="102"/>
         <source>{0} refused the request (HTTP {1}).</source>
         <translation>{0} ปฏิเสธคำขอ (HTTP {1})</translation>
     </message>
     <message>
-        <location filename="../../core/messages.py" line="102"/>
+        <location filename="../../core/messages.py" line="108"/>
         <source>The service said: {0}</source>
         <translation>ข้อความจากผู้ให้บริการ: {0}</translation>
     </message>
@@ -2596,21 +2603,21 @@ Please check your internet connection.</source>
 กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต</translation>
     </message>
     <message>
-        <location filename="../../core/messages.py" line="114"/>
+        <location filename="../../core/messages.py" line="120"/>
         <source>Text Recognition blocked: The AI provider flagged this content.
 Please try a different Text Recognition tool.</source>
         <translation>การอ่านข้อความถูกระงับ: ผู้ให้บริการ AI ตีเนื้อหานี้ว่าไม่เหมาะสม
 กรุณาลองใช้เครื่องมืออ่านข้อความอื่น</translation>
     </message>
     <message>
-        <location filename="../../core/messages.py" line="119"/>
+        <location filename="../../core/messages.py" line="125"/>
         <source>Translation blocked: The AI provider flagged this content.
 Please try a different translator.</source>
         <translation>การแปลถูกระงับ: ผู้ให้บริการ AI ตีเนื้อหานี้ว่าไม่เหมาะสม
 กรุณาลองใช้ตัวแปลอื่น</translation>
     </message>
     <message>
-        <location filename="../../core/messages.py" line="123"/>
+        <location filename="../../core/messages.py" line="129"/>
         <source>Operation blocked: The AI provider flagged this content.
 Please try a different tool.</source>
         <translation>การดำเนินการถูกระงับ: ผู้ให้บริการ AI ตีเนื้อหานี้ว่าไม่เหมาะสม
@@ -5988,60 +5995,60 @@ It may have been moved, renamed, or deleted.
         <translation>อังกฤษ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="749"/>
+        <location filename="../../app/controllers/text.py" line="750"/>
         <source>+ Strokes</source>
         <translation>+ เส้นขอบ</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="749"/>
+        <location filename="../../app/controllers/text.py" line="750"/>
         <source>Strokes: {0}</source>
         <translation>เส้นขอบ: {0} ชั้น</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="769"/>
+        <location filename="../../app/controllers/text.py" line="770"/>
         <source>Choose a style…</source>
         <translation>เลือกสไตล์…</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="796"/>
+        <location filename="../../app/controllers/text.py" line="797"/>
         <source>Apply style {0}</source>
         <translation>ใช้สไตล์ {0}</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="814"/>
-        <location filename="../../app/controllers/text.py" line="823"/>
-        <location filename="../../app/controllers/text.py" line="829"/>
+        <location filename="../../app/controllers/text.py" line="815"/>
+        <location filename="../../app/controllers/text.py" line="824"/>
+        <location filename="../../app/controllers/text.py" line="830"/>
         <source>Save Style</source>
         <translation>บันทึกสไตล์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="814"/>
+        <location filename="../../app/controllers/text.py" line="815"/>
         <source>Name for this style:</source>
         <translation>ชื่อสไตล์นี้:</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="824"/>
+        <location filename="../../app/controllers/text.py" line="825"/>
         <source>&quot;{0}&quot; is the name of a built-in style. Choose another name.</source>
         <translation>&quot;{0}&quot; เป็นชื่อของสไตล์ในตัว โปรดตั้งชื่ออื่น</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="830"/>
+        <location filename="../../app/controllers/text.py" line="831"/>
         <source>Replace the style &quot;{0}&quot;?</source>
         <translation>แทนที่สไตล์ &quot;{0}&quot; หรือไม่?</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="848"/>
-        <location filename="../../app/controllers/text.py" line="852"/>
+        <location filename="../../app/controllers/text.py" line="849"/>
+        <location filename="../../app/controllers/text.py" line="853"/>
         <source>Delete Style</source>
         <translation>ลบสไตล์</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="848"/>
+        <location filename="../../app/controllers/text.py" line="849"/>
         <source>Built-in styles cannot be deleted.</source>
         <translation>สไตล์ในตัวลบไม่ได้</translation>
     </message>
     <message>
-        <location filename="../../app/controllers/text.py" line="852"/>
+        <location filename="../../app/controllers/text.py" line="853"/>
         <source>Delete the style &quot;{0}&quot;?</source>
         <translation>ลบสไตล์ &quot;{0}&quot; หรือไม่?</translation>
     </message>

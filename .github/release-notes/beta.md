@@ -21,6 +21,8 @@
 
 - **เส้นขอบตัวอักษรหายหลัง Smart Workflow แปะคำ** จนกว่าจะไปขยับตัวอักษร — ตอนนี้แสดงทันที และหน้าที่แปะไว้ด้วยตัวทดลองก่อน (beta.19) จะได้เส้นขอบกลับมาเองเมื่อเปิดหรือส่งออก · Text rendered by Smart Workflow had no outline until it was moved; it now shows at once, and pages rendered with the previous test build get theirs back when opened or exported.
 
+- **แปลแล้วขึ้น error `JSONDecodeError: Expecting ',' delimiter`** — เกิดเมื่อ AI ตอบกลับมาในรูปแบบที่ผิดเล็กน้อย (เช่นมีเครื่องหมายคำพูดในคำแปล) ตอนนี้แอปซ่อมและอ่านได้เอง ถ้าอ่านไม่ได้จริง ๆ จะถาม AI ใหม่อีก 1 ครั้ง และถ้ายังไม่ได้จะบอกเป็นข้อความว่าต้องทำอะไร แทนหน้าต่าง error · A translation reply that is not quite valid JSON is now repaired and read; if it cannot be, the model is asked once more, and a second failure is a plain message instead of a traceback.
+
 ## อยากให้ช่วยลอง / Please try
 
 - แปรงซ่อมจุดบนหน้ามังงะ/เว็บตูนจริง โดยเฉพาะตัวอักษรบนสกรีนโทน · The spot healing brush on real pages, especially text over screentone.
