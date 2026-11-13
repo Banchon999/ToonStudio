@@ -72,6 +72,9 @@ class PsdPageData:
 	composite_image: np.ndarray | None = None
 	# Document-wide layer group props (core.layers.DocumentLayers.to_dict()).
 	document_layers: dict[str, Any] | None = None
+	# The export watermark placed on this page, (x, y, straight-alpha RGBA) —
+	# core.watermark.WatermarkStamp.for_page — written as its own top layer.
+	watermark: tuple[int, int, np.ndarray] | None = None
 
 
 @dataclass
@@ -189,7 +192,21 @@ def _write_page_psd(page: PsdPageData, out_path: str) -> str:
 
 	layers = DocumentLayers.from_dict(page.document_layers)
 
-	# Editable Text group (topmost)
+	# Watermark (above everything, its own layer so it can be hidden or moved)
+	if page.watermark is not None:
+		wx, wy, mark = page.watermark
+		mark = np.asarray(mark, dtype=np.uint8)
+		mh, mw = mark.shape[:2]
+		doc.add_layer(psapi.ImageLayer_8bit(
+			_to_psapi_image_data(mark),
+			"Watermark",
+			width=mw,
+			height=mh,
+			pos_x=wx + mw / 2,
+			pos_y=wy + mh / 2,
+		))
+
+	# Editable Text group
 	text_items = page.viewer_state.get("text_items_state", []) or []
 	text_group = psapi.GroupLayer_8bit("Editable Text")
 	_apply_group_props(text_group, layers.group(LayerGroup.TEXT))

@@ -86,6 +86,7 @@ class SettingsPage(QtWidgets.QWidget):
         for checkbox in checkboxes:
             checkbox.stateChanged.connect(self._mark_settings_dirty)
 
+        ui.export_page.watermark_section.changed.connect(self._mark_settings_dirty)
         ui.bubble_font_combo.currentTextChanged.connect(self._mark_settings_dirty)
         ui.free_font_combo.currentTextChanged.connect(self._mark_settings_dirty)
         ui.default_outline_width_combo.currentTextChanged.connect(self._mark_settings_dirty)
@@ -267,6 +268,10 @@ class SettingsPage(QtWidgets.QWidget):
         }
         return settings
 
+    def get_watermark_settings(self):
+        """The export watermark (Settings > Export), as `core.watermark.WatermarkSettings`."""
+        return self.ui.export_page.watermark_section.settings()
+
     def get_credentials(self, service: str = ""):
         save_keys = self.ui.save_keys_checkbox.isChecked()
 
@@ -408,6 +413,13 @@ class SettingsPage(QtWidgets.QWidget):
 
         for key, value in all_settings.items():
             process_group(key, value, settings)
+
+        # Written directly, not through process_group: value_mappings would
+        # rewrite a watermark text that happens to equal a mapped label.
+        settings.beginGroup('watermark')
+        for key, value in self.get_watermark_settings().to_dict().items():
+            settings.setValue(key, value)
+        settings.endGroup()
 
         # Remove deprecated export keys from older versions.
         settings.beginGroup('export')
@@ -551,6 +563,12 @@ class SettingsPage(QtWidgets.QWidget):
         settings.endGroup()
 
         # Load export settings
+        settings.beginGroup('watermark')
+        from core.watermark import WatermarkSettings
+        stored = {key: settings.value(key) for key in settings.childKeys()}
+        settings.endGroup()
+        self.ui.export_page.watermark_section.set_settings(WatermarkSettings.from_dict(stored))
+
         settings.beginGroup('export')
         self.ui.raw_text_checkbox.setChecked(settings.value('export_raw_text', False, type=bool))
         self.ui.translated_text_checkbox.setChecked(settings.value('export_translated_text', False, type=bool))

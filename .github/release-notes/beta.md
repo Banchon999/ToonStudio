@@ -17,6 +17,12 @@
 - สกรีนโทนและเส้นแรเงากลับมาเหมือนเดิม · Screentone and hatching come back as they were.
 - **ข้อจำกัด:** ถ้าจุดที่ลบพาดผ่านขอบของรูปทรง ขอบอาจออกมาเป็นฟันเลื่อย กรณีนี้ใช้แปรง AI ดีกว่า · **Limit:** across the edge of a shape the edge may come back jagged; use the AI brush for that.
 
+## ลายน้ำ / Watermark (ใหม่ / new)
+
+- ตั้งค่า › ส่งออก › **ลายน้ำ**: ใส่ข้อความ รูปโลโก้ หรือทั้งสองอย่าง เลือกตำแหน่งได้ 9 จุด ปรับขนาด ความทึบ เส้นขอบ และระยะจากขอบ มีตัวอย่างให้ดูทันที · Settings › Export › **Watermark**: text, a logo or both, in one of nine positions, with size, opacity, outline and margin, and a live preview.
+- ใส่ทุกหน้าตอนส่งออกเท่านั้น (ภาพ, CBZ, PDF, ZIP, คิวหลายตอน, บันทึกหน้าปัจจุบัน) ตัวโปรเจกต์ไม่ถูกแก้ ส่วน PSD จะได้ลายน้ำเป็นเลเยอร์แยกชื่อ "Watermark" ซ่อนหรือย้ายได้ · Stamped on every page at export only; a PSD gets it as its own "Watermark" layer.
+- ขนาดคิดเป็นสัดส่วนของความกว้างหน้า ใช้ค่าเดียวได้ทั้งมังงะและเว็บตูนหน้ายาว · Sizes follow the page width, so one setting suits manga and long webtoon pages.
+
 ## แก้ไข / Fixed
 
 - **เส้นขอบตัวอักษรหายหลัง Smart Workflow แปะคำ** จนกว่าจะไปขยับตัวอักษร — ตอนนี้แสดงทันที และหน้าที่แปะไว้ด้วยตัวทดลองก่อน (beta.19) จะได้เส้นขอบกลับมาเองเมื่อเปิดหรือส่งออก · Text rendered by Smart Workflow had no outline until it was moved; it now shows at once, and pages rendered with the previous test build get theirs back when opened or exported.

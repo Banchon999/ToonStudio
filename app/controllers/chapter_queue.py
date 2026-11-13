@@ -313,7 +313,7 @@ class ChapterQueueController(QtCore.QObject):
         self._status(translate("ChapterQueue", "Chapter {0}/{1}: {2} — exporting").format(
             self._index + 1, len(self.chapters), chapter.name))
         main.run_threaded(main.project_ctrl.save_and_make_worker, None, on_error, on_finished,
-                          plan, pages_state)
+                          plan, pages_state, main.project_ctrl.watermark_stamp())
 
     def _export_psd(self) -> None:
         """Editable PSDs of the chapter, one per page, when asked for.
@@ -336,9 +336,10 @@ class ChapterQueueController(QtCore.QObject):
         except Exception:
             logger.debug("Chapter queue: could not pre-resolve PSD fonts", exc_info=True)
         failed = {"error": ""}
+        watermark = main.project_ctrl.watermark_stamp()
 
         def write():
-            pages = main.project_ctrl._gather_psd_pages(pages_state)
+            pages = main.project_ctrl._gather_psd_pages(pages_state, watermark)
             export_psd_pages(output_folder=destination, pages=pages, bundle_name=chapter.name)
 
         def on_error(error_tuple):
