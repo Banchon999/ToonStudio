@@ -481,14 +481,25 @@ def convert_scale_abs(
     Returns:
         Scaled and converted array as uint8
     """
-    # Apply scaling and offset
-    scaled = array * alpha + beta
-    
-    # Convert to absolute values and clip to uint8 range
-    abs_scaled = np.abs(scaled)
-    clipped = np.clip(abs_scaled, 0, 255)
-    
-    return clipped.astype(np.uint8)
+    array = np.asarray(array)
+    # uint8 scaled by 1 and offset by 0 is already its own answer. Every
+    # inpainting caller hands this a uint8 page, and computing it anyway made
+    # three float64 copies of the page at once: 1.9 GB for one 32767×800
+    # webtoon page, which is how the multi-page Clean ran out of memory.
+    if array.dtype == np.uint8 and alpha == 1 and beta == 0:
+        return array.copy()
+
+    # Otherwise the same expression as always, a block of rows at a time, so
+    # only one block's worth of intermediates is ever held.
+    out = np.empty(array.shape, np.uint8)
+    flat_in = array.reshape(array.shape[0], -1) if array.ndim > 1 else array.reshape(1, -1)
+    flat_out = out.reshape(flat_in.shape)
+    row_bytes = max(1, flat_in.shape[1]) * 8
+    step = max(1, (16 << 20) // row_bytes)   # ~16 MB of float64 per block
+    for start in range(0, flat_in.shape[0], step):
+        block = flat_in[start:start + step]
+        flat_out[start:start + step] = np.clip(np.abs(block * alpha + beta), 0, 255).astype(np.uint8)
+    return out
 
 
 def threshold(

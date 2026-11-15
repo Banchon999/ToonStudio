@@ -627,11 +627,16 @@ class InpaintingHandler:
         without eating into the background.
         """
         grow = np.ones((3, 3), np.uint8)
-        fill_u8 = fill_region.astype(np.uint8)
+        # Growth n is the region dilated n times, so every growth any step
+        # needs comes from one chain of single dilations: 14 of them, where
+        # dilating from scratch for each step cost 165 per block.
+        levels = [fill_region.astype(np.uint8)]
+        for _ in range(max(FAST_FILL_GROWTH_STEPS) + 3):
+            levels.append(imk.dilate(levels[-1], grow))
         candidates = []
         for step in FAST_FILL_GROWTH_STEPS:
-            inner = imk.dilate(fill_u8, grow, iterations=step) > 0
-            ring = (imk.dilate(fill_u8, grow, iterations=step + 3) > 0) & ~inner
+            inner = levels[step] > 0
+            ring = (levels[step + 3] > 0) & ~inner
             if bubble_mask is not None:
                 inner &= bubble_mask
                 ring &= bubble_mask

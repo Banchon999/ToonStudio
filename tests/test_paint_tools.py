@@ -321,11 +321,26 @@ def test_in_webtoon_mode_a_stroke_on_page_two_lands_on_page_two(qapp, tmp_path):
         win.webtoon_toggle.click()
         viewer = win.image_viewer
         assert _pump_until(qapp, lambda: viewer.webtoon_mode and len(viewer.webtoon_manager.loaded_pages) == 2)
+        # The loader re-centres on the current page 100–150 ms after loading
+        # (image_loader's singleShot timers); scrolling before they fire is
+        # undone by them on a slow runner, leaving page two barely in view.
+        from PySide6.QtCore import QElapsedTimer
+
+        settle = QElapsedTimer()
+        settle.start()
+        while settle.elapsed() < 400:
+            qapp.processEvents()
         top = viewer.webtoon_manager.layout_manager.image_positions[1]
-        viewer.centerOn(120, top + 40)
-        qapp.processEvents()
-        _, mappings = viewer.get_visible_area_image()
-        page_two = next(m for m in mappings if m["page_index"] == 1)
+
+        def page_two_in_view():
+            viewer.centerOn(120, top + 40)
+            qapp.processEvents()
+            _, found = viewer.get_visible_area_image()
+            part = next((m for m in found if m["page_index"] == 1), None)
+            return part if part and part["scene_y_end"] - part["scene_y_start"] > 40 else None
+
+        assert _pump_until(qapp, page_two_in_view)
+        page_two = page_two_in_view()
         y = page_two["scene_y_start"] + 15
         assert page_two["scene_y_end"] - y > 20
 

@@ -1,4 +1,4 @@
-from PySide6 import QtWidgets, QtGui
+from PySide6 import QtCore, QtWidgets, QtGui
 from ..dayu_widgets.label import MLabel
 from ..dayu_widgets.spin_box import MSpinBox
 from ..dayu_widgets.browser import MClickBrowserFileToolButton
@@ -9,6 +9,8 @@ from ..dayu_widgets.combo_box import MComboBox, MFontComboBox
 class ColorPickerButton(QtWidgets.QPushButton):
     """Small swatch button that opens a color dialog and remembers the choice."""
 
+    color_changed = QtCore.Signal(str)
+
     def __init__(self, color: str = "#000000", parent=None):
         super().__init__(parent)
         self.setFixedSize(30, 30)
@@ -17,10 +19,13 @@ class ColorPickerButton(QtWidgets.QPushButton):
 
     def set_color(self, color: str) -> None:
         color = color or "#000000"
+        changed = color != self.property("selected_color")
         self.setProperty("selected_color", color)
         self.setStyleSheet(
             f"background-color: {color}; border: 1px solid gray; border-radius: 5px;"
         )
+        if changed:
+            self.color_changed.emit(color)
 
     def get_color(self) -> str:
         return self.property("selected_color") or "#000000"

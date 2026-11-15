@@ -223,6 +223,7 @@ class PaintController:
             "aibrush": QCoreApplication.translate("PaintController", "AI Inpaint"),
             "clone": QCoreApplication.translate("PaintController", "Clone Stamp"),
             "heal": QCoreApplication.translate("PaintController", "Healing Brush"),
+            "spotheal": QCoreApplication.translate("PaintController", "Spot Healing Brush"),
             "balloons": QCoreApplication.translate("PaintController", "Clean White Balloons"),
         }
         label = labels.get(mode, QCoreApplication.translate("PaintController", "Paint"))

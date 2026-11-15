@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 from dataclasses import asdict, is_dataclass
 from collections import OrderedDict
+import imkit as imk
 
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtCore import QSettings
@@ -635,6 +636,7 @@ class ProjectController:
     def _run_export_plan(self, export_plan: list[dict]) -> None:
         self.main.image_ctrl.save_current_image_state()
         all_pages_current_state = self._build_all_pages_current_state()
+        watermark = self.watermark_stamp()
         self.main.loading.setVisible(True)
         self.main.run_threaded(
             self.save_and_make_worker,
@@ -643,7 +645,17 @@ class ProjectController:
             lambda: self.main.loading.setVisible(False),
             export_plan,
             all_pages_current_state,
+            watermark,
         )
+
+    def watermark_stamp(self):
+        """The export watermark (Settings > Export), drawn now — on the GUI
+        thread, which is the only one allowed to touch Qt's fonts — or None
+        when it is off. Export workers only scale and place it."""
+        from app.ui.watermark import build_stamp
+
+        getter = getattr(self.main.settings_page, "get_watermark_settings", None)
+        return build_stamp(getter()) if callable(getter) else None
 
     def _prompt_for_partition(
         self,
@@ -865,10 +877,11 @@ class ProjectController:
             warm_font_cache(all_pages_current_state)
         except Exception:
             logger.debug("Could not pre-resolve export fonts.", exc_info=True)
+        watermark = self.watermark_stamp()
         self.main.loading.setVisible(True)
         self.main.run_threaded(
             self._write_psd_worker, None, self.main.default_error_handler, lambda: self.main.loading.setVisible(False),
-            output_folder, all_pages_current_state, bundle_name, single_file_path,
+            output_folder, all_pages_current_state, bundle_name, single_file_path, watermark,
         )
 
     def export_psd_plan(self, export_plan: list[dict]) -> None:
@@ -881,6 +894,7 @@ class ProjectController:
             warm_font_cache(all_pages_current_state)
         except Exception:
             logger.debug("Could not pre-resolve export fonts.", exc_info=True)
+        watermark = self.watermark_stamp()
         self.main.loading.setVisible(True)
         self.main.run_threaded(
             self._write_psd_plan_worker,
@@ -890,6 +904,7 @@ class ProjectController:
             export_plan,
             all_pages_current_state,
             bundle_name,
+            watermark,
         )
 
     def _write_psd_worker(
@@ -898,8 +913,9 @@ class ProjectController:
         all_pages_current_state: dict[str, dict],
         bundle_name: str,
         single_file_path: str | None = None,
+        watermark=None,
     ):
-        pages = self._gather_psd_pages(all_pages_current_state)
+        pages = self._gather_psd_pages(all_pages_current_state, watermark)
         export_psd_pages(
             output_folder=output_folder,
             pages=pages,
@@ -912,8 +928,9 @@ class ProjectController:
         export_plan: list[dict],
         all_pages_current_state: dict[str, dict],
         default_bundle_name: str,
+        watermark=None,
     ) -> None:
-        pages = self._gather_psd_pages(all_pages_current_state)
+        pages = self._gather_psd_pages(all_pages_current_state, watermark)
         for group in export_plan:
             group_pages = [
                 pages[page_idx]
@@ -1043,7 +1060,8 @@ class ProjectController:
             groups.setdefault(group_name, []).append(page_index)
         return groups
 
-    def save_and_make_worker(self, export_plan: list[dict], all_pages_current_state: dict[str, dict]):
+    def save_and_make_worker(self, export_plan: list[dict], all_pages_current_state: dict[str, dict],
+                             watermark=None):
         try:
             if self.main.file_handler.should_pre_materialize(self.main.image_files):
                 count = self.main.file_handler.pre_materialize(self.main.image_files)
@@ -1088,7 +1106,10 @@ class ProjectController:
                         renderer.add_state_to_image(viewer_state)
 
                     sv_pth = os.path.join(group_dir, self._build_export_page_name(page_number, file_path))
-                    renderer.save_image(sv_pth)
+                    final_rgb = renderer.render_to_image()
+                    if watermark is not None:
+                        final_rgb = watermark.apply(final_rgb)
+                    imk.write_image(sv_pth, final_rgb)
 
                 if as_folder:
                     continue
@@ -1098,7 +1119,7 @@ class ProjectController:
             # Clean up temp directory
             shutil.rmtree(temp_dir)
 
-    def _gather_psd_pages(self, all_pages_current_state: dict[str, dict]) -> list[PsdPageData]:
+    def _gather_psd_pages(self, all_pages_current_state: dict[str, dict], watermark=None) -> list[PsdPageData]:
         """Collect PSD page data from the captured viewer state."""
         try:
             if self.main.file_handler.should_pre_materialize(self.main.image_files):
@@ -1127,6 +1148,14 @@ class ProjectController:
             composite = self._render_psd_preview(
                 rgb_img, viewer_state, patch_list, self.main.document_layers
             )
+            # The watermark is its own layer in the PSD, and part of the
+            # flattened preview every reader but Photoshop shows.
+            placed_watermark = None
+            if watermark is not None:
+                height, width = rgb_img.shape[:2]
+                placed_watermark = watermark.for_page(width, height)
+                if composite is not None:
+                    composite = watermark.apply(composite)
             text_items = viewer_state.get('text_items_state', [])
             logger.info(
                 "PSD page %d (%s): patches=%d, text_items=%d, viewer_state_keys=%s",
@@ -1143,6 +1172,7 @@ class ProjectController:
                     patches=patch_list,
                     composite_image=composite,
                     document_layers=self.main.document_layers.to_dict(),
+                    watermark=placed_watermark,
                 )
             )
 

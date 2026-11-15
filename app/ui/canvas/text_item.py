@@ -1144,6 +1144,23 @@ class TextBlockItem(QGraphicsTextItem):
             self.text_color = color
         self.update_text_format('color', color)
 
+    def restore_missing_outline(self) -> None:
+        """Rebuild the whole-text outline of an item that has an outline colour
+        but nothing to draw it with.
+
+        Items are drawn from `selection_outlines`; `outline`/`outline_color`
+        alone draw nothing. The multi-page Render (Smart Workflow) saved its
+        items with the colour and no outline, so they showed none until
+        selected — selecting copies the toolbar's Outline box back onto the
+        item. Pages rendered that way are repaired wherever an item is built
+        from saved state: the canvas and the flattened export.
+        """
+        if self.outline and self.outline_color is not None and not any(
+            getattr(outline, "type", None) == OutlineType.Full_Document
+            for outline in self.selection_outlines
+        ):
+            self.update_outlines()
+
     def update_outlines(self):
         """Update the selection outlines when text changes"""
         if self.outline:

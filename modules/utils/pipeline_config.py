@@ -32,4 +32,7 @@ def get_config(settings_page: SettingsPage):
     else:
         config = Config(hd_strategy="Original")
 
+    getter = getattr(settings_page, "get_smart_fill_textured", None)
+    if callable(getter):
+        config.smart_fill_textured = getter()
     return config

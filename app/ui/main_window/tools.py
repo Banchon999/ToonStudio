@@ -75,6 +75,9 @@ class ToolStateMixin:
     def toggle_heal_tool(self):
         self._toggle_pixel_tool(self.heal_button, "heal")
 
+    def toggle_spot_heal_tool(self):
+        self._toggle_pixel_tool(self.spot_heal_button, "spotheal")
+
     def toggle_eyedropper_tool(self):
         if self.eyedropper_button.isChecked():
             self.set_tool("eyedropper")

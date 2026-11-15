@@ -606,6 +606,16 @@ class WorkspaceMixin:
         self.heal_button.clicked.connect(self.toggle_heal_tool)
         self.tool_buttons["heal"] = self.heal_button
 
+        self.spot_heal_button = self.create_tool_button(svg="spot-heal.svg", checkable=True)
+        self.spot_heal_button.setToolTip(self.tr(
+            "Spot healing brush: paint over a mark and it is filled with texture\n"
+            "found nearby (screentone, hatching, artwork), in the colour around it.\n"
+            "No source to choose, no AI model. For a mark across the edge of a shape,\n"
+            "the AI inpaint brush rebuilds the edge better."
+        ))
+        self.spot_heal_button.clicked.connect(self.toggle_spot_heal_tool)
+        self.tool_buttons["spotheal"] = self.spot_heal_button
+
         self.eyedropper_button = self.create_tool_button(svg="eyedropper.svg", checkable=True)
         self.eyedropper_button.setToolTip(self.tr("Pick the paint colour from the page."))
         self.eyedropper_button.clicked.connect(self.toggle_eyedropper_tool)
@@ -695,7 +705,7 @@ class WorkspaceMixin:
             (self.pan_button, self.box_button, self.type_text_button),
             (self.brush_button, self.eraser_button),
             (self.paint_button, self.fill_button, self.ai_brush_button, self.clone_button,
-             self.heal_button, self.restore_button, self.eyedropper_button),
+             self.heal_button, self.spot_heal_button, self.restore_button, self.eyedropper_button),
             (self.marquee_button, self.balloon_button, self.wand_button, self.lasso_button),
             (self.clean_balloons_button, self.delete_button, self.clear_rectangles_button,
              self.draw_blklist_blks, self.clear_brush_strokes_button),
@@ -933,8 +943,8 @@ class WorkspaceMixin:
             options.addWidget(button)
 
     SELECTION_TOOLS = ("marquee", "balloon", "wand", "lasso")
-    PIXEL_TOOLS = ("paint", "fill", "aibrush", "clone", "heal", "restore", "eyedropper")
-    BRUSH_SIZED_TOOLS = ("brush", "eraser", "paint", "restore", "aibrush", "clone", "heal")
+    PIXEL_TOOLS = ("paint", "fill", "aibrush", "clone", "heal", "spotheal", "restore", "eyedropper")
+    BRUSH_SIZED_TOOLS = ("brush", "eraser", "paint", "restore", "aibrush", "clone", "heal", "spotheal")
 
     def _build_paint_options(self, row: QtWidgets.QHBoxLayout) -> None:
         """Colour, hardness, opacity and pen pressure for the pixel tools. The
@@ -1013,6 +1023,7 @@ class WorkspaceMixin:
                 "aibrush": {"pressure"},
                 "clone": {"hardness", "opacity", "clone", "pressure"},
                 "heal": {"hardness", "opacity", "clone", "pressure"},
+                "spotheal": {"pressure"},
                 "restore": {"hardness", "opacity", "pressure"},
                 "eyedropper": {"colour"},
             }[tool]
@@ -1028,7 +1039,7 @@ class WorkspaceMixin:
                 for widget in widgets:
                     widget.setVisible(name in uses)
             # The AI brush makes a mask: in or out, nothing to be faint about.
-            self.paint_pressure_flow_check.setVisible(tool != "aibrush")
+            self.paint_pressure_flow_check.setVisible(tool not in ("aibrush", "spotheal"))
         self.selection_options.setVisible(show_selection)
         self.brush_options.setVisible(
             tool in self.BRUSH_SIZED_TOOLS or not (show_selection or show_paint)

@@ -16,7 +16,6 @@ Adaptations from upstream:
   here to produce the identical sequence without adding a SciPy dependency.
 """
 
-from collections import Counter
 
 import numpy as np
 import imkit as imk
@@ -134,11 +133,16 @@ def heuristic_median_color(colors: np.ndarray) -> np.ndarray | None:
 
     A cheap exact answer for flat backgrounds, which is the common case.
     """
-    color_counts = Counter(tuple(color) for color in colors)
-    total = len(colors)
-    for color, count in color_counts.items():
-        if count > total / 2:
-            return np.array(color)
+    colors = np.asarray(colors)
+    if len(colors) == 0:
+        return None
+    # At most one colour can hold more than half, so the most frequent one is
+    # the only candidate. Counted in numpy: a Counter over per-pixel tuples was
+    # the larger part of Smart Fill's time on a page of small letters.
+    unique, counts = np.unique(colors, axis=0, return_counts=True)
+    top = int(np.argmax(counts))
+    if counts[top] > len(colors) / 2:
+        return unique[top]
     return None
 
 

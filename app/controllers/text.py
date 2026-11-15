@@ -15,6 +15,7 @@ from app.ui.canvas.text_item import TextBlockItem
 from app.ui.canvas.text.presets import apply_preset_to_item, preset_label, preset_from_item
 from modules.utils.text_presets import LOOK_FIELDS
 from app.ui.canvas.text.text_item_properties import TextItemProperties
+from core.text_style import full_document_outline
 
 from modules.utils.textblock import TextBlock
 from modules.rendering.render import TextRenderingSettings, manual_wrap, is_vertical_block, pyside_word_wrap, font_family_for_block, default_preset_for, render_area, text_position
@@ -1305,6 +1306,16 @@ class TextController:
                             width=rendered_width,
                             height=rendered_height,
                             vertical=vertical,
+                            # The outline itself, not only its colour: an item
+                            # is drawn from its outlines, and without one here
+                            # it showed none until it was selected (which copies
+                            # the toolbar's Outline box onto it) — batch mode's
+                            # build_text_item_state has always written this.
+                            outline=outline_color is not None,
+                            selection_outlines=(
+                                full_document_outline(wrapped, outline_color, outline_width)
+                                if outline_color is not None else []
+                            ),
                         )
                         # The default style for the block's text class, as
                         # batch mode and the single-page Render apply it.

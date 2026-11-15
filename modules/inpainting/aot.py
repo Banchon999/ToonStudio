@@ -13,6 +13,7 @@ from modules.utils.inpainting import (
 )
 from modules.utils.download import ModelDownloader, ModelID
 from modules.utils.onnx import make_session
+from modules.utils.openvino_cpu import make_cpu_session
 from modules.utils.torch_autocast import TorchAutocastMixin
 
 logger = logging.getLogger(__name__)
@@ -42,10 +43,14 @@ class AOT(TorchAutocastMixin, InpaintModel):
             ModelDownloader.get(ModelID.AOT_ONNX)
             onnx_path = ModelDownloader.primary_path(ModelID.AOT_ONNX)
             providers = get_providers(device)
-            self.session = make_session(
-                onnx_path,
-                sess_options=_make_aot_session_options(),
-                providers=providers,
+            self.session = make_cpu_session(
+                onnx_path, device,
+                lambda: make_session(
+                    onnx_path,
+                    sess_options=_make_aot_session_options(),
+                    providers=providers,
+                ),
+                "AOT inpainter",
             )
         else:
             import torch

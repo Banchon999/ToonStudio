@@ -7,7 +7,8 @@ import imkit as imk
 
 from ..base import LLMTranslation
 from ...utils.textblock import TextBlock
-from ...utils.translator_utils import get_raw_text, set_texts_from_json
+from ...utils.api_errors import APIError
+from ...utils.translator_utils import ReplyParseError, get_raw_text, set_texts_from_json
 from ...utils.thai_speech import targets_thai
 from ...utils.speaker_map import (
     apply_speaker_map, build_speaker_prompt, parse_speaker_reply, speaker_map_block,
@@ -109,7 +110,21 @@ class BaseLLMTranslation(LLMTranslation):
         user_prompt = build_user_prompt(entire_raw_text, context)
         
         entire_translated_text = self._perform_translation(user_prompt, system_prompt, image)
-        set_texts_from_json(blk_list, entire_translated_text)
+        try:
+            set_texts_from_json(blk_list, entire_translated_text)
+        except ReplyParseError as first:
+            # A reply that cannot be read even after repair is asked for once
+            # more; it was a traceback dialog before ("Expecting ',' delimiter").
+            logger.warning("Translation reply could not be read (%s); asking again", first)
+            entire_translated_text = self._perform_translation(user_prompt, system_prompt, image)
+            try:
+                set_texts_from_json(blk_list, entire_translated_text)
+            except ReplyParseError as second:
+                raise APIError.bad_reply(
+                    getattr(self, "PROVIDER", "") or type(self).__name__,
+                    getattr(self, "model", "") or "",
+                    str(second),
+                ) from second
         fixed = apply_speaker_map(blk_list, speakers, getattr(self, "series_setting", "auto"))
         if fixed:
             logger.info("Speaker map: fixed ครับ/ค่ะ in %d block(s)", fixed)

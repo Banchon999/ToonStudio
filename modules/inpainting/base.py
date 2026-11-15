@@ -131,10 +131,13 @@ class InpaintModel:
                         (origin_size[1], origin_size[0]),
                         mode=Image.Resampling.BICUBIC,
                     )
-                    original_pixel_indices = mask < 127
-                    inpaint_result[original_pixel_indices] = image[
-                        original_pixel_indices
-                    ]
+                    # Copied in place through a broadcast mask: indexing a 3-D
+                    # array with a 2-D boolean mask builds an int64 index per
+                    # kept pixel — 420 MB for a 32767×800 page — and a copy.
+                    np.copyto(
+                        inpaint_result, image[..., : inpaint_result.shape[2]],
+                        where=(mask < 127)[..., np.newaxis],
+                    )
 
             if inpaint_result is None:
                 inpaint_result = self._pad_forward(image, mask, config)

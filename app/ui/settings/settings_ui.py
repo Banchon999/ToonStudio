@@ -252,6 +252,7 @@ class SettingsPageUI(QtWidgets.QWidget):
         self.skia_text_checkbox = self.tools_page.skia_text_checkbox
         self.text_segmentation_checkbox = self.tools_page.text_segmentation_checkbox
         self.denoise_checkbox = self.tools_page.denoise_checkbox
+        self.smart_fill_textured_combo = self.tools_page.smart_fill_textured_combo
         self.ocr_padding_spinbox = self.tools_page.ocr_padding_spinbox
         self.ocr_min_padding_spinbox = self.tools_page.ocr_min_padding_spinbox
         self.resize_spinbox = self.tools_page.resize_spinbox

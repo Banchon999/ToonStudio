@@ -549,6 +549,7 @@ class ImageViewer(QGraphicsView):
             
         # Set selection outlines
         item.selection_outlines = properties.selection_outlines.copy()
+        item.restore_missing_outline()
 
         # Text effects
         if properties.letter_spacing:
