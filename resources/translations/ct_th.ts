@@ -3989,227 +3989,257 @@ Open or create a project to get started.</source>
 <context>
     <name>StitchPage</name>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="181"/>
+        <location filename="../../app/ui/stitch_page.py" line="190"/>
         <source>Stitch</source>
         <translation>ต่อภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="184"/>
+        <location filename="../../app/ui/stitch_page.py" line="193"/>
         <source>Join webtoon slices into one strip, then cut it into even pages at empty rows so no bubble is split across two pages.</source>
         <translation>ต่อภาพเว็บตูนที่แยกเป็นชิ้นให้เป็นแถบยาว แล้วตัดใหม่เป็นหน้าสูงเท่าๆ กันตรงแถวที่ว่าง บับเบิลจะได้ไม่ถูกตัดขาดข้ามสองหน้า</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="212"/>
+        <location filename="../../app/ui/stitch_page.py" line="221"/>
         <source>Slices</source>
         <translation>ชิ้นภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="217"/>
-        <location filename="../../app/ui/stitch_page.py" line="464"/>
+        <location filename="../../app/ui/stitch_page.py" line="226"/>
+        <location filename="../../app/ui/stitch_page.py" line="517"/>
         <source>Add Images</source>
         <translation>เพิ่มภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="219"/>
-        <location filename="../../app/ui/stitch_page.py" line="469"/>
+        <location filename="../../app/ui/stitch_page.py" line="228"/>
+        <location filename="../../app/ui/stitch_page.py" line="522"/>
         <source>Add Folder</source>
         <translation>เพิ่มโฟลเดอร์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="225"/>
+        <location filename="../../app/ui/stitch_page.py" line="234"/>
         <source>Use Pages of the Open Project</source>
         <translation>ใช้หน้าจากโปรเจกต์ที่เปิดอยู่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="240"/>
+        <location filename="../../app/ui/stitch_page.py" line="249"/>
         <source>Sort by Name</source>
         <translation>เรียงตามชื่อ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="241"/>
+        <location filename="../../app/ui/stitch_page.py" line="250"/>
         <source>Remove</source>
         <translation>เอาออก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="242"/>
+        <location filename="../../app/ui/stitch_page.py" line="251"/>
         <source>Clear</source>
         <translation>ล้าง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="263"/>
-        <location filename="../../app/ui/stitch_page.py" line="366"/>
+        <location filename="../../app/ui/stitch_page.py" line="272"/>
+        <location filename="../../app/ui/stitch_page.py" line="387"/>
         <source>Preview</source>
         <translation>ดูตัวอย่าง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="264"/>
+        <location filename="../../app/ui/stitch_page.py" line="273"/>
         <source>Add slices, then press Preview to see where the cuts fall.</source>
         <translation>เพิ่มชิ้นภาพ แล้วกด &quot;ดูตัวอย่าง&quot; เพื่อดูว่าจะตัดตรงไหน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="279"/>
+        <location filename="../../app/ui/stitch_page.py" line="281"/>
+        <source>Chapter to preview</source>
+        <translation>ตอนที่จะดูตัวอย่าง</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/stitch_page.py" line="300"/>
         <source>- - - where the original slices ended</source>
         <translation>- - - รอยต่อของชิ้นภาพเดิม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="280"/>
+        <location filename="../../app/ui/stitch_page.py" line="301"/>
         <source>━ forced cut (no empty row nearby)</source>
         <translation>━ ตัดบังคับ (ไม่มีแถวว่างใกล้ๆ)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="288"/>
+        <location filename="../../app/ui/stitch_page.py" line="309"/>
         <source>Pages</source>
         <translation>หน้าที่ได้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="299"/>
+        <location filename="../../app/ui/stitch_page.py" line="320"/>
         <source>Don&apos;t split</source>
         <translation>ไม่ตัด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="300"/>
+        <location filename="../../app/ui/stitch_page.py" line="321"/>
         <source>About how tall each page should be. 0 keeps one long image.</source>
         <translation>ความสูงโดยประมาณของแต่ละหน้า ตั้งเป็น 0 เพื่อเก็บเป็นภาพยาวภาพเดียว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="301"/>
+        <location filename="../../app/ui/stitch_page.py" line="322"/>
         <source>Page height</source>
         <translation>ความสูงหน้า</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="307"/>
+        <location filename="../../app/ui/stitch_page.py" line="328"/>
         <source>How empty a row must be to cut there. 100 % accepts only perfectly flat rows; lower it for scans with grain or a faint texture.</source>
         <translation>แถวต้องว่างแค่ไหนถึงจะตัดได้ 100 % ยอมรับเฉพาะแถวที่เรียบสนิท ลดลงถ้าภาพสแกนมีเกรนหรือลายจางๆ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="310"/>
+        <location filename="../../app/ui/stitch_page.py" line="331"/>
         <source>Detection</source>
         <translation>ความไวการหาแถวว่าง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="315"/>
+        <location filename="../../app/ui/stitch_page.py" line="336"/>
         <source>Rows skipped between candidate cut rows.</source>
         <translation>จำนวนแถวที่ข้ามระหว่างจุดตัดที่ลองแต่ละจุด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="316"/>
+        <location filename="../../app/ui/stitch_page.py" line="337"/>
         <source>Scan step</source>
         <translation>ระยะสแกน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="321"/>
+        <location filename="../../app/ui/stitch_page.py" line="342"/>
         <source>Columns ignored at each edge, e.g. a frame line down the sides.</source>
         <translation>จำนวนคอลัมน์ที่ไม่นับที่ขอบซ้ายขวา เช่น เส้นกรอบด้านข้าง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="322"/>
+        <location filename="../../app/ui/stitch_page.py" line="343"/>
         <source>Ignore edges</source>
         <translation>ไม่นับขอบ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="325"/>
+        <location filename="../../app/ui/stitch_page.py" line="346"/>
         <source>Shrink to the narrowest</source>
         <translation>ย่อให้เท่าภาพที่แคบที่สุด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="326"/>
+        <location filename="../../app/ui/stitch_page.py" line="347"/>
         <source>Enlarge to the widest</source>
         <translation>ขยายให้เท่าภาพที่กว้างที่สุด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="327"/>
+        <location filename="../../app/ui/stitch_page.py" line="348"/>
         <source>Keep pixels, pad the sides</source>
         <translation>คงพิกเซลเดิม เติมขอบข้าง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="328"/>
+        <location filename="../../app/ui/stitch_page.py" line="349"/>
         <source>Different widths</source>
         <translation>ภาพกว้างไม่เท่ากัน</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="333"/>
+        <location filename="../../app/ui/stitch_page.py" line="354"/>
         <source>Format</source>
         <translation>รูปแบบไฟล์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="338"/>
+        <location filename="../../app/ui/stitch_page.py" line="359"/>
         <source>JPEG quality</source>
         <translation>คุณภาพ JPEG</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="341"/>
+        <location filename="../../app/ui/stitch_page.py" line="362"/>
         <source>e.g. ch12_</source>
         <translation>เช่น ch12_</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="342"/>
+        <location filename="../../app/ui/stitch_page.py" line="363"/>
         <source>Name prefix</source>
         <translation>คำนำหน้าชื่อไฟล์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="345"/>
+        <location filename="../../app/ui/stitch_page.py" line="366"/>
         <source>Save to</source>
         <translation>บันทึกที่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="349"/>
-        <location filename="../../app/ui/stitch_page.py" line="352"/>
-        <location filename="../../app/ui/stitch_page.py" line="474"/>
+        <location filename="../../app/ui/stitch_page.py" line="370"/>
+        <location filename="../../app/ui/stitch_page.py" line="373"/>
+        <location filename="../../app/ui/stitch_page.py" line="527"/>
         <source>Choose a folder</source>
         <translation>เลือกโฟลเดอร์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="367"/>
+        <location filename="../../app/ui/stitch_page.py" line="388"/>
         <source>Stitch and Save</source>
         <translation>ต่อภาพและบันทึก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="373"/>
+        <location filename="../../app/ui/stitch_page.py" line="394"/>
         <source>Open Folder</source>
         <translation>เปิดโฟลเดอร์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="374"/>
+        <location filename="../../app/ui/stitch_page.py" line="395"/>
         <source>Open as New Project</source>
         <translation>เปิดเป็นโปรเจกต์ใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="544"/>
+        <location filename="../../app/ui/stitch_page.py" line="449"/>
+        <source>(not in a chapter)</source>
+        <translation>(ไม่อยู่ในตอนใด)</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/stitch_page.py" line="601"/>
+        <source>{0} slice(s) in {1} chapter(s)</source>
+        <translation>{0} ชิ้น ใน {1} ตอน</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/stitch_page.py" line="603"/>
         <source>{0} slice(s)</source>
         <translation>{0} ชิ้น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="574"/>
+        <location filename="../../app/ui/stitch_page.py" line="634"/>
         <source>Failed: {0}</source>
         <translation>ไม่สำเร็จ: {0}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="599"/>
+        <location filename="../../app/ui/stitch_page.py" line="661"/>
         <source>Reading {0} slice(s)…</source>
         <translation>กำลังอ่าน {0} ชิ้น…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="636"/>
+        <location filename="../../app/ui/stitch_page.py" line="728"/>
+        <source>Saved {0} page(s) in {1} chapter(s) to {2}</source>
+        <translation>บันทึก {0} หน้า จาก {1} ตอน ไปที่ {2}</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/stitch_page.py" line="732"/>
+        <source>{0} chapter(s) failed: {1}</source>
+        <translation>{0} ตอนไม่สำเร็จ: {1}</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/stitch_page.py" line="736"/>
         <source>Saved {0} page(s) to {1}</source>
         <translation>บันทึก {0} หน้าไว้ที่ {1}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="638"/>
+        <location filename="../../app/ui/stitch_page.py" line="740"/>
         <source>Stitching…</source>
         <translation>กำลังต่อภาพ…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="644"/>
+        <location filename="../../app/ui/stitch_page.py" line="745"/>
+        <source>Chapter {0} of {1}: {2}</source>
+        <translation>ตอน {0} จาก {1}: {2}</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/stitch_page.py" line="753"/>
         <source>Writing page {0} of {1}…</source>
         <translation>กำลังบันทึกหน้า {0} จาก {1}…</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="653"/>
+        <location filename="../../app/ui/stitch_page.py" line="763"/>
         <source>{0} slice(s) → {1} page(s) · {2} × {3} px strip</source>
         <translation>{0} ชิ้น → {1} หน้า · แถบ {2} × {3} px</translation>
     </message>
     <message>
-        <location filename="../../app/ui/stitch_page.py" line="657"/>
+        <location filename="../../app/ui/stitch_page.py" line="767"/>
         <source>{0} forced cut(s)</source>
         <translation>ตัดบังคับ {0} จุด</translation>
     </message>
@@ -4805,22 +4835,22 @@ It keeps the text readable on both light and dark artwork.</source>
     </message>
     <message>
         <location filename="../../app/ui/settings/watermark_section.py" line="131"/>
-        <location filename="../../app/ui/settings/watermark_section.py" line="237"/>
+        <location filename="../../app/ui/settings/watermark_section.py" line="238"/>
         <source>Watermark</source>
         <translation>ลายน้ำ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/watermark_section.py" line="231"/>
+        <location filename="../../app/ui/settings/watermark_section.py" line="232"/>
         <source>Choose a logo</source>
         <translation>เลือกโลโก้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/watermark_section.py" line="231"/>
+        <location filename="../../app/ui/settings/watermark_section.py" line="232"/>
         <source>Images (*.png *.webp *.jpg *.jpeg *.bmp)</source>
         <translation>รูปภาพ (*.png *.webp *.jpg *.jpeg *.bmp)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/watermark_section.py" line="238"/>
+        <location filename="../../app/ui/settings/watermark_section.py" line="239"/>
         <source>Could not use that image: {0}</source>
         <translation>ใช้รูปนี้ไม่ได้: {0}</translation>
     </message>
