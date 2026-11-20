@@ -184,3 +184,45 @@ class TestPreview:
     def test_slice_edges_are_where_the_sources_met(self):
         p = plan([page(100), page(250), page(40)], StitchSettings(target_height=0))
         assert slice_edges(p) == [100, 350]
+
+
+class TestSeriesFolders:
+    """A folder of chapters is found chapter by chapter, never as one pile of slices."""
+
+    @staticmethod
+    def touch(path, name):
+        path.mkdir(parents=True, exist_ok=True)
+        Image.fromarray(np.full((4, 4, 3), 255, np.uint8)).save(path / name)
+
+    def test_a_folder_of_slices_is_one_unnamed_chapter(self, tmp_path):
+        from modules.utils.stitch import find_slice_folders
+
+        for name in ("10.png", "2.png", "1.png"):
+            self.touch(tmp_path, name)
+        self.touch(tmp_path / "extra", "1.png")  # subfolders of a slice folder are not read, as before
+        ((chapter, paths),) = find_slice_folders(str(tmp_path))
+        assert chapter == "" and [p.rsplit("/", 1)[-1] for p in paths] == ["1.png", "2.png", "10.png"]
+
+    def test_each_subfolder_is_a_chapter_at_any_depth_in_natural_order(self, tmp_path):
+        from modules.utils.stitch import find_slice_folders
+
+        for chapter in ("ตอนที่ 10", "ตอนที่ 2", "ภาค 2/ตอนที่ 1", "ภาค 1/ตอนที่ 3"):
+            for name in ("2.jpg", "1.jpg"):
+                self.touch(tmp_path / chapter, name)
+        self.touch(tmp_path / "ตอนที่ 2" / "stitched", "001.png")   # an earlier run's output inside a chapter
+        self.touch(tmp_path / "stitched" / "ตอนที่ 2", "001.png")   # the default output beside them
+        self.touch(tmp_path / ".cache" / "x", "1.png")
+        self.touch(tmp_path / "out" / "ตอนที่ 2", "001.png")        # the output chosen now
+        (tmp_path / "empty").mkdir()
+        found = find_slice_folders(str(tmp_path), skip=[str(tmp_path / "out")])
+        assert [c for c, _ in found] == ["ตอนที่ 2", "ตอนที่ 10", "ภาค 1/ตอนที่ 3", "ภาค 2/ตอนที่ 1"]
+        assert all([p.rsplit("/", 1)[-1] for p in paths] == ["1.jpg", "2.jpg"] for _, paths in found)
+
+    def test_a_chapter_is_written_to_its_own_folder(self, tmp_path):
+        import os
+
+        from modules.utils.stitch import chapter_output_dir
+
+        assert chapter_output_dir("/out", "") == "/out"
+        assert chapter_output_dir("/out", "ภาค 1/ตอนที่ 3") == os.path.join("/out", "ภาค 1", "ตอนที่ 3")
+        assert chapter_output_dir("/out", 'a:b?') == os.path.join("/out", "a_b_")

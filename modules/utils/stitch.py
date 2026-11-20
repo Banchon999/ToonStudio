@@ -18,6 +18,7 @@ ranges of the original slices, one at a time.
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass, field
 from typing import Callable, Iterator, Sequence
 
@@ -254,6 +255,71 @@ def write_pages(
         if progress is not None:
             progress(i + 1, len(names))
     return paths
+
+
+IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".avif")
+DEFAULT_OUTPUT_NAME = "stitched"
+_UNSAFE_NAME = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
+
+
+def _natural(text: str) -> list:
+    return [int(p) if p.isdigit() else p.casefold() for p in re.split(r"(\d+)", text)]
+
+
+def _direct_images(folder: str) -> list[str]:
+    try:
+        names = [e.name for e in os.scandir(folder)
+                 if e.is_file() and not e.name.startswith(".") and e.name.lower().endswith(IMAGE_EXTENSIONS)]
+    except OSError:
+        return []
+    return [os.path.join(folder, n) for n in sorted(names, key=_natural)]
+
+
+def find_slice_folders(root: str, skip: Sequence[str] = ()) -> list[tuple[str, list[str]]]:
+    """The chapters a picked folder holds, as ``(chapter, slice paths)``, in natural order.
+
+    - A folder with images directly in it is one chapter, named ``""`` — the
+      way "Add Folder" always worked; its subfolders are not read.
+    - Any other folder is a series: every folder below it, at any depth, that
+      has images directly in it is a chapter named by its path from ``root``
+      (``"ตอน 2"``, ``"ภาค 1/ตอน 2"``). A chapter's own subfolders are not
+      read either, so an earlier run's output inside it is never a chapter.
+
+    Hidden folders, folders called ``stitched`` (the default output) and the
+    folders in ``skip`` (the output chosen now) are passed over with
+    everything below them.
+    """
+    root = os.path.normpath(root)
+    direct = _direct_images(root)
+    if direct:
+        return [("", direct)]
+    skipped = {os.path.normcase(os.path.normpath(os.path.abspath(p))) for p in skip if p}
+    found: list[tuple[str, list[str]]] = []
+
+    def visit(folder: str) -> None:
+        try:
+            subdirs = sorted((e for e in os.scandir(folder) if e.is_dir()), key=lambda e: _natural(e.name))
+        except OSError:
+            return
+        for entry in subdirs:
+            if entry.name.startswith(".") or entry.name.casefold() == DEFAULT_OUTPUT_NAME:
+                continue
+            if os.path.normcase(os.path.abspath(entry.path)) in skipped:
+                continue
+            images = _direct_images(entry.path)
+            if images:
+                found.append((os.path.relpath(entry.path, root).replace(os.sep, "/"), images))
+            else:
+                visit(entry.path)
+
+    visit(root)
+    return found
+
+
+def chapter_output_dir(out_dir: str, chapter: str) -> str:
+    """Where one chapter's pages go: ``out_dir`` itself, or a folder per chapter below it."""
+    parts = [_UNSAFE_NAME.sub("_", p).strip(" .") or "chapter" for p in chapter.split("/") if p]
+    return os.path.join(out_dir, *parts) if parts else out_dir
 
 
 def slice_edges(stitch_plan: StitchPlan) -> list[int]:

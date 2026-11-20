@@ -153,7 +153,7 @@ def test_the_theme_colours_the_cut_legend(page):
     assert theme_tokens.DARK["warn"].lower() in page.legend_forced.styleSheet().lower()
 
 
-def test_the_nav_rail_opens_the_stitch_page(qapp, slices_dir, tmp_path):
+def test_the_nav_rail_opens_the_stitch_page(qapp, slices_dir, series_dir, tmp_path):
     from PySide6 import QtCore
 
     import controller as controller_mod
@@ -189,6 +189,75 @@ def test_the_nav_rail_opens_the_stitch_page(qapp, slices_dir, tmp_path):
             os.path.basename(p) for p in sp._written
         ]
         assert win._center_stack.currentWidget() is win.main_content_widget
+
+        # A series folder through the worker: every chapter into its own folder.
+        win.show_stitch_page()
+        sp.clear_sources()
+        sp._written = []
+        sp.add_folder(str(series_dir))
+        sp.output_edit.setText(str(tmp_path / "series_out"))
+        sp.run_stitch()
+        timer.start()
+        while (sp._busy or not sp._written) and timer.elapsed() < 20000:
+            qapp.processEvents()
+        assert sorted(os.listdir(tmp_path / "series_out")) == ["ตอน 1", "ตอน 10", "ตอน 2"]
+        assert not sp._busy
     finally:
         win._skip_close_prompt = True
         win.close()
+
+
+@pytest.fixture
+def series_dir(tmp_path):
+    """A series folder: three chapters of slices, named so that string order is wrong."""
+    root = tmp_path / "series"
+    for c, chapter in enumerate(("ตอน 1", "ตอน 10", "ตอน 2")):
+        folder = root / chapter
+        folder.mkdir(parents=True)
+        for i, name in enumerate(("1.png", "2.png")):
+            Image.fromarray(slice_image(600, panels=[(50, 550)], seed=10 * c + i)).save(folder / name)
+    return root
+
+
+def test_a_series_folder_is_added_chapter_by_chapter(page, series_dir):
+    assert page.add_folder(str(series_dir)) == 6
+    assert [s.chapter for s in page.sources()] == ["ตอน 1"] * 2 + ["ตอน 2"] * 2 + ["ตอน 10"] * 2
+    assert page.output_edit.text() == os.path.join(str(series_dir), "stitched")
+    assert "3" in page.count_label.text()
+    assert page.chapter_row.isVisibleTo(page) and page.chapter_combo.count() == 3
+
+
+def test_each_chapter_is_stitched_alone_into_its_own_folder(page, series_dir, tmp_path):
+    page.add_folder(str(series_dir))
+    out = tmp_path / "out"
+    page.output_edit.setText(str(out))
+    page.run_stitch()
+    assert sorted(os.listdir(out)) == ["ตอน 1", "ตอน 10", "ตอน 2"]
+    for chapter in ("ตอน 1", "ตอน 2", "ตอน 10"):
+        written = sorted(os.listdir(out / chapter))
+        strip = np.concatenate([np.asarray(Image.open(series_dir / chapter / n).convert("RGB")) for n in ("1.png", "2.png")])
+        back = np.concatenate([np.asarray(Image.open(out / chapter / n).convert("RGB")) for n in written])
+        assert np.array_equal(back, strip)  # this chapter's slices and nothing from the next one
+    assert len(page._written) == sum(len(os.listdir(out / c)) for c in os.listdir(out))
+    assert "3" in page.status_label.text()
+
+
+def test_the_preview_shows_the_chapter_chosen(page, series_dir):
+    page.add_folder(str(series_dir))
+    page.chapter_combo.setCurrentIndex(page.chapter_combo.findData("ตอน 2"))
+    page.run_preview()
+    assert page._plan is not None and page._plan.total_height == 1200
+    assert page._plan_key[0] == tuple(s for s in page.sources() if s.chapter == "ตอน 2")
+    assert page.summary_label.text().startswith("ตอน 2")
+    page.chapter_combo.setCurrentIndex(page.chapter_combo.findData("ตอน 1"))
+    assert page._plan is None  # the preview no longer shows the chapter chosen
+
+
+def test_a_broken_chapter_does_not_stop_the_others(page, series_dir, tmp_path):
+    (series_dir / "ตอน 2" / "2.png").write_bytes(b"not an image")
+    page.add_folder(str(series_dir))
+    out = tmp_path / "out"
+    page.output_edit.setText(str(out))
+    page.run_stitch()
+    assert sorted(os.listdir(out)) == ["ตอน 1", "ตอน 10"]
+    assert "ตอน 2" in page.status_label.text()

@@ -2,7 +2,9 @@
 
 The maths lives Qt-free in ``modules/utils/stitch.py``; this is the page
 around it — a source list (files, a folder, or the open project's pages), the
-settings, a preview of where the cuts fall, and the write. Loading, planning
+settings, a preview of where the cuts fall, and the write. A series folder
+(chapters in subfolders) is added as chapters: each is stitched on its own
+and written to a folder of its name under the output folder. Loading, planning
 and writing run on the task runner's worker; the only thing that crosses back
 is this page's own ``_progress`` signal, so no QObject is ever created or
 destroyed off the GUI thread.
@@ -39,6 +41,7 @@ class Source:
 
     path: str
     from_project: bool = False
+    chapter: str = ""  # its chapter in a series folder ("ตอน 2", "ภาค 1/ตอน 2"); "" = none
 
 
 def _read_source(item) -> np.ndarray:
@@ -53,9 +56,11 @@ def _read_source(item) -> np.ndarray:
     return imk.read_image(item)
 
 
-def _plan_job(items, settings: stitch.StitchSettings):
+def _plan_job(items, settings: stitch.StitchSettings, with_preview: bool = True):
     slices = [_read_source(i) for i in items]
     stitch_plan = stitch.plan(slices, settings)
+    if not with_preview:
+        return stitch_plan, None
     pages, _scale = stitch.preview_pages(stitch_plan, PREVIEW_PAGE_HEIGHT)
     return stitch_plan, pages
 
@@ -155,6 +160,7 @@ class StitchPage(QtWidgets.QWidget):
 
     open_pages = QtCore.Signal(list)      # written page paths, to open as a new project
     _progress = QtCore.Signal(int, int)   # emitted from the worker; queued onto the GUI thread
+    _chapter = QtCore.Signal(int, int, str)  # (chapter n, of total, its name), from the worker too
 
     def __init__(self, main=None, parent=None):
         super().__init__(parent)
@@ -162,13 +168,16 @@ class StitchPage(QtWidgets.QWidget):
         self.main = main
         self._plan: stitch.StitchPlan | None = None
         self._plan_key = None
+        self._plan_chapter = ""
         self._preview: list[np.ndarray] | None = None
         self._written: list[str] = []
+        self._chapter_status = ""
         self._busy = False
         self._is_dark = True
         self._build()
         self._load_settings()
         self._progress.connect(self._on_progress)
+        self._chapter.connect(self._on_chapter)
         self._update_state()
 
     # ------------------------------------------------------------------ layout
@@ -265,6 +274,18 @@ class StitchPage(QtWidgets.QWidget):
         self.summary_label.setObjectName("toonStitchMuted")
         self.summary_label.setWordWrap(True)
         lay.addWidget(self.summary_label)
+
+        self.chapter_row = QtWidgets.QWidget()
+        row = QtWidgets.QHBoxLayout(self.chapter_row)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.addWidget(QtWidgets.QLabel(self.tr("Chapter to preview")))
+        self.chapter_combo = QtWidgets.QComboBox()
+        self.chapter_combo.setSizeAdjustPolicy(QtWidgets.QComboBox.SizeAdjustPolicy.AdjustToContents)
+        row.addWidget(self.chapter_combo)
+        row.addStretch(1)
+        self.chapter_row.setVisible(False)
+        self.chapter_combo.currentIndexChanged.connect(self._invalidate)
+        lay.addWidget(self.chapter_row)
 
         self.preview_canvas = PreviewCanvas()
         self.preview_scroll = QtWidgets.QScrollArea()
@@ -394,25 +415,57 @@ class StitchPage(QtWidgets.QWidget):
     def sources(self) -> list[Source]:
         return [self.source_list.item(i).data(SOURCE_ROLE) for i in range(self.source_list.count())]
 
-    def add_files(self, paths, from_project: bool = False) -> int:
+    def add_files(self, paths, from_project: bool = False, chapter: str = "", default_output: str | None = None) -> int:
         added = 0
         for path in paths:
             if not from_project and not is_image_file(path):
                 continue
-            item = QtWidgets.QListWidgetItem(os.path.basename(path))
-            item.setData(SOURCE_ROLE, Source(path, from_project))
+            name = os.path.basename(path)
+            item = QtWidgets.QListWidgetItem(f"{chapter} › {name}" if chapter else name)
+            item.setData(SOURCE_ROLE, Source(path, from_project, chapter))
             item.setToolTip(path)
             item.setIcon(self._thumbnail(path))
             self.source_list.addItem(item)
             added += 1
         if added and not self.output_edit.text() and not from_project:
-            self.output_edit.setText(os.path.join(os.path.dirname(paths[0]), "stitched"))
+            self.output_edit.setText(default_output or os.path.join(os.path.dirname(paths[0]), stitch.DEFAULT_OUTPUT_NAME))
         self._sources_changed()
         return added
 
     def add_folder(self, folder: str) -> int:
-        names = sorted((n for n in os.listdir(folder) if is_image_file(n)), key=natural_sort_key)
-        return self.add_files([os.path.join(folder, n) for n in names])
+        """A folder of slices, or a series folder whose subfolders are its chapters."""
+        groups = stitch.find_slice_folders(folder, skip=[self.output_edit.text().strip()])
+        default_output = os.path.join(os.path.normpath(folder), stitch.DEFAULT_OUTPUT_NAME)
+        return sum(self.add_files(paths, chapter=chapter, default_output=default_output) for chapter, paths in groups)
+
+    def chapters(self) -> list[tuple[str, list[Source]]]:
+        """The sources grouped by chapter, chapters in the order they first appear in the list."""
+        groups: dict[str, list[Source]] = {}
+        for source in self.sources():
+            groups.setdefault(source.chapter, []).append(source)
+        return list(groups.items())
+
+    def _chapter_label(self, chapter: str) -> str:
+        return chapter or self.tr("(not in a chapter)")
+
+    def _refresh_chapters(self):
+        groups = self.chapters()
+        current = self.chapter_combo.currentData()
+        blocker = QtCore.QSignalBlocker(self.chapter_combo)
+        self.chapter_combo.clear()
+        for chapter, sources in groups:
+            self.chapter_combo.addItem(f"{self._chapter_label(chapter)} ({len(sources)})", chapter)
+        index = self.chapter_combo.findData(current) if current is not None else -1
+        self.chapter_combo.setCurrentIndex(max(0, index))
+        del blocker
+        self.chapter_row.setVisible(len(groups) > 1)
+
+    def _preview_group(self) -> tuple[str, list[Source]] | None:
+        groups = self.chapters()
+        if not groups:
+            return None
+        chosen = self.chapter_combo.currentData()
+        return next((g for g in groups if g[0] == chosen), groups[0])
 
     def use_project_pages(self) -> int:
         files = list(getattr(self.main, "image_files", None) or [])
@@ -529,23 +582,30 @@ class StitchPage(QtWidgets.QWidget):
         self._invalidate()
 
     def _sources_changed(self, *args):
+        self._refresh_chapters()
         self._invalidate()
 
-    def _invalidate(self):
+    def _invalidate(self, *args):
         """Settings or sources changed: the preview no longer shows what would be written."""
         self._plan = None
         self._plan_key = None
+        self._plan_chapter = ""
         self._preview = None
         self.preview_canvas.set_pages(None, [])
         self._update_state()
 
     def _update_state(self):
         n = self.source_list.count()
-        self.count_label.setText(self.tr("{0} slice(s)").format(n))
+        groups = self.chapters()
+        if len(groups) > 1 or (groups and groups[0][0]):
+            self.count_label.setText(self.tr("{0} slice(s) in {1} chapter(s)").format(n, len(groups)))
+        else:
+            self.count_label.setText(self.tr("{0} slice(s)").format(n))
         has_project = bool(getattr(self.main, "image_files", None))
         self.from_project_button.setEnabled(has_project and not self._busy)
         for b in (self.add_files_button, self.add_folder_button, self.sort_button, self.clear_button):
             b.setEnabled(not self._busy)
+        self.chapter_combo.setEnabled(not self._busy)
         self.remove_button.setEnabled(bool(self.source_list.selectedItems()) and not self._busy)
         self.preview_button.setEnabled(n > 0 and not self._busy)
         self.stitch_button.setEnabled(n > 0 and not self._busy and bool(self.output_edit.text().strip()))
@@ -555,8 +615,8 @@ class StitchPage(QtWidgets.QWidget):
 
     # ------------------------------------------------------------------ running
 
-    def _key(self):
-        return (tuple(self.sources()), self.settings())
+    def _key(self, sources):
+        return (tuple(sources), self.settings())
 
     def _run(self, fn, on_result, *args):
         """On the task runner when there is a window, inline otherwise (tests)."""
@@ -592,56 +652,106 @@ class StitchPage(QtWidgets.QWidget):
         self._update_state()
 
     def run_preview(self):
-        if not self.source_list.count():
+        group = self._preview_group()
+        if group is None:
             return
-        key = self._key()
-        items = [self._resolve(s) for s in key[0]]
+        chapter, sources = group
+        key = self._key(sources)
+        items = [self._resolve(s) for s in sources]
         self.status_label.setText(self.tr("Reading {0} slice(s)…").format(len(items)))
 
         def show(result):
             stitch_plan, pages = result
-            self._plan, self._plan_key, self._preview = stitch_plan, key, pages
+            self._plan, self._plan_key, self._preview, self._plan_chapter = stitch_plan, key, pages, chapter
             self._show_plan()
             self.status_label.clear()
 
         self._run(_plan_job, show, items, key[1])
 
     def run_stitch(self):
+        """Stitch every chapter on its own, each into its own folder under the output folder.
+
+        Slices that belong to no chapter are written to the output folder
+        itself, exactly as before chapters existed. With several chapters a
+        chapter that fails is reported and the rest are still written.
+        """
         out_dir = self.output_edit.text().strip()
-        if not self.source_list.count() or not out_dir:
+        groups = self.chapters()
+        if not groups or not out_dir:
             return
-        key = self._key()
-        settings = key[1]
+        plan_settings = self.settings()
+        settings = plan_settings
         if settings.target_height == 0 and settings.fmt == "jpg":
             settings = dataclasses.replace(settings, fmt="png")  # JPEG cannot hold a long strip
-        cached = self._plan if self._plan_key == key else None
-        cached_preview = self._preview
-        items = None if cached is not None else [self._resolve(s) for s in key[0]]
+        cached, cached_key, cached_preview = self._plan, self._plan_key, self._preview
+        multi = len(groups) > 1
+        jobs = []
+        for chapter, sources in groups:
+            key = self._key(sources)
+            reuse = cached is not None and cached_key == key
+            jobs.append((chapter, key, None if reuse else [self._resolve(s) for s in sources], reuse))
         prefix = self.prefix_edit.text().strip()
         progress = self._progress.emit
+        announce = self._chapter.emit
 
         def job():
-            if cached is not None:
-                stitch_plan, preview = cached, cached_preview
-            else:
-                stitch_plan, preview = _plan_job(items, key[1])
-            paths = stitch.write_pages(stitch_plan, out_dir, settings, prefix, progress)
-            return stitch_plan, preview, paths
+            written: list[str] = []
+            failures: list[tuple[str, str]] = []
+            last = None
+            for number, (chapter, key, items, reuse) in enumerate(jobs, 1):
+                announce(number, len(jobs), chapter)
+                try:
+                    if reuse:
+                        stitch_plan, preview = cached, cached_preview
+                    else:
+                        # A preview is only shown for a single chapter; skip building one per chapter.
+                        stitch_plan, preview = _plan_job(items, plan_settings, with_preview=not multi)
+                    target = stitch.chapter_output_dir(out_dir, chapter)
+                    written.extend(stitch.write_pages(stitch_plan, target, settings, prefix, progress))
+                except Exception as exc:  # noqa: BLE001 — one bad chapter must not stop the series
+                    if not multi:
+                        raise
+                    failures.append((chapter, str(exc)))
+                    continue
+                if not multi:
+                    last = (stitch_plan, key, preview, chapter)
+            return written, failures, last
 
         def finished(result):
-            stitch_plan, preview, paths = result
-            self._plan, self._plan_key, self._preview = stitch_plan, key, preview
-            self._written = paths
-            self._show_plan()
-            self.status_label.setText(self.tr("Saved {0} page(s) to {1}").format(len(paths), out_dir))
+            written, failures, last = result
+            self._written = written
+            self._chapter_status = ""
+            if last is not None:
+                self._plan, self._plan_key, self._preview, self._plan_chapter = last
+                self._show_plan()
+            if multi:
+                text = self.tr("Saved {0} page(s) in {1} chapter(s) to {2}").format(
+                    len(written), len(jobs) - len(failures), out_dir
+                )
+                if failures:
+                    text += "\n" + self.tr("{0} chapter(s) failed: {1}").format(
+                        len(failures), "; ".join(f"{self._chapter_label(c)}: {e}" for c, e in failures)
+                    )
+            else:
+                text = self.tr("Saved {0} page(s) to {1}").format(len(written), out_dir)
+            self.status_label.setText(text)
+            self._update_state()
 
         self.status_label.setText(self.tr("Stitching…"))
         self._run(job, finished)
 
+    def _on_chapter(self, number: int, total: int, chapter: str):
+        self._chapter_status = (
+            self.tr("Chapter {0} of {1}: {2}").format(number, total, self._chapter_label(chapter)) if total > 1 else ""
+        )
+        if self._chapter_status:
+            self.status_label.setText(self._chapter_status)
+
     def _on_progress(self, done: int, total: int):
         self.progress.setRange(0, total)
         self.progress.setValue(done)
-        self.status_label.setText(self.tr("Writing page {0} of {1}…").format(done, total))
+        text = self.tr("Writing page {0} of {1}…").format(done, total)
+        self.status_label.setText(f"{self._chapter_status} · {text}" if self._chapter_status else text)
 
     # ------------------------------------------------------------------ preview
 
@@ -655,6 +765,8 @@ class StitchPage(QtWidgets.QWidget):
         )
         if forced:
             text += "  ·  " + self.tr("{0} forced cut(s)").format(forced)
+        if self._plan_chapter:
+            text = f"{self._plan_chapter}  ·  {text}"
         self.summary_label.setText(text)
         self._paint_preview()
         self._update_state()
