@@ -243,3 +243,56 @@ def test_the_row_menu_offers_what_the_row_can_do(ct):
     assert pick(_group_row(panel, LayerGroup.TEXT), None) == [
         "Hide Group", "Show Only This Group", "Lock Group"]
     assert pick(_group_row(panel, LayerGroup.RAW), None) == ["Hide Group"]
+
+
+def _ink(icon):
+    """How many thumbnail pixels are neither checkerboard grey nor empty."""
+    image = icon.pixmap(36, 26).toImage()
+    count = 0
+    for y in range(image.height()):
+        for x in range(image.width()):
+            c = image.pixelColor(x, y)
+            if c.alpha() and abs(c.red() - c.green()) + abs(c.green() - c.blue()) > 20:
+                count += 1
+            elif c.alpha() and c.lightness() < 150:
+                count += 1
+    return count
+
+
+def test_every_layer_row_has_a_thumbnail_of_what_it_holds(ct):
+    """Photoshop's Layers panel: a small picture of each layer beside its name."""
+    text = ct.image_viewer.add_text_item(_text_props())
+    text.selected = True  # its selection frame must not be in the picture
+    ct.layers_panel.rebuild()
+    row = _object_row(ct.layers_panel, text.object_id)
+    assert not row.icon(COL_NAME).isNull()
+    assert _ink(row.icon(COL_NAME)) > 3, "the text is drawn in it"
+    assert text.selected, "the item is left as it was"
+    raw = _group_row(ct.layers_panel, LayerGroup.RAW)
+    assert not raw.icon(COL_NAME).isNull()
+
+
+def test_thumbnails_are_reused_until_the_layer_changes(ct):
+    text = ct.image_viewer.add_text_item(_text_props())
+    panel = ct.layers_panel
+    panel.rebuild()
+    first = panel._thumb_cache[text.object_id][1]
+    panel.rebuild()
+    assert panel._thumb_cache[text.object_id][1] is first
+    text.setHtml("<p>Something else</p>")
+    panel.rebuild()
+    assert panel._thumb_cache[text.object_id][1] is not first
+    ct.image_viewer.scene().removeItem(text)
+    panel.rebuild()
+    assert text.object_id not in panel._thumb_cache
+
+
+def test_opacity_sits_above_the_list_and_the_trash_at_the_bottom_right(ct):
+    panel = ct.layers_panel
+    panel.resize(340, 500)
+    panel.show()
+    ct.layers_panel.rebuild()
+    tree_top = panel.tree.geometry().top()
+    assert panel.opacity_slider.geometry().bottom() < tree_top
+    assert panel.delete_button.geometry().top() > panel.tree.geometry().bottom()
+    assert panel.delete_button.geometry().left() > panel.down_button.geometry().left()
