@@ -12,6 +12,23 @@ from PySide6.QtGui import QColor, QImage, QPainter, QTextCursor
 from PySide6.QtWidgets import QStyleOptionGraphicsItem
 
 
+@pytest.fixture(autouse=True)
+def _qt_engine():
+    """These are the Qt painter's tests. The engine is a process-wide setting
+    that every window sets from Settings (Skia by default), so without this
+    they ran under whichever engine the previous test left behind. The item
+    below is built without `set_font`, so its document keeps Qt's 9 pt font
+    while Skia draws at `font_size`: under Skia the lines overlap and these
+    measurements are meaningless (an item the app builds is set up properly,
+    and Skia's gradient then runs across both lines as it should)."""
+    from core import text_engine
+
+    before = text_engine.engine()
+    text_engine.set_engine(text_engine.QT)
+    yield
+    text_engine.set_engine(before)
+
+
 @pytest.fixture
 def item(qapp):
     from app.ui.canvas.text_item import TextBlockItem
