@@ -158,8 +158,11 @@ def main():
     repair_settings()
 
     # The bundled UI typeface, before any widget is styled.
-    from app.ui.fonts import load_ui_fonts
+    from app.ui.fonts import load_ui_fonts, load_user_fonts
     load_ui_fonts()
+    # Imported fonts and the font folders chosen in Settings, so every font
+    # list has them from the start.
+    load_user_fonts()
 
     router = OpenRequestRouter()
     file_open_event_filter = FileOpenEventFilter(router)

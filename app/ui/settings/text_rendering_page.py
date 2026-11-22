@@ -6,6 +6,78 @@ from ..dayu_widgets.check_box import MCheckBox
 from ..dayu_widgets.combo_box import MComboBox, MFontComboBox
 
 
+class FontFoldersBox(QtWidgets.QWidget):
+    """Folders on this computer whose fonts are loaded every time the app
+    starts, read where they are — nothing is copied (app/ui/fonts.py)."""
+
+    folders_changed = QtCore.Signal(list)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        from app.ui.fonts import font_folders
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 4, 0, 0)
+        layout.addWidget(MLabel(self.tr("Font Folders:")))
+        note = MLabel(self.tr(
+            "Every font in these folders (and their subfolders) is loaded each time the app "
+            "starts, so it is in every font list without importing it. Nothing is copied."
+        )).secondary()
+        note.setWordWrap(True)
+        layout.addWidget(note)
+        self.list = QtWidgets.QListWidget()
+        self.list.setMaximumHeight(110)
+        self.list.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
+        layout.addWidget(self.list)
+        row = QtWidgets.QHBoxLayout()
+        self.add_button = QtWidgets.QPushButton(self.tr("Add Folder…"))
+        self.remove_button = QtWidgets.QPushButton(self.tr("Remove"))
+        self.status = MLabel("").secondary()
+        row.addWidget(self.add_button)
+        row.addWidget(self.remove_button)
+        row.addWidget(self.status, 1)
+        layout.addLayout(row)
+        for folder in font_folders():
+            self.list.addItem(folder)
+        self.add_button.clicked.connect(self._pick_folder)
+        self.remove_button.clicked.connect(self.remove_selected)
+        self.list.itemSelectionChanged.connect(self._update_buttons)
+        self._update_buttons()
+
+    def folders(self) -> list[str]:
+        return [self.list.item(i).text() for i in range(self.list.count())]
+
+    def _pick_folder(self):
+        folder = QtWidgets.QFileDialog.getExistingDirectory(self, self.tr("Choose a font folder"))
+        if folder:
+            self.add_folder(folder)
+
+    def add_folder(self, folder: str) -> int:
+        """Add `folder`, load its fonts now, and remember it. Returns the families loaded."""
+        from app.ui.fonts import load_font_folder, set_font_folders
+
+        if folder not in self.folders():
+            self.list.addItem(folder)
+            set_font_folders(self.folders())
+        families = load_font_folder(folder)
+        self.status.setText(self.tr("{0} font(s) loaded").format(len(families)))
+        self.folders_changed.emit(self.folders())
+        return len(families)
+
+    def remove_selected(self):
+        from app.ui.fonts import set_font_folders
+
+        for item in self.list.selectedItems():
+            self.list.takeItem(self.list.row(item))
+        set_font_folders(self.folders())
+        # Fonts already loaded stay until the app restarts.
+        self.status.setText(self.tr("Takes effect the next time the app starts"))
+        self.folders_changed.emit(self.folders())
+
+    def _update_buttons(self):
+        self.remove_button.setEnabled(bool(self.list.selectedItems()))
+
+
 class ColorPickerButton(QtWidgets.QPushButton):
     """Small swatch button that opens a color dialog and remembers the choice."""
 
@@ -111,6 +183,8 @@ class TextRenderingPage(QtWidgets.QWidget):
 
         font_layout.addWidget(font_label)
         font_layout.addLayout(font_browser_layout)
+        self.font_folders_box = FontFoldersBox(self)
+        font_layout.addWidget(self.font_folders_box)
         font_layout.addWidget(self.per_class_fonts_checkbox)
         font_layout.addLayout(bubble_font_layout)
         font_layout.addLayout(free_font_layout)
