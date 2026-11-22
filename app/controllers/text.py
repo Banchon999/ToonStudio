@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import copy
+from contextlib import contextmanager
 import numpy as np
 from typing import TYPE_CHECKING
 
@@ -299,6 +300,43 @@ class TextController:
             return selected_items
         return [self.main.curr_tblock_item] if self.main.curr_tblock_item else []
 
+    def panel_selection(self) -> tuple[int, int] | None:
+        """The words selected in the translation box, as (start, end) in the
+        current text item — when they can stand for a range of it.
+
+        The box holds the item's plain text, character for character, so its
+        selection is the same range of the item. A selection made on the
+        canvas wins; a box that no longer matches the item stands for nothing.
+        """
+        item = self.main.curr_tblock_item
+        edit = getattr(self.main, "t_text_edit", None)
+        if item is None or edit is None:
+            return None
+        cursor = edit.textCursor()
+        if not cursor.hasSelection() or item.textCursor().hasSelection():
+            return None
+        if edit.toPlainText() != item.toPlainText():
+            return None
+        return cursor.selectionStart(), cursor.selectionEnd()
+
+    @contextmanager
+    def _in_panel_range(self, item):
+        """Run a format change on just the words selected in the translation
+        box, by selecting them in `item` for the duration of the change."""
+        span = self.panel_selection() if item is self.main.curr_tblock_item else None
+        if span is None:
+            yield
+            return
+        saved = QTextCursor(item.textCursor())
+        cursor = QTextCursor(item.document())
+        cursor.setPosition(span[0])
+        cursor.setPosition(span[1], QTextCursor.MoveMode.KeepAnchor)
+        item.setTextCursor(cursor)
+        try:
+            yield
+        finally:
+            item.setTextCursor(saved)
+
     def _apply_format_to_selected(self, macro_name: str, apply_fn):
         items = self._selected_text_items()
         if not items:
@@ -307,7 +345,8 @@ class TextController:
         commands = []
         for item in items:
             command = TextFormatCommand(self.main.image_viewer, item)
-            apply_fn(item)
+            with self._in_panel_range(item):
+                apply_fn(item)
             command.finalize_new_state()
             commands.append(command)
 
@@ -637,7 +676,8 @@ class TextController:
             item = self.main.curr_tblock_item
             command = TextFormatCommand(self.main.image_viewer, item)
             state = self.main.bold_button.isChecked()
-            item.set_bold(state)
+            with self._in_panel_range(item):
+                item.set_bold(state)
             command.finalize_new_state()
             self.main.push_command(command)
 
@@ -646,7 +686,8 @@ class TextController:
             item = self.main.curr_tblock_item
             command = TextFormatCommand(self.main.image_viewer, item)
             state = self.main.italic_button.isChecked()
-            item.set_italic(state)
+            with self._in_panel_range(item):
+                item.set_italic(state)
             command.finalize_new_state()
             self.main.push_command(command)
 
@@ -655,7 +696,8 @@ class TextController:
             item = self.main.curr_tblock_item
             command = TextFormatCommand(self.main.image_viewer, item)
             state = self.main.underline_button.isChecked()
-            item.set_underline(state)
+            with self._in_panel_range(item):
+                item.set_underline(state)
             command.finalize_new_state()
             self.main.push_command(command)
 
@@ -671,7 +713,8 @@ class TextController:
             if self.main.curr_tblock_item and self.main.outline_checkbox.isChecked():
                 item = self.main.curr_tblock_item
                 command = TextFormatCommand(self.main.image_viewer, item)
-                item.set_outline(outline_color, outline_width)
+                with self._in_panel_range(item):
+                    item.set_outline(outline_color, outline_width)
                 command.finalize_new_state()
                 self.main.push_command(command)
 
@@ -682,7 +725,8 @@ class TextController:
             outline_width = float(self.main.outline_width_dropdown.currentText())
             color_str = self.main.outline_font_color_button.property('selected_color')
             color = QColor(color_str)
-            item.set_outline(color, outline_width)
+            with self._in_panel_range(item):
+                item.set_outline(color, outline_width)
             command.finalize_new_state()
             self.main.push_command(command)
 
@@ -691,13 +735,14 @@ class TextController:
         if self.main.curr_tblock_item:
             item = self.main.curr_tblock_item
             command = TextFormatCommand(self.main.image_viewer, item)
-            if not enabled:
-                item.set_outline(None, None)
-            else:
-                outline_width = float(self.main.outline_width_dropdown.currentText())
-                color_str = self.main.outline_font_color_button.property('selected_color')
-                color = QColor(color_str)
-                item.set_outline(color, outline_width)
+            with self._in_panel_range(item):
+                if not enabled:
+                    item.set_outline(None, None)
+                else:
+                    outline_width = float(self.main.outline_width_dropdown.currentText())
+                    color_str = self.main.outline_font_color_button.property('selected_color')
+                    color = QColor(color_str)
+                    item.set_outline(color, outline_width)
             command.finalize_new_state()
             self.main.push_command(command)
 
