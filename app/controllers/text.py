@@ -73,6 +73,7 @@ class TextController:
         self._suspend_text_command = False
         self._is_updating_from_edit = False
         self._render_macro_stack = None
+        self._live_color = None  # the Color panel's drag: [(item, command)]
 
     def connect_text_item_signals(self, text_item: TextBlockItem, force_reconnect: bool = False):
         if getattr(text_item, "_ct_signals_connected", False) and not force_reconnect:
@@ -341,7 +342,7 @@ class TextController:
         finally:
             item.setTextCursor(saved)
 
-    def _apply_format_to_selected(self, macro_name: str, apply_fn):
+    def _apply_format_to_selected(self, macro_name: str, apply_fn, use_panel_range: bool = True):
         items = self._selected_text_items()
         if not items:
             return
@@ -349,11 +350,28 @@ class TextController:
         commands = []
         for item in items:
             command = TextFormatCommand(self.main.image_viewer, item)
-            with self._in_panel_range(item):
+            with (self._in_panel_range(item) if use_panel_range else self._whole_item(item)):
                 apply_fn(item)
             command.finalize_new_state()
             commands.append(command)
+        self._push_commands(macro_name, commands, items)
 
+    @contextmanager
+    def _whole_item(self, item):
+        """Run an item-wide change (a gradient) with no selection in the item."""
+        saved = QTextCursor(item.textCursor())
+        if not saved.hasSelection():
+            yield
+            return
+        cursor = QTextCursor(saved)
+        cursor.clearSelection()
+        item.setTextCursor(cursor)
+        try:
+            yield
+        finally:
+            item.setTextCursor(saved)
+
+    def _push_commands(self, macro_name: str, commands, items) -> None:
         stack = self.main.undo_group.activeStack()
         if stack is None:
             return
@@ -674,6 +692,95 @@ class TextController:
             item.set_alignment(QtCore.Qt.AlignmentFlag.AlignRight)
             command.finalize_new_state()
             self.main.push_command(command)
+
+    # --- the Color and Gradients panels --------------------------------------
+
+    def _set_panel_color(self, item, target: str, color: QColor) -> None:
+        if target == "stroke":
+            if getattr(item, "outline", False) and item.outline_width:
+                width = float(item.outline_width)
+            else:
+                width = self._dropdown_value(self.main.outline_width_dropdown, 1.0)
+            item.set_outline(QColor(color), width)
+            return
+        item.set_color(QColor(color))
+        # set_color lays a plain colour over the document; the gradient,
+        # which starts at the text colour, goes back on top.
+        if getattr(item, "gradient_enabled", False) and not item.textCursor().hasSelection():
+            item.set_gradient(True)
+
+    def _show_toolbar_color(self, target: str, color: QColor) -> None:
+        button = self.main.outline_font_color_button if target == "stroke" else self.main.block_font_color_button
+        button.setStyleSheet(f"background-color: {color.name()}; border: none; border-radius: 5px;")
+        button.setProperty('selected_color', color.name())
+        if target == "stroke" and not self.main.outline_checkbox.isChecked():
+            self.main.outline_checkbox.blockSignals(True)
+            self.main.outline_checkbox.setChecked(True)
+            self.main.outline_checkbox.blockSignals(False)
+
+    def preview_panel_color(self, target: str, color: QColor) -> None:
+        """The Color panel is being dragged: show the colour on the selected
+        layers; `commit_panel_color` makes it one undo step."""
+        items = self._selected_text_items()
+        if not items:
+            return
+        if self._live_color is None:
+            self._live_color = [(item, TextFormatCommand(self.main.image_viewer, item)) for item in items]
+        for item, _command in self._live_color:
+            with self._in_panel_range(item):
+                self._set_panel_color(item, target, color)
+
+    def commit_panel_color(self, target: str, color: QColor) -> None:
+        self._show_toolbar_color(target, color)
+        live, self._live_color = self._live_color, None
+        if live is None:
+            self._apply_format_to_selected(
+                f"change_{target}_color", lambda item: self._set_panel_color(item, target, color)
+            )
+            return
+        commands, items = [], []
+        for item, command in live:
+            if item.scene() is None:
+                continue
+            with self._in_panel_range(item):
+                self._set_panel_color(item, target, color)
+            command.finalize_new_state()
+            commands.append(command)
+            items.append(item)
+        self._push_commands(f"change_{target}_color", commands, items)
+
+    def apply_gradient_preset(self, start: str, end: str) -> None:
+        """The Gradients panel: the selected layers fade from `start` to `end`,
+        at the angle each already has, one undo step for all of them."""
+        start_color, end_color = QColor(start), QColor(end)
+
+        def apply(item):
+            item.set_color(start_color)
+            item.set_gradient(True, end_color, getattr(item, "gradient_angle", None))
+
+        self._apply_format_to_selected("apply_gradient_preset", apply, use_panel_range=False)
+        self._show_toolbar_color("fill", start_color)
+        self.main.gradient_color_button.setStyleSheet(
+            f"background-color: {end_color.name()}; border: none; border-radius: 5px;"
+        )
+        self.main.gradient_color_button.setProperty('selected_color', end_color.name())
+        self.main.gradient_checkbox.blockSignals(True)
+        self.main.gradient_checkbox.setChecked(True)
+        self.main.gradient_checkbox.blockSignals(False)
+        panel = getattr(self.main, "color_panel", None)
+        if panel is not None:
+            panel.set_colors(fill=start_color)
+
+    def save_gradient_from_selection(self) -> None:
+        """The Gradients panel's "+": the selected text's gradient into My Gradients
+        (or, with none on it, the toolbar's text and gradient colours)."""
+        item = self.main.curr_tblock_item
+        if item is not None and getattr(item, "gradient_enabled", False):
+            start, end = QColor(item.text_color or "#000000"), QColor(item.gradient_color)
+        else:
+            start = QColor(self.main.block_font_color_button.property('selected_color') or "#000000")
+            end = QColor(self.main.gradient_color_button.property('selected_color') or "#ffffff")
+        self.main.gradients_panel.add_custom(start.name(), end.name())
 
     def justify_align(self):
         if self.main.curr_tblock_item:
@@ -1316,6 +1423,10 @@ class TextController:
         values = item.paragraph() if hasattr(item, "paragraph") else {}
         for key, spin in getattr(self.main, "paragraph_spins", {}).items():
             spin.setValue(float(values.get(key, 0.0)))
+        panel = getattr(self.main, "color_panel", None)
+        if panel is not None:
+            stroke = getattr(item, "outline_color", None) if getattr(item, "outline", False) else None
+            panel.set_colors(fill=getattr(item, "text_color", None), stroke=stroke)
 
     def set_values_for_blk_item(self, text_item: TextBlockItem):
 

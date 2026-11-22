@@ -1075,8 +1075,16 @@ class WorkspaceMixin:
             layout.addStretch(1)
 
     def _extra_panels(self) -> list:
-        """Panels added by later builders (Color, Gradients): (name, title, widget, scroll)."""
-        return []
+        """The Color and Gradients panels: (name, title, widget, scroll)."""
+        from app.ui.color_panel import ColorPanel
+        from app.ui.gradients_panel import GradientsPanel
+
+        self.color_panel = ColorPanel()
+        self.gradients_panel = GradientsPanel()
+        return [
+            ("dock_color", self.tr("Color"), self.color_panel, False),
+            ("dock_gradients", self.tr("Gradients"), self.gradients_panel, True),
+        ]
 
     def _on_layers_dock_visibility(self, visible: bool) -> None:
         """Keep the layers button in step with whether the Layers panel shows."""

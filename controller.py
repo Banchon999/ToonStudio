@@ -313,6 +313,10 @@ class ComicTranslate(ComicTranslateUI):
             button.toggled.connect(lambda on, name=name: self.text_ctrl.on_char_style_toggled(name, on))
         for key, spin in self.paragraph_spins.items():
             spin.valueChanged.connect(lambda value, key=key: self.text_ctrl.on_paragraph_changed(key, value))
+        self.color_panel.preview.connect(self.text_ctrl.preview_panel_color)
+        self.color_panel.committed.connect(self.text_ctrl.commit_panel_color)
+        self.gradients_panel.chosen.connect(self.text_ctrl.apply_gradient_preset)
+        self.gradients_panel.save_requested.connect(self.text_ctrl.save_gradient_from_selection)
         self.bold_button.clicked.connect(self.text_ctrl.bold)
         self.italic_button.clicked.connect(self.text_ctrl.italic)
         self.underline_button.clicked.connect(self.text_ctrl.underline)
