@@ -13,6 +13,8 @@ from dataclasses import asdict, is_dataclass
 from collections import OrderedDict
 import imkit as imk
 
+from core.watermark import credit_image, export_names
+
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtCore import QSettings
 from PySide6.QtGui import QUndoStack
@@ -611,6 +613,43 @@ class ProjectController:
         export_plan = self._build_export_plan_for_directory(output_dir, f".{extension}", chapter_names_by_path)
         self._run_export_plan(export_plan)
 
+    def start_export_as_folder(self) -> None:
+        """Export the pages as plain images: one folder per chapter, inside a
+        folder the user picks (the same rendering, watermark and credit pages
+        as an archive, without the packing)."""
+        if not self.main.image_files:
+            return
+        export_rows = self._build_export_rows()
+        if self._should_show_partition_dialog(export_rows):
+            partition_result = self._prompt_for_partition(
+                export_rows, os.path.join(self._get_default_export_dir(), "untitled")
+            )
+            if partition_result is None:
+                return
+            chapter_names_by_path, output_dir = partition_result
+        else:
+            chapter_names_by_path = {row.file_path: row.group_name for row in export_rows}
+            output_dir = QtWidgets.QFileDialog.getExistingDirectory(
+                self.main, self.main.tr("Export Images to a Folder"), self._get_default_export_dir()
+            )
+            if not output_dir:
+                return
+        self._run_export_plan(self.folder_export_plan(output_dir, chapter_names_by_path))
+
+    def folder_export_plan(self, output_dir: str, chapter_names_by_path: dict[str, str]) -> list[dict]:
+        """One group per chapter, each written as images into `output_dir/<chapter>/`."""
+        groups = self._group_page_indices(chapter_names_by_path)
+        used_names: set[str] = set()
+        return [
+            {
+                "group_name": group_name,
+                "page_indices": page_indices,
+                "output_path": os.path.join(output_dir, self._build_export_filename(group_name, "", used_names)),
+                "folder": True,
+            }
+            for group_name, page_indices in groups.items()
+        ]
+
     def _save_and_make_internal(
         self,
         output_path: str,
@@ -646,7 +685,13 @@ class ProjectController:
             export_plan,
             all_pages_current_state,
             watermark,
+            self.credit_pages(),
         )
+
+    def credit_pages(self) -> tuple[str, str]:
+        """(opening, closing) credit page images from Settings > Export; "" for none."""
+        getter = getattr(self.main.settings_page, "get_watermark_settings", None)
+        return getter().credit_pages() if callable(getter) else ("", "")
 
     def watermark_stamp(self):
         """The export watermark (Settings > Export), drawn now — on the GUI
@@ -1061,7 +1106,7 @@ class ProjectController:
         return groups
 
     def save_and_make_worker(self, export_plan: list[dict], all_pages_current_state: dict[str, dict],
-                             watermark=None):
+                             watermark=None, credits: tuple[str, str] = ("", "")):
         try:
             if self.main.file_handler.should_pre_materialize(self.main.image_files):
                 count = self.main.file_handler.pre_materialize(self.main.image_files)
@@ -1085,6 +1130,14 @@ class ProjectController:
                 group_dir = group["output_path"] if as_folder else os.path.join(
                     temp_dir, f"group_{group_index:03d}")
                 os.makedirs(group_dir, exist_ok=True)
+                credit_first, credit_last = credits or ("", "")
+                page_names = [
+                    self._build_export_page_name(n, self.main.image_files[i])
+                    for n, i in enumerate(group["page_indices"], start=1)
+                ]
+                names = export_names(page_names, bool(credit_first), bool(credit_last))
+                offset = 1 if credit_first else 0
+                widths: list[int] = []
                 for page_number, page_idx in enumerate(group["page_indices"], start=1):
                     file_path = self.main.image_files[page_idx]
                     
@@ -1105,11 +1158,26 @@ class ProjectController:
                     else:
                         renderer.add_state_to_image(viewer_state)
 
-                    sv_pth = os.path.join(group_dir, self._build_export_page_name(page_number, file_path))
+                    sv_pth = os.path.join(group_dir, names[offset + page_number - 1])
                     final_rgb = renderer.render_to_image()
                     if watermark is not None:
                         final_rgb = watermark.apply(final_rgb)
                     imk.write_image(sv_pth, final_rgb)
+                    widths.append(int(final_rgb.shape[1]))
+
+                # Credit pages: pages of their own, as wide as the chapter's
+                # first / last page, never watermarked.
+                for credit, name, width in (
+                    (credit_first, names[0], widths[0] if widths else 0),
+                    (credit_last, names[-1], widths[-1] if widths else 0),
+                ):
+                    if not credit:
+                        continue
+                    credit_rgb = credit_image(credit, width)
+                    if credit_rgb is None:
+                        logger.warning("Credit page %s could not be read; left out", credit)
+                        continue
+                    imk.write_image(os.path.join(group_dir, name), credit_rgb)
 
                 if as_folder:
                     continue

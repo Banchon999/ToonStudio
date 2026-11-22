@@ -132,6 +132,39 @@ class WatermarkSection(QtWidgets.QWidget):
         layout.addWidget(self.enabled_checkbox)
         layout.addWidget(self.options)
 
+        # Credit pages: their own pages, before the first and after the last
+        # page of each chapter — on whether or not the watermark is.
+        layout.addSpacing(12)
+        layout.addWidget(MLabel(self.tr("Credit Pages")).h4())
+        credit_note = MLabel(self.tr(
+            "An image added as a page of its own before the first page and/or after the last "
+            "page of every chapter you export as images, CBZ, PDF or ZIP. It is resized to the "
+            "chapter's page width. The project and PSD export are not changed."
+        )).secondary()
+        credit_note.setWordWrap(True)
+        layout.addWidget(credit_note)
+        credit_form = QtWidgets.QFormLayout()
+        credit_form.setFieldGrowthPolicy(QtWidgets.QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+        self.credit_inputs: dict[str, QtWidgets.QLineEdit] = {}
+        for key, label, placeholder in (
+            ("credit_first", self.tr("Opening page:"), self.tr("None — the chapter starts with its first page")),
+            ("credit_last", self.tr("Closing page:"), self.tr("None — the chapter ends with its last page")),
+        ):
+            path_input = QtWidgets.QLineEdit()
+            path_input.setReadOnly(True)
+            path_input.setPlaceholderText(placeholder)
+            choose = QtWidgets.QPushButton(self.tr("Choose…"))
+            clear = QtWidgets.QPushButton(self.tr("Remove"))
+            choose.clicked.connect(lambda _c=False, k=key: self._choose_credit(k))
+            clear.clicked.connect(lambda _c=False, k=key: self._clear_credit(k))
+            row = QtWidgets.QHBoxLayout()
+            row.addWidget(path_input, 1)
+            row.addWidget(choose)
+            row.addWidget(clear)
+            credit_form.addRow(label, row)
+            self.credit_inputs[key] = path_input
+        layout.addLayout(credit_form)
+
         self.logo_browse_button.clicked.connect(self._choose_logo)
         self.logo_clear_button.clicked.connect(self._clear_logo)
         for signal in (
@@ -183,6 +216,8 @@ class WatermarkSection(QtWidgets.QWidget):
             "opacity": self.opacity_slider.value(),
             "position": self.position_combo.currentData(),
             "margin": self.margin_spin.value(),
+            "credit_first": self.credit_inputs["credit_first"].text(),
+            "credit_last": self.credit_inputs["credit_last"].text(),
         })
 
     def set_settings(self, settings: WatermarkSettings) -> None:
@@ -203,6 +238,8 @@ class WatermarkSection(QtWidgets.QWidget):
             self.opacity_slider.setValue(settings.opacity)
             self.position_combo.setCurrentIndex(max(0, self.position_combo.findData(settings.position)))
             self.margin_spin.setValue(settings.margin)
+            self.credit_inputs["credit_first"].setText(settings.credit_first)
+            self.credit_inputs["credit_last"].setText(settings.credit_last)
         finally:
             self._loading = False
         self._refresh()
@@ -239,6 +276,31 @@ class WatermarkSection(QtWidgets.QWidget):
                                           self.tr("Could not use that image: {0}").format(exc))
             return
         self.logo_path_input.setText(stored)
+        self._on_changed()
+
+    def _choose_credit(self, key: str) -> None:
+        from app.ui.watermark import keep_logo
+
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, self.tr("Choose a credit page"), "", self.tr("Images (*.png *.webp *.jpg *.jpeg *.bmp)"))
+        if path:
+            self.set_credit_page(key, path, keep_logo)
+
+    def set_credit_page(self, key: str, path: str, keep=None) -> None:
+        """Use `path` for the opening ("credit_first") or closing ("credit_last") page."""
+        if keep is None:
+            from app.ui.watermark import keep_logo as keep
+        try:
+            stored = keep(path, key)
+        except OSError as exc:
+            QtWidgets.QMessageBox.warning(self, self.tr("Credit Pages"),
+                                          self.tr("Could not use that image: {0}").format(exc))
+            return
+        self.credit_inputs[key].setText(stored)
+        self._on_changed()
+
+    def _clear_credit(self, key: str) -> None:
+        self.credit_inputs[key].clear()
         self._on_changed()
 
     def _clear_logo(self) -> None:

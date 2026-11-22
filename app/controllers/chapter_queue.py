@@ -313,7 +313,8 @@ class ChapterQueueController(QtCore.QObject):
         self._status(translate("ChapterQueue", "Chapter {0}/{1}: {2} — exporting").format(
             self._index + 1, len(self.chapters), chapter.name))
         main.run_threaded(main.project_ctrl.save_and_make_worker, None, on_error, on_finished,
-                          plan, pages_state, main.project_ctrl.watermark_stamp())
+                          plan, pages_state, main.project_ctrl.watermark_stamp(),
+                          main.project_ctrl.credit_pages())
 
     def _export_psd(self) -> None:
         """Editable PSDs of the chapter, one per page, when asked for.
