@@ -67,6 +67,8 @@ def build_text_item(text_block: dict) -> TextBlockItem:
         text_props.gradient_angle,
     )
     text_item.set_curvature(text_props.curvature)
+    if text_props.glow_enabled:
+        text_item.set_glow(True, text_props.glow_color, text_props.glow_size)
     text_item.set_stroke_layers(text_props.stroke_layers)
     text_item.set_warp(text_props.warp_style, text_props.warp_bend)
     text_item.set_quad(text_props.quad)

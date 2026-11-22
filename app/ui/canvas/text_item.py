@@ -2,7 +2,7 @@ from PySide6.QtWidgets import QGraphicsTextItem, QGraphicsItem, \
      QApplication, QWidget, QStyleOptionGraphicsItem, QGraphicsDropShadowEffect
 from PySide6.QtGui import QFont, QCursor, QColor, QBrush, QPen, QFontMetricsF, \
      QLinearGradient, QGradient, QPainterPath, QTransform, QPolygonF, \
-     QTextCharFormat, QTextBlockFormat, QTextCursor, QPainter
+     QTextCharFormat, QTextBlockFormat, QTextCursor, QPainter, QImage
 from PySide6.QtCore import Qt, QRectF, Signal, QPointF
 import math, copy
 from dataclasses import dataclass
@@ -17,6 +17,7 @@ from app.ui.canvas import skia_paint
 # are unaffected, and `from .text_item import OutlineInfo` still works.
 from core.text_style import OutlineInfo, OutlineType  # noqa: F401
 from core.text_style import WIDE_OUTLINE, StrokeLayer, stroke_layers_from, stroke_reaches
+from core.text_glow import glow_reach, glow_rgba
 from modules.rendering.text_effects import (
     arc_bulge, arc_placements, gradient_line,
     normalise_quad, quad_corner_from_point, quad_is_convex, quad_points,
@@ -108,6 +109,13 @@ class TextBlockItem(QGraphicsTextItem):
         self.gradient_enabled = False
         self.gradient_color = QColor(255, 255, 255)
         self.gradient_angle = 90.0
+        # Outer glow (core.text_glow): a halo of one colour round the drawn
+        # text; the colour's alpha is its strength, `glow_size` how far it reaches.
+        self.glow_enabled = False
+        self.glow_color = QColor(255, 255, 255, 230)
+        self.glow_size = 8.0
+        self._glow_cache = None  # (key, QImage, top-left in item coordinates)
+        self._painting_glow_source = False
         self.curvature = 0.0
         # Extra strokes outside the outline, innermost first (core.text_style).
         self.stroke_layers: list[StrokeLayer] = []
@@ -446,6 +454,81 @@ class TextBlockItem(QGraphicsTextItem):
             self.shadow_blur = max(0.0, float(blur))
 
         self.apply_shadow()
+
+    def set_glow(self, enabled: bool, color: QColor = None, size: float = None):
+        """Outer glow: the drawn text (outline and strokes included) blurred into
+        a halo of `color`, reaching `size` pixels out. Drawn under the text by
+        `paint`, so every path — Qt, Skia, warped, curved, export — has it."""
+        self.prepareGeometryChange()  # the repaint rect grows with the glow
+        self.glow_enabled = bool(enabled)
+        if color is not None:
+            self.glow_color = QColor(color)
+        if size is not None:
+            self.glow_size = max(0.0, float(size))
+        self._glow_cache = None
+        self.update()
+
+    def glow_extent(self) -> float:
+        if not getattr(self, 'glow_enabled', False):
+            return 0.0
+        return glow_reach(getattr(self, 'glow_size', 0.0))
+
+    def _glow_key(self):
+        outlines = tuple(
+            (o.start, o.end, str(o.color), o.width) for o in (getattr(self, 'selection_outlines', None) or [])
+        )
+        return (
+            hash(self.document().toHtml()), outlines, tuple(getattr(self, 'stroke_layers', []) or []),
+            self.outline, str(self.outline_color), self.outline_width,
+            self.letter_spacing, self.horizontal_scale, self.textWidth(),
+            self.curvature, self.warp_style, self.warp_bend,
+            self.gradient_enabled, str(self.gradient_color), self.gradient_angle,
+            self.glow_size, self.glow_color.rgba(), text_engine.paints_with_skia(),
+        )
+
+    def _glow_image(self):
+        """(QImage, top-left) of the glow in item coordinates, cached until the look changes."""
+        import numpy as np
+
+        key = self._glow_key()
+        cached = getattr(self, '_glow_cache', None)
+        if cached is not None and cached[0] == key:
+            return cached[1], cached[2]
+        rect = self.boundingRect().toAlignedRect()
+        if rect.width() <= 0 or rect.height() <= 0:
+            return None, None
+        source = QImage(rect.width(), rect.height(), QImage.Format.Format_ARGB32_Premultiplied)
+        source.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(source)
+        was_selected = self.selected
+        self.selected = False
+        self._painting_glow_source = True
+        try:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            painter.translate(-rect.left(), -rect.top())
+            self._paint_content(painter, QStyleOptionGraphicsItem(), None)
+        finally:
+            self._painting_glow_source = False
+            self.selected = was_selected
+            painter.end()
+        ptr = source.constBits()
+        bgra = np.frombuffer(ptr, np.uint8).reshape(rect.height(), source.bytesPerLine() // 4, 4)[:, :rect.width()]
+        colour = self.glow_color
+        rgba = glow_rgba(bgra[..., 3], self.glow_size, (colour.blue(), colour.green(), colour.red(), colour.alpha()))
+        rgba = np.ascontiguousarray(rgba)
+        glow = QImage(rgba.data, rect.width(), rect.height(), rect.width() * 4,
+                      QImage.Format.Format_ARGB32_Premultiplied).copy()
+        origin = QPointF(rect.left(), rect.top())
+        self._glow_cache = (key, glow, origin)
+        return glow, origin
+
+    def _paint_glow(self, painter: QPainter) -> None:
+        try:
+            image, origin = self._glow_image()
+        except Exception:  # noqa: BLE001 — a glow must never take the canvas down
+            return
+        if image is not None:
+            painter.drawImage(origin, image)
 
     def apply_shadow(self):
         # Skia bakes the shadow into the raster it hands back, so attaching
@@ -829,6 +912,13 @@ class TextBlockItem(QGraphicsTextItem):
         return super().boundingRect()
 
     def boundingRect(self) -> QRectF:
+        rect = self._content_bounding_rect()
+        glow = self.glow_extent() if getattr(self, 'glow_enabled', False) else 0.0
+        if glow:
+            rect = rect.adjusted(-glow, -glow, glow, glow)
+        return rect
+
+    def _content_bounding_rect(self) -> QRectF:
         rect = super().boundingRect()
         # Stacked strokes reach past the document margin; the item is cached
         # to this rect, so anything outside it would be clipped off.
@@ -1242,13 +1332,23 @@ class TextBlockItem(QGraphicsTextItem):
         
         self.update()
 
-    def paint(   
-        self, 
-        painter: QPainter, 
-        option: QStyleOptionGraphicsItem, 
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
         widget: QWidget = None
     ):
+        # The glow goes under everything, made from what the rest draws.
+        if getattr(self, 'glow_enabled', False) and not self._painting_glow_source:
+            self._paint_glow(painter)
+        self._paint_content(painter, option, widget)
 
+    def _paint_content(
+        self,
+        painter: QPainter,
+        option: QStyleOptionGraphicsItem,
+        widget: QWidget = None
+    ):
         if self.is_warped() and not self.editing_mode:
             # Like the curve, a point warp is drawn from mapped glyph paths
             # and has no Skia equivalent, so it stays on the Qt path.

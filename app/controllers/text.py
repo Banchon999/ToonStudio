@@ -53,6 +53,10 @@ class TextController:
             self.main.shadow_offset_y_dropdown,
             self.main.shadow_blur_dropdown,
             self.main.shadow_opacity_dropdown,
+            self.main.shadow_distance_dropdown,
+            self.main.glow_checkbox,
+            self.main.glow_size_dropdown,
+            self.main.glow_strength_dropdown,
             self.main.gradient_checkbox,
             self.main.gradient_color_button,
             self.main.gradient_angle_dropdown,
@@ -774,6 +778,70 @@ class TextController:
         command.finalize_new_state()
         self.main.push_command(command)
 
+    def on_shadow_direction_changed(self, *_):
+        """The dial and the distance write the shadow's X/Y offset, then apply it."""
+        from app.ui.angle_dial import offset_for
+
+        distance = max(0.0, self._dropdown_value(self.main.shadow_distance_dropdown, 4.0))
+        dx, dy = offset_for(self.main.shadow_angle_dial.angle(), distance)
+        for combo, value in ((self.main.shadow_offset_x_dropdown, dx), (self.main.shadow_offset_y_dropdown, dy)):
+            combo.blockSignals(True)
+            combo.setCurrentText(f"{value:g}")
+            combo.blockSignals(False)
+        self.apply_shadow_settings()
+
+    def _show_shadow_direction(self, offset) -> None:
+        from app.ui.angle_dial import polar_of
+
+        angle, distance = polar_of(float(offset[0]), float(offset[1]))
+        self.main.shadow_angle_dial.set_angle(angle)
+        self.main.shadow_distance_dropdown.blockSignals(True)
+        self.main.shadow_distance_dropdown.setCurrentText(f"{round(distance, 1):g}")
+        self.main.shadow_distance_dropdown.blockSignals(False)
+
+    def on_gradient_dial_moved(self, angle: float):
+        combo = self.main.gradient_angle_dropdown
+        combo.blockSignals(True)
+        combo.setCurrentText(f"{round(angle):g}")
+        combo.blockSignals(False)
+
+    def on_gradient_dial_committed(self, angle: float):
+        self.on_gradient_dial_moved(angle)
+        self.apply_gradient_settings()
+
+    def on_gradient_angle_typed(self, text: str):
+        try:
+            self.main.gradient_angle_dial.set_angle(float(text))
+        except (TypeError, ValueError):
+            pass
+
+    # Outer glow
+    def _glow_settings(self):
+        color = QColor(self.main.glow_color_button.property('selected_color') or "#ffffff")
+        strength = min(100.0, max(0.0, self._dropdown_value(self.main.glow_strength_dropdown, 90.0)))
+        color.setAlphaF(strength / 100.0)
+        size = max(0.0, self._dropdown_value(self.main.glow_size_dropdown, 8.0))
+        return color, size
+
+    def apply_glow_settings(self, *_):
+        items = self._selected_text_items()
+        if not items:
+            return
+        color, size = self._glow_settings()
+        enabled = self.main.glow_checkbox.isChecked()
+        self._apply_format_to_selected("change_text_glow", lambda item: item.set_glow(enabled, color, size))
+
+    def on_glow_color_change(self):
+        color = self.main.get_color()
+        if not (color and color.isValid()):
+            return
+        self.main.glow_color_button.setStyleSheet(
+            f"background-color: {color.name()}; border: none; border-radius: 5px;"
+        )
+        self.main.glow_color_button.setProperty('selected_color', color.name())
+        if self.main.glow_checkbox.isChecked():
+            self.apply_glow_settings()
+
     def edit_stroke_layers(self, *_):
         item = self.main.curr_tblock_item
         if not item:
@@ -1246,6 +1314,16 @@ class TextController:
             self.main.shadow_offset_y_dropdown.setCurrentText(str(offset_y))
             self.main.shadow_blur_dropdown.setCurrentText(str(getattr(text_item, 'shadow_blur', 0.0)))
             self.main.shadow_opacity_dropdown.setCurrentText(str(round(shadow_color.alphaF() * 100)))
+            self._show_shadow_direction((offset_x, offset_y))
+
+            glow_color = QColor(getattr(text_item, 'glow_color', None) or QColor(255, 255, 255, 230))
+            self.main.glow_color_button.setStyleSheet(
+                f"background-color: {glow_color.name()}; border: none; border-radius: 5px;"
+            )
+            self.main.glow_color_button.setProperty('selected_color', glow_color.name())
+            self.main.glow_size_dropdown.setCurrentText(f"{float(getattr(text_item, 'glow_size', 8.0)):g}")
+            self.main.glow_strength_dropdown.setCurrentText(str(round(glow_color.alphaF() * 100)))
+            self.main.glow_checkbox.setChecked(bool(getattr(text_item, 'glow_enabled', False)))
             self._show_stroke_layer_count(text_item)
             self.main.shadow_checkbox.setChecked(bool(getattr(text_item, 'shadow_enabled', False)))
 
@@ -1257,6 +1335,7 @@ class TextController:
             self.main.gradient_angle_dropdown.setCurrentText(
                 str(getattr(text_item, 'gradient_angle', 90.0))
             )
+            self.main.gradient_angle_dial.set_angle(float(getattr(text_item, 'gradient_angle', 90.0) or 0.0))
             self.main.gradient_checkbox.setChecked(bool(getattr(text_item, 'gradient_enabled', False)))
             warp_style = getattr(text_item, 'warp_style', '') or ''
             bend = getattr(text_item, 'warp_bend', 0.0) if warp_style else getattr(text_item, 'curvature', 0.0)

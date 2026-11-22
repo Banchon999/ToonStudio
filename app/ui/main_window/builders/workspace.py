@@ -916,7 +916,10 @@ class WorkspaceMixin:
         grid.addLayout(row, 1, 1, 1, 3)
         grid.addWidget(self.stroke_layers_button, 2, 1, 1, 3, QtCore.Qt.AlignmentFlag.AlignLeft)
 
-        # Drop shadow.
+        # Drop shadow: a direction dial and a distance, as in Photoshop. The
+        # X/Y offsets stay (hidden) as what the dial and distance write.
+        from app.ui.angle_dial import AngleDial
+
         grid = self._character_section(text_render_layout, self.tr("Drop Shadow"))
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.shadow_checkbox)
@@ -925,22 +928,72 @@ class WorkspaceMixin:
         grid.addLayout(row, 0, 0, 1, 2)
         grid.addWidget(self._field_label(self.tr("Opacity"), self.shadow_opacity_dropdown.toolTip()), 0, 2)
         grid.addWidget(self.shadow_opacity_dropdown, 0, 3)
-        grid.addWidget(self._field_label(self.tr("Offset X"), self.shadow_offset_x_dropdown.toolTip()), 1, 0)
-        grid.addWidget(self.shadow_offset_x_dropdown, 1, 1)
-        grid.addWidget(self._field_label(self.tr("Offset Y"), self.shadow_offset_y_dropdown.toolTip()), 1, 2)
-        grid.addWidget(self.shadow_offset_y_dropdown, 1, 3)
+        self.shadow_angle_dial = AngleDial(45.0)
+        self.shadow_angle_dial.setToolTip(self.tr(
+            "Direction: drag the needle to where the shadow should fall. Shift snaps to 15°."
+        ))
+        self.shadow_distance_dropdown = MComboBox().small()
+        self.shadow_distance_dropdown.setToolTip(self.tr("Shadow Distance (px)"))
+        self.shadow_distance_dropdown.addItems(["0", "2", "3", "4", "6", "8", "12", "16", "24"])
+        self.shadow_distance_dropdown.set_editable(True)
+        self.shadow_distance_dropdown.setMinimumWidth(56)
+        grid.addWidget(self._field_label(self.tr("Direction"), self.shadow_angle_dial.toolTip()), 1, 0)
+        grid.addWidget(self.shadow_angle_dial, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        grid.addWidget(self._field_label(self.tr("Distance"), self.shadow_distance_dropdown.toolTip()), 1, 2)
+        grid.addWidget(self.shadow_distance_dropdown, 1, 3)
         grid.addWidget(self._field_label(self.tr("Blur"), self.shadow_blur_dropdown.toolTip()), 2, 0)
         grid.addWidget(self.shadow_blur_dropdown, 2, 1)
+        for hidden in (self.shadow_offset_x_dropdown, self.shadow_offset_y_dropdown):
+            grid.addWidget(hidden, 3, 0)
+            hidden.setVisible(False)
 
-        # Gradient fill.
+        # Outer glow.
+        grid = self._character_section(text_render_layout, self.tr("Outer Glow"))
+        self.glow_checkbox = MCheckBox(self.tr("Glow"))
+        self.glow_checkbox.setToolTip(self.tr("A soft halo of one colour around the text and its outline."))
+        self.glow_color_button = QtWidgets.QPushButton()
+        self.glow_color_button.setToolTip(self.tr("Glow Color"))
+        self.glow_color_button.setFixedSize(30, 30)
+        self.glow_color_button.setStyleSheet("background-color: #ffffff; border: none; border-radius: 5px;")
+        self.glow_color_button.setProperty("selected_color", "#ffffff")
+        self.glow_size_dropdown = MComboBox().small()
+        self.glow_size_dropdown.setToolTip(self.tr("Glow Size (px): how far the glow reaches"))
+        self.glow_size_dropdown.addItems(["4", "6", "8", "12", "16", "24", "32"])
+        self.glow_size_dropdown.setCurrentText("8")
+        self.glow_size_dropdown.set_editable(True)
+        self.glow_strength_dropdown = MComboBox().small()
+        self.glow_strength_dropdown.setToolTip(self.tr("Glow Strength (%)"))
+        self.glow_strength_dropdown.addItems(["100", "90", "75", "60", "45", "30"])
+        self.glow_strength_dropdown.setCurrentText("90")
+        self.glow_strength_dropdown.set_editable(True)
+        for combo in (self.glow_size_dropdown, self.glow_strength_dropdown):
+            combo.setMinimumWidth(56)
+            combo.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.glow_checkbox)
+        row.addWidget(self.glow_color_button)
+        row.addStretch(1)
+        grid.addLayout(row, 0, 0, 1, 2)
+        grid.addWidget(self._field_label(self.tr("Strength"), self.glow_strength_dropdown.toolTip()), 0, 2)
+        grid.addWidget(self.glow_strength_dropdown, 0, 3)
+        grid.addWidget(self._field_label(self.tr("Size"), self.glow_size_dropdown.toolTip()), 1, 0)
+        grid.addWidget(self.glow_size_dropdown, 1, 1)
+
+        # Gradient fill, with the same dial for its direction.
         grid = self._character_section(text_render_layout, self.tr("Gradient"))
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.gradient_checkbox)
         row.addWidget(self.gradient_color_button)
         row.addStretch(1)
-        grid.addLayout(row, 0, 0, 1, 2)
-        grid.addWidget(self._field_label(self.tr("Angle"), self.gradient_angle_dropdown.toolTip()), 0, 2)
-        grid.addWidget(self.gradient_angle_dropdown, 0, 3)
+        grid.addLayout(row, 0, 0, 1, 4)
+        self.gradient_angle_dial = AngleDial(90.0)
+        self.gradient_angle_dial.setToolTip(self.tr(
+            "Direction: drag the needle toward where the second colour should be. Shift snaps to 15°."
+        ))
+        grid.addWidget(self._field_label(self.tr("Direction"), self.gradient_angle_dial.toolTip()), 1, 0)
+        grid.addWidget(self.gradient_angle_dial, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        grid.addWidget(self._field_label(self.tr("Angle"), self.gradient_angle_dropdown.toolTip()), 1, 2)
+        grid.addWidget(self.gradient_angle_dropdown, 1, 3)
 
         # Warp and transform.
         grid = self._character_section(text_render_layout, self.tr("Warp"))

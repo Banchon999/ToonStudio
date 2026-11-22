@@ -31,6 +31,7 @@ LOOK_FIELDS = (
     "color", "outline", "outline_color", "outline_width", "stroke_layers",
     "shadow_enabled", "shadow_color", "shadow_offset", "shadow_blur",
     "gradient_enabled", "gradient_color", "gradient_angle",
+    "glow_enabled", "glow_color", "glow_size",
     "warp_style", "warp_bend", "curvature",
 )
 
@@ -59,6 +60,9 @@ class TextPreset:
     gradient_enabled: Optional[bool] = None
     gradient_color: Optional[str] = None
     gradient_angle: Optional[float] = None
+    glow_enabled: Optional[bool] = None
+    glow_color: Optional[str] = None
+    glow_size: Optional[float] = None
     warp_style: Optional[str] = None
     warp_bend: Optional[float] = None
     curvature: Optional[float] = None

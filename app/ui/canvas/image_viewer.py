@@ -586,6 +586,8 @@ class ImageViewer(QGraphicsView):
             properties.gradient_angle,
         )
         item.set_curvature(properties.curvature)
+        if getattr(properties, 'glow_enabled', False):
+            item.set_glow(True, properties.glow_color, properties.glow_size)
         item.set_stroke_layers(getattr(properties, 'stroke_layers', None))
         item.set_warp(getattr(properties, 'warp_style', ''), getattr(properties, 'warp_bend', 0.0))
         item.set_quad(getattr(properties, 'quad', None))

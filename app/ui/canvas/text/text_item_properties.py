@@ -46,6 +46,9 @@ class TextItemProperties:
     shadow_color: Optional[QColor] = None
     shadow_offset: tuple = (4.0, 4.0)
     shadow_blur: float = 0.0
+    glow_enabled: bool = False
+    glow_color: Optional[QColor] = None
+    glow_size: float = 8.0
     gradient_enabled: bool = False
     gradient_color: Optional[QColor] = None
     gradient_angle: float = 90.0
@@ -148,6 +151,16 @@ class TextItemProperties:
         if shadow_offset:
             props.shadow_offset = (float(shadow_offset[0]), float(shadow_offset[1]))
         props.shadow_blur = float(data.get('shadow_blur', 0.0))
+        props.glow_enabled = bool(data.get('glow_enabled', False))
+        glow_color = data.get('glow_color')
+        if isinstance(glow_color, QColor):
+            props.glow_color = glow_color
+        elif glow_color:
+            props.glow_color = QColor(glow_color)
+        try:
+            props.glow_size = float(data.get('glow_size', 8.0) or 0.0)
+        except (TypeError, ValueError):
+            props.glow_size = 8.0
         props.gradient_enabled = bool(data.get('gradient_enabled', False))
         if 'gradient_color' in data:
             if isinstance(data['gradient_color'], QColor):
@@ -214,6 +227,9 @@ class TextItemProperties:
         props.shadow_color = getattr(item, 'shadow_color', None)
         props.shadow_offset = getattr(item, 'shadow_offset', (4.0, 4.0))
         props.shadow_blur = getattr(item, 'shadow_blur', 0.0)
+        props.glow_enabled = bool(getattr(item, 'glow_enabled', False))
+        props.glow_color = getattr(item, 'glow_color', None)
+        props.glow_size = float(getattr(item, 'glow_size', 8.0) or 0.0)
         props.gradient_enabled = bool(getattr(item, 'gradient_enabled', False))
         props.gradient_color = getattr(item, 'gradient_color', None)
         props.gradient_angle = getattr(item, 'gradient_angle', 90.0)
@@ -268,6 +284,10 @@ class TextItemProperties:
             out['layer'] = self.layer
         if self.stroke_layers:
             out['stroke_layers'] = stroke_layers_payload(self.stroke_layers)
+        if self.glow_enabled:
+            out['glow_enabled'] = True
+            out['glow_color'] = self.glow_color
+            out['glow_size'] = self.glow_size
         if self.horizontal_scale and abs(self.horizontal_scale - 100.0) > 1e-6:
             out['horizontal_scale'] = self.horizontal_scale
         if self.quad:
