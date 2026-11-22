@@ -1482,6 +1482,35 @@ QDockWidget::title {
     padding: 2px 8px;
     text-align: left;
 }
+/* The font menu (app/ui/font_picker.py). */
+QFrame#toonFontPicker {
+    background: @background_color;
+    border: 1px solid @border_color;
+    border-radius: 6px;
+}
+QFrame#toonFontPicker QLabel#toonFontPickerName {
+    color: @secondary_text_color;
+    background: transparent;
+}
+QFrame#toonFontPicker QLabel#toonFontPickerPreview {
+    color: @primary_text_color;
+    background: @background_in_color;
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+QFrame#toonFontPicker QListWidget, QFrame#toonFontPicker QTreeWidget {
+    background: @background_in_color;
+    border: none;
+}
+QFrame#toonFontPicker QToolButton, QFrame#toonFontPicker QPushButton {
+    background: transparent;
+    color: @secondary_text_color;
+    border: none;
+    padding: 2px 6px;
+}
+QFrame#toonFontPicker QToolButton:checked, QFrame#toonFontPicker QPushButton:hover {
+    color: @primary_color;
+}
 QLabel#toonSectionLabel {
     color: @secondary_text_color;
     font-weight: 600;

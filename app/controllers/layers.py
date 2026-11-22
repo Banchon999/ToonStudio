@@ -102,6 +102,34 @@ class LayerController(QObject):
             return
         viewer.ensureVisible(item)
 
+    def select_many_on_canvas(self, object_ids) -> list:
+        """Several text layers picked in the Layers panel become the canvas
+        selection together, as Ctrl+clicking them would — so a font, size or
+        colour change applies to those layers and only those (Photoshop's
+        multi-layer type edit). Locked and hidden layers are left out; the
+        last one picked becomes the item the panels show."""
+        from app.ui.canvas.layer_apply import is_hidden, is_locked
+
+        viewer = self.viewer
+        viewer.hide_layer_highlight()
+        doc = self.document()
+        items = []
+        for object_id in object_ids:
+            item = find_by_id(viewer._scene, object_id, viewer=viewer)
+            if item is None or kind_of(item) is not LayerGroup.TEXT:
+                continue
+            if is_locked(item, doc) or is_hidden(item, doc):
+                continue
+            items.append(item)
+        if not items:
+            return []
+        viewer.deselect_all()
+        for item in items:
+            item.selected = True
+            item.setSelected(True)
+        items[-1].item_selected.emit(items[-1])
+        return items
+
     def clear_highlight(self) -> None:
         self.viewer.hide_layer_highlight()
 

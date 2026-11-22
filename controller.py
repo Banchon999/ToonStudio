@@ -294,6 +294,10 @@ class ComicTranslate(ComicTranslateUI):
         # Rendering
         self.font_dropdown.currentTextChanged.connect(self.text_ctrl.on_font_dropdown_change)
         self.font_dropdown.currentTextChanged.connect(self._sync_font_favourite_star)
+        # The font menu previews the selected text itself.
+        self.font_dropdown.sample_text = lambda: (
+            self.curr_tblock_item.toPlainText() if self.curr_tblock_item is not None else ''
+        )
         self.font_favourite_toggle.clicked.connect(self._on_font_favourite_toggled)
         self.font_favourites_menu.aboutToShow.connect(self._rebuild_font_favourites_menu)
         font_favourites().changed.connect(self._sync_font_favourite_star)

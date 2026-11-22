@@ -449,8 +449,11 @@ class LayersPanel(QtWidgets.QWidget):
         targets = self._selected_targets()
         if self._ctrl is None:
             return
+        object_ids = [oid for oid, _group in targets if oid]
         if len(targets) == 1 and targets[0][0]:
             self._ctrl.select_on_canvas(targets[0][0])
+        elif len(object_ids) > 1 and self._ctrl.select_many_on_canvas(object_ids):
+            pass  # several text layers: all selected on the canvas, as one edit target
         else:
             self._ctrl.clear_highlight()
 

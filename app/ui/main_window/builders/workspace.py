@@ -18,6 +18,7 @@ from app.ui.dayu_widgets.slider import MSlider
 from app.ui.dayu_widgets.text_edit import MTextEdit
 from app.ui.dayu_widgets.tool_button import MToolButton
 from app.ui.file_tree_panel import FileTreePanel
+from app.ui.font_picker import PickerFontComboBox
 from app.ui.layers_panel import LayersPanel
 from app.ui.search_replace_panel import SearchReplacePanel
 from app.ui.main_window.constants import supported_source_languages, supported_target_languages
@@ -239,7 +240,8 @@ class WorkspaceMixin:
 
         text_render_layout = QtWidgets.QVBoxLayout()
 
-        self.font_dropdown = MFontComboBox().small()
+        # The arrow opens the Photoshop-style font menu (app/ui/font_picker.py).
+        self.font_dropdown = PickerFontComboBox().small()
         self.font_dropdown.setToolTip(self.tr("Font"))
 
         # Favourite fonts: a star that adds/removes the current font, and a
