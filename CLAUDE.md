@@ -358,6 +358,10 @@ What users see is **Toon Studio**: the window title (`theme_tokens.BRAND_NAME`),
 
 **Reading a page again after Clean** (`tests/test_after_clean_tools.py::TestOcrAfterClean`). Reported as "after OCR and Clean I see the text was read incompletely, press OCR again and it does not read, and end up undoing". Three causes, all silent: (1) `OCRHandler.OCR_image` ran only when `image_viewer.rectangles` was non-empty, and the Segment button and Render take the boxes off the canvas while `main.blk_list` stays — so after Clean the button did nothing. It now runs when there are blocks, and `ManualWorkflowController.ocr` redraws the boxes from the blocks first (`pipeline.load_box_coords`). (2) With every block already holding what the OCR cache has, serving the cache changes nothing; `CacheManager.ocr_cache_would_change_nothing` makes that press a real read (single page and multi-page). A page whose boxes are empty still takes the cache. (3) The box's own OCR action returned at once when the box had text; it now reads that box again and updates the cache.
 
+### Performance
+
+`docs/performance-notes.md` holds measured bottlenecks and their fixes, kept for later at the owner's request; nothing there is acted on yet. In short: the heavy work is already native, so Rust is not worth it now. The time goes into LLM OCR one block at a time, re-hashing every model on every load, OpenVINO recompiling on every start, and spot heal recomputing the same FFT per tile. Re-measure before acting on any of it.
+
 ### Caching
 
 `pipeline/cache_manager.py`'s `CacheManager` caches OCR and translation results keyed by `(image_hash, model/translator_key, lang(s), device, ...extra)` — extra key components include the glossary/prompt fingerprint and `extra_context` hash, so results are invalidated exactly when something that could change them changes. Batch processing checks this cache before re-running OCR/translation (see `pipeline/batch_processor.py`'s `_apply_cached_ocr`).
