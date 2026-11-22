@@ -74,13 +74,16 @@ def test_the_layout_holds_every_old_widget_in_its_new_place(win):
     assert in_options_bar(win.change_all_blocks_size_diff)
     assert in_options_bar(win.clean_selection_button)
 
-    tabs = win.inspector_tabs
-    assert tabs.count() == 3
-    assert tabs.widget(1) is win.layers_panel
-    assert tabs.widget(2) is win.glossary_peek
-    # The text controls are inside the Text tab.
-    assert tabs.widget(0).isAncestorOf(win.font_dropdown)
-    assert tabs.widget(0).isAncestorOf(win.s_combo)
+    # Every panel is a dock window around the canvas (app/ui/main_window/docks.py).
+    docks = win.panel_docks
+    assert {"dock_text", "dock_glossary", "dock_character", "dock_paragraph",
+            "dock_layer_style", "dock_layers"} <= set(docks)
+    assert docks["dock_layers"].isAncestorOf(win.layers_panel)
+    assert docks["dock_glossary"].isAncestorOf(win.glossary_peek)
+    assert docks["dock_text"].isAncestorOf(win.s_combo)
+    assert docks["dock_character"].isAncestorOf(win.font_dropdown)
+    assert docks["dock_paragraph"].isAncestorOf(win.alignment_tool_group)
+    assert docks["dock_layer_style"].isAncestorOf(win.glow_checkbox)
 
     steps = win.hbutton_group.get_button_group().buttons()
     assert len(steps) == 6
@@ -88,15 +91,19 @@ def test_the_layout_holds_every_old_widget_in_its_new_place(win):
     assert win.translate_button.property("dayu_type") == "primary"
 
 
-def test_the_layers_button_and_tab_stay_in_step(win):
-    tabs = win.inspector_tabs
-    win.layers_button.setChecked(True)
-    assert tabs.currentWidget() is win.layers_panel
+def test_the_layers_button_and_panel_stay_in_step(win, qapp):
+    win.show()
+    win._center_stack.setCurrentWidget(win.main_content_widget)
+    qapp.processEvents()
+    dock = win.panel_docks["dock_layers"]
     win.layers_button.setChecked(False)
-    assert tabs.currentIndex() == 0
-    tabs.setCurrentWidget(win.layers_panel)
-    assert win.layers_button.isChecked()
-    tabs.setCurrentWidget(win.glossary_peek)
+    qapp.processEvents()
+    assert not dock.isVisible()
+    win.layers_button.setChecked(True)
+    qapp.processEvents()
+    assert dock.isVisible()
+    dock.hide()  # its own close button
+    qapp.processEvents()
     assert not win.layers_button.isChecked()
 
 
@@ -123,7 +130,7 @@ def test_the_glossary_tab_explains_this_page(win):
     ]
     win.blk_list = [_block("김철 수가 왔다", "ชอลซูมาแล้ว")]
     win.last_glossary_issues = [GlossaryIssue(0, "김철수", "คิมชอลซู", "김철 수")]
-    win.inspector_tabs.setCurrentWidget(win.glossary_peek)
+    win.glossary_peek.refresh(win)
     rows = win.glossary_peek.rows.toPlainText()
     assert "김철수 → คิมชอลซู" in rows
     assert "철수 → เชลซี" in rows and "«김철수»" in rows  # shown as suppressed

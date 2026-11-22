@@ -142,6 +142,12 @@ class WorkspaceMixin:
         header_layout.addWidget(self.translate_button)
         header_layout.addWidget(self.cancel_button)
         header_layout.addWidget(self.chapter_queue_button)
+        # Window ▾: show/hide each panel, or put them all back (Photoshop's Window menu).
+        self.window_menu_button = MToolButton().svg("panels.svg").icon_only()
+        self.window_menu_button.setToolTip(self.tr("Panels: show, hide or reset the panel windows"))
+        self.window_menu_button.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+        self.window_menu_button.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.InstantPopup)
+        header_layout.addWidget(self.window_menu_button)
         header_layout.addWidget(self.batch_report_button)
 
         self.search_panel = SearchReplacePanel(self)
@@ -730,11 +736,11 @@ class WorkspaceMixin:
         central_layout.setContentsMargins(0, 0, 0, 0)
         central_layout.setSpacing(0)
 
-        # --- Inspector: Text · Layers · Glossary tabs on the right. ---
+        # --- Panels: dockable windows around the canvas, as in Photoshop. ---
         text_tab = QtWidgets.QWidget()
         text_tab_layout = QtWidgets.QVBoxLayout(text_tab)
         text_tab_layout.setContentsMargins(10, 10, 10, 10)
-        # Source over target: the inspector is one column wide.
+        # Source over target: a panel is one column wide.
         input_layout.setDirection(QtWidgets.QBoxLayout.Direction.TopToBottom)
         self.s_text_edit.setFixedHeight(84)
         self.t_text_edit.setFixedHeight(84)
@@ -745,40 +751,37 @@ class WorkspaceMixin:
         text_tab_layout.addLayout(set_all_row)
         text_tab_layout.addLayout(text_render_layout)
         text_tab_layout.addStretch(1)
-        text_scroll = QtWidgets.QScrollArea()
-        text_scroll.setWidgetResizable(True)
-        text_scroll.setWidget(text_tab)
-        text_scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        text_scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
-        text_scroll.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
 
         self.glossary_peek = GlossaryPeekPanel()
         self.glossary_peek.open_glossary.connect(self.show_glossary_dialog)
-
-        self.inspector_tabs = QtWidgets.QTabWidget()
-        self.inspector_tabs.setObjectName("toonInspector")
-        self.inspector_tabs.setDocumentMode(True)
-        self.inspector_tabs.addTab(text_scroll, self.tr("Text"))
         if self.layers_panel.layout() is not None:
             self.layers_panel.layout().setContentsMargins(10, 8, 10, 8)
-        self.inspector_tabs.addTab(self.layers_panel, self.tr("Layers"))
-        self.inspector_tabs.addTab(self.glossary_peek, self.tr("Glossary"))
-        self.inspector_tabs.currentChanged.connect(self._on_inspector_tab_changed)
 
-        right_widget = self.inspector_tabs
+        panels = [
+            ("dock_text", self.tr("Text"), text_tab, True),
+            ("dock_glossary", self.tr("Glossary"), self.glossary_peek, False),
+            ("dock_character", self.tr("Character"), self.character_panel, True),
+            ("dock_paragraph", self.tr("Paragraph"), self.paragraph_panel, True),
+            ("dock_layer_style", self.tr("Layer Style"), self.layer_style_panel, True),
+            ("dock_layers", self.tr("Layers"), self.layers_panel, False),
+        ]
+        panels += self._extra_panels()
+        dock_host = self._build_dock_host(central_widget, panels)
+        self.window_menu_button.setMenu(self.build_window_menu(self.window_menu_button))
+        layers_dock = self.panel_docks["dock_layers"]
+        layers_dock.visibilityChanged.connect(self._on_layers_dock_visibility)
+        self.panel_docks["dock_glossary"].visibilityChanged.connect(
+            lambda visible: visible and self.glossary_peek.refresh(self)
+        )
 
         splitter = QtWidgets.QSplitter()
         splitter.addWidget(left_widget)
-        splitter.addWidget(central_widget)
-        splitter.addWidget(right_widget)
-
-        right_widget.setMinimumWidth(340)
+        splitter.addWidget(dock_host)
         left_widget.setMinimumWidth(170)
 
         splitter.setStretchFactor(0, 20)
-        splitter.setStretchFactor(1, 80)
-        splitter.setStretchFactor(2, 10)
-        splitter.setSizes([210, 890, 340])
+        splitter.setStretchFactor(1, 90)
+        splitter.setSizes([210, 1230])
 
         body = QtWidgets.QHBoxLayout()
         body.setContentsMargins(0, 0, 0, 0)
@@ -831,8 +834,24 @@ class WorkspaceMixin:
             label.setToolTip(tooltip)
         return label
 
+    @staticmethod
+    def _panel_body() -> tuple[QtWidgets.QWidget, QtWidgets.QVBoxLayout]:
+        widget = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(widget)
+        layout.setContentsMargins(10, 6, 10, 10)
+        layout.setSpacing(6)
+        return widget, layout
+
     def _build_character_panel(self, text_render_layout, style_label, curve_label) -> None:
+        """Build the Character, Paragraph and Layer Style panels' contents.
+
+        Each becomes a dock of its own (`_build_dock_host`), as Photoshop's
+        Character and Paragraph panels and its Layer Style effects are; the
+        widgets and their attribute names are the ones the controllers use."""
         self.character_sections: list[MLabel] = []
+        self.character_panel, character_layout = self._panel_body()
+        self.paragraph_panel, paragraph_layout = self._panel_body()
+        self.layer_style_panel, style_layout = self._panel_body()
         for combo in (
             self.font_size_dropdown, self.line_spacing_dropdown, self.letter_spacing_dropdown,
             self.horizontal_scale_dropdown, self.outline_width_dropdown, self.shadow_opacity_dropdown,
@@ -845,7 +864,7 @@ class WorkspaceMixin:
             combo.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
 
         # Styles: a whole look in one pick.
-        grid = self._character_section(text_render_layout, self.tr("Style"))
+        grid = self._character_section(character_layout, self.tr("Style"))
         style_label.setVisible(False)
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.style_preset_combo, 1)
@@ -854,7 +873,7 @@ class WorkspaceMixin:
         grid.addLayout(row, 0, 0, 1, 4)
 
         # Character.
-        grid = self._character_section(text_render_layout, self.tr("Character"))
+        grid = self._character_section(character_layout, self.tr("Character"))
         font_row = QtWidgets.QHBoxLayout()
         font_row.addWidget(self.font_dropdown, 1)
         font_row.addWidget(self.font_favourite_toggle)
@@ -885,12 +904,12 @@ class WorkspaceMixin:
         grid.addWidget(hint, 4, 0, 1, 4)
 
         # Paragraph.
-        grid = self._character_section(text_render_layout, self.tr("Paragraph"))
+        grid = self._character_section(paragraph_layout, self.tr("Paragraph"))
         grid.addWidget(self._field_label(self.tr("Align")), 0, 0)
         grid.addWidget(self.alignment_tool_group, 0, 1, 1, 3, QtCore.Qt.AlignmentFlag.AlignLeft)
 
         # Stroke (Photoshop's Layer Style > Stroke), with presets.
-        grid = self._character_section(text_render_layout, self.tr("Text Stroke"))
+        grid = self._character_section(style_layout, self.tr("Text Stroke"))
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.outline_checkbox)
         row.addWidget(self.outline_font_color_button)
@@ -920,7 +939,7 @@ class WorkspaceMixin:
         # X/Y offsets stay (hidden) as what the dial and distance write.
         from app.ui.angle_dial import AngleDial
 
-        grid = self._character_section(text_render_layout, self.tr("Drop Shadow"))
+        grid = self._character_section(style_layout, self.tr("Drop Shadow"))
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.shadow_checkbox)
         row.addWidget(self.shadow_color_button)
@@ -948,7 +967,7 @@ class WorkspaceMixin:
             hidden.setVisible(False)
 
         # Outer glow.
-        grid = self._character_section(text_render_layout, self.tr("Outer Glow"))
+        grid = self._character_section(style_layout, self.tr("Outer Glow"))
         self.glow_checkbox = MCheckBox(self.tr("Glow"))
         self.glow_checkbox.setToolTip(self.tr("A soft halo of one colour around the text and its outline."))
         self.glow_color_button = QtWidgets.QPushButton()
@@ -980,7 +999,7 @@ class WorkspaceMixin:
         grid.addWidget(self.glow_size_dropdown, 1, 1)
 
         # Gradient fill, with the same dial for its direction.
-        grid = self._character_section(text_render_layout, self.tr("Gradient"))
+        grid = self._character_section(style_layout, self.tr("Gradient"))
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.gradient_checkbox)
         row.addWidget(self.gradient_color_button)
@@ -996,7 +1015,7 @@ class WorkspaceMixin:
         grid.addWidget(self.gradient_angle_dropdown, 1, 3)
 
         # Warp and transform.
-        grid = self._character_section(text_render_layout, self.tr("Warp"))
+        grid = self._character_section(style_layout, self.tr("Warp"))
         curve_label.setText(self.tr("Style"))
         curve_label.setProperty("secondary", True)
         grid.addWidget(curve_label, 0, 0)
@@ -1008,17 +1027,19 @@ class WorkspaceMixin:
         row.addWidget(self.reset_transform_button)
         row.addStretch(1)
         grid.addLayout(row, 1, 0, 1, 4)
+        for layout in (character_layout, paragraph_layout, style_layout):
+            layout.addStretch(1)
 
-    def _on_inspector_tab_changed(self, index: int) -> None:
-        """Keep the layers button in step with the Layers tab, refresh the Glossary tab."""
-        tabs = self.inspector_tabs
-        on_layers = tabs.widget(index) is self.layers_panel
-        if self.layers_button.isChecked() != on_layers:
+    def _extra_panels(self) -> list:
+        """Panels added by later builders (Color, Gradients): (name, title, widget, scroll)."""
+        return []
+
+    def _on_layers_dock_visibility(self, visible: bool) -> None:
+        """Keep the layers button in step with whether the Layers panel shows."""
+        if self.layers_button.isChecked() != visible:
             self.layers_button.blockSignals(True)
-            self.layers_button.setChecked(on_layers)
+            self.layers_button.setChecked(visible)
             self.layers_button.blockSignals(False)
-        if tabs.widget(index) is self.glossary_peek:
-            self.glossary_peek.refresh(self)
 
     def _build_selection_options(self, options: QtWidgets.QHBoxLayout) -> None:
         """The selection part of the options bar.
@@ -1194,9 +1215,16 @@ class WorkspaceMixin:
         self.box_options.setVisible(not (show_selection or show_paint))
 
     def show_layers_tab(self, show: bool) -> None:
-        """The layers button: open the Layers tab, or go back to Text."""
-        target = self.layers_panel if show else self.inspector_tabs.widget(0)
-        self.inspector_tabs.setCurrentWidget(target)
+        """The layers button: show the Layers panel (and bring it to the front), or hide it."""
+        dock = self.panel_docks.get("dock_layers")
+        if dock is None:
+            return
+        if show:
+            dock.show()
+            dock.raise_()
+        else:
+            dock.hide()
+
     def create_tool_button(self, text: str = "", svg: str = "", checkable: bool = False):
         if text:
             button = MToolButton().svg(svg).text_beside_icon()

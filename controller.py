@@ -1125,7 +1125,7 @@ class ComicTranslate(ComicTranslateUI):
             apply_step_states(self)
         except Exception:  # decoration only: never let it break an operation's finish
             logging.getLogger(__name__).exception("Step bar refresh failed")
-        if self.inspector_tabs.currentWidget() is self.glossary_peek:
+        if self.glossary_peek.isVisible():
             self.glossary_peek.refresh(self)
 
     def block_detect(self, load_rects: bool = True):
@@ -1245,6 +1245,10 @@ class ComicTranslate(ComicTranslateUI):
     def closeEvent(self, event):
         try:
             self.text_ctrl._commit_pending_text_command()
+        except Exception:
+            pass
+        try:
+            self.save_dock_state()  # where the panel windows are, for the next start
         except Exception:
             pass
         if not getattr(self, "_skip_close_prompt", False):

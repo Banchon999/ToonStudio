@@ -100,6 +100,8 @@ STROKED = {
     # Stitch page (main nav rail): two slices with a dashed cut between them
     # The chapter queue: a stack of pages with "play" on the front one.
     "chapter-queue": "M8 3h11v14H8zM5 6v15h11M11.5 7.5l4 2.5-4 2.5z",
+    # Panels (Window menu): a window with a docked panel column on its right.
+    "panels": "M3.5 4.5h17v15h-17zM14.5 4.5v15M16.5 8h2M16.5 11h2M16.5 14h2",
     "nav-stitch": "M5 3.5h14v6H5zM5 14.5h14v6H5zM3 12h2M8 12h2M13 12h2M18 12h3",
     # Pipeline steps (the editor's step bar)
     "detect": "M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8.5 8.5h7A1.5 1.5 0 0 1 17 10v3a1.5 1.5 0 0 1-1.5 1.5H12l-2.5 2v-2h-1A1.5 1.5 0 0 1 7 13v-3a1.5 1.5 0 0 1 1.5-1.5z",

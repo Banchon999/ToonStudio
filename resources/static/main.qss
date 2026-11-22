@@ -1453,6 +1453,35 @@ QTabWidget#toonInspector QTabBar::tab:selected {
 QTabWidget#toonInspector QTabBar::tab:hover {
     color: @primary_text_color;
 }
+/* Panel windows (app/ui/main_window/docks.py): Photoshop-style tabs and title bars. */
+QMainWindow#toonDockHost::separator {
+    background: @border_color;
+    width: 3px;
+    height: 3px;
+}
+QMainWindow#toonDockHost QTabBar::tab {
+    background: transparent;
+    color: @secondary_text_color;
+    padding: 6px 12px;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+QMainWindow#toonDockHost QTabBar::tab:selected {
+    color: @primary_text_color;
+    border-bottom: 2px solid @primary_color;
+}
+QMainWindow#toonDockHost QTabBar::tab:hover {
+    color: @primary_text_color;
+}
+QDockWidget {
+    color: @secondary_text_color;
+    titlebar-close-icon: none;
+}
+QDockWidget::title {
+    background: @background_in_color;
+    padding: 2px 8px;
+    text-align: left;
+}
 QLabel#toonSectionLabel {
     color: @secondary_text_color;
     font-weight: 600;
