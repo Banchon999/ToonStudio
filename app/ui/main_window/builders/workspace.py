@@ -307,6 +307,7 @@ class WorkspaceMixin:
             {"svg": "tabler--align-left.svg", "checkable": True, "tooltip": "Align Left"},
             {"svg": "tabler--align-center.svg", "checkable": True, "tooltip": "Align Center"},
             {"svg": "tabler--align-right.svg", "checkable": True, "tooltip": "Align Right"},
+            {"svg": "tabler--align-justified.svg", "checkable": True, "tooltip": "Justify"},
         ]
         self.alignment_tool_group.set_button_list(alignment_tools)
         self.alignment_tool_group.set_dayu_checked(1)
@@ -890,25 +891,66 @@ class WorkspaceMixin:
         grid.addWidget(self._field_label(self.tr("Width %"), self.horizontal_scale_dropdown.toolTip()), 2, 2)
         grid.addWidget(self.horizontal_scale_dropdown, 2, 3)
         grid.addWidget(self._field_label(self.tr("Colour"), self.tr("Font Color")), 3, 0)
+        grid.addWidget(self.block_font_color_button, 3, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        # Photoshop's row of glyph toggles: faux bold, italic, underline, then
+        # all caps, small caps, superscript, subscript and strikethrough.
+        self.char_style_buttons = {}
         style_row = QtWidgets.QHBoxLayout()
-        style_row.addWidget(self.block_font_color_button)
-        style_row.addSpacing(6)
+        style_row.setSpacing(2)
         style_row.addWidget(self.bold_button)
         style_row.addWidget(self.italic_button)
         style_row.addWidget(self.underline_button)
+        style_row.addSpacing(6)
+        for key, glyph, tip in (
+            ("all_caps", "TT", self.tr("All Caps")),
+            ("small_caps", "Tᴛ", self.tr("Small Caps")),
+            ("superscript", "T¹", self.tr("Superscript")),
+            ("subscript", "T₁", self.tr("Subscript")),
+            ("strikethrough", "S", self.tr("Strikethrough")),
+        ):
+            button = MToolButton().text_only()
+            button.setText(glyph)
+            button.setCheckable(True)
+            button.setToolTip(tip)
+            button.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+            if key == "strikethrough":
+                # A combining stroke (S̶) is missing from most UI faces.
+                button.setStyleSheet("text-decoration: line-through;")
+            self.char_style_buttons[key] = button
+            style_row.addWidget(button)
         style_row.addStretch(1)
-        grid.addLayout(style_row, 3, 1, 1, 3)
+        grid.addLayout(style_row, 4, 0, 1, 4)
         hint = MLabel(self.tr(
             "Select words in the translation box (or inside the text on the page) to change only them."
         )).secondary()
         hint.setWordWrap(True)
         self.character_hint = hint
-        grid.addWidget(hint, 4, 0, 1, 4)
+        grid.addWidget(hint, 5, 0, 1, 4)
 
         # Paragraph.
         grid = self._character_section(paragraph_layout, self.tr("Paragraph"))
         grid.addWidget(self._field_label(self.tr("Align")), 0, 0)
         grid.addWidget(self.alignment_tool_group, 0, 1, 1, 3, QtCore.Qt.AlignmentFlag.AlignLeft)
+        # Indents and spacing, as Photoshop's Paragraph panel (item pixels).
+        self.paragraph_spins = {}
+        for row, pair in enumerate((
+            (("indent_left", self.tr("Indent left")), ("indent_right", self.tr("Indent right"))),
+            (("indent_first", self.tr("First line")), None),
+            (("space_before", self.tr("Space before")), ("space_after", self.tr("Space after"))),
+        ), start=1):
+            for column, field in enumerate(pair):
+                if field is None:
+                    continue
+                key, label = field
+                spin = QtWidgets.QDoubleSpinBox()
+                spin.setRange(-200.0 if key == "indent_first" else 0.0, 400.0)
+                spin.setDecimals(0)
+                spin.setSuffix(" px")
+                spin.setToolTip(label)
+                spin.setKeyboardTracking(False)  # one change per entry, not per digit
+                self.paragraph_spins[key] = spin
+                grid.addWidget(self._field_label(label), row, column * 2)
+                grid.addWidget(spin, row, column * 2 + 1)
 
         # Stroke (Photoshop's Layer Style > Stroke), with presets.
         grid = self._character_section(style_layout, self.tr("Text Stroke"))

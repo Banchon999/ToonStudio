@@ -19,7 +19,7 @@ import struct
 SERIF, SLAB_SERIF, SANS_SERIF, SCRIPT = "serif", "slabSerif", "sansSerif", "script"
 MONOSPACE, HANDWRITTEN, BLACKLETTER, DECORATIVE = "monospace", "handwritten", "blackletter", "decorative"
 
-#: Every class, in menu order, with its English label.
+# Every class, in menu order, with its English label.
 CLASSES: tuple[tuple[str, str], ...] = (
     (SERIF, "Serif"),
     (SLAB_SERIF, "Slab Serif"),
@@ -31,7 +31,7 @@ CLASSES: tuple[tuple[str, str], ...] = (
     (DECORATIVE, "Decorative"),
 )
 
-#: Name fragments (lowercase) that mark a blackletter face; the tables have no class for it.
+# Name fragments (lowercase) that mark a blackletter face; the tables have no class for it.
 _BLACKLETTER = ("fraktur", "blackletter", "black letter", "textura", "old english", "schwabacher", "rotunda")
 
 

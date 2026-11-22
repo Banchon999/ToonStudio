@@ -675,6 +675,37 @@ class TextController:
             command.finalize_new_state()
             self.main.push_command(command)
 
+    def justify_align(self):
+        if self.main.curr_tblock_item:
+            item = self.main.curr_tblock_item
+            command = TextFormatCommand(self.main.image_viewer, item)
+            item.set_alignment(QtCore.Qt.AlignmentFlag.AlignJustify)
+            command.finalize_new_state()
+            self.main.push_command(command)
+
+    # Photoshop's glyph toggles: caps and small caps exclude each other, as do
+    # superscript and subscript (each pair is one Qt property).
+    _CHAR_STYLE_PARTNER = {
+        "all_caps": "small_caps", "small_caps": "all_caps",
+        "superscript": "subscript", "subscript": "superscript",
+    }
+
+    def on_char_style_toggled(self, name: str, on: bool) -> None:
+        partner = self._CHAR_STYLE_PARTNER.get(name)
+        buttons = getattr(self.main, "char_style_buttons", {})
+        if on and partner in buttons:
+            buttons[partner].blockSignals(True)
+            buttons[partner].setChecked(False)
+            buttons[partner].blockSignals(False)
+        self._apply_format_to_selected(
+            f"change_{name}", lambda item: item.set_char_style(name, on)
+        )
+
+    def on_paragraph_changed(self, key: str, value: float) -> None:
+        self._apply_format_to_selected(
+            f"change_{key}", lambda item: item.set_paragraph(**{key: value})
+        )
+
     def bold(self):
         if self.main.curr_tblock_item:
             item = self.main.curr_tblock_item
@@ -1251,6 +1282,9 @@ class TextController:
         self.main.alignment_tool_group.get_button_group().buttons()[0].clicked.disconnect(self.left_align)
         self.main.alignment_tool_group.get_button_group().buttons()[1].clicked.disconnect(self.center_align)
         self.main.alignment_tool_group.get_button_group().buttons()[2].clicked.disconnect(self.right_align)
+        self.main.alignment_tool_group.get_button_group().buttons()[3].clicked.disconnect(self.justify_align)
+        for widget in self._character_paragraph_widgets():
+            widget.blockSignals(True)
 
     def unblock_text_item_widgets(self, widgets):
         # Unblock signals
@@ -1264,6 +1298,24 @@ class TextController:
         self.main.alignment_tool_group.get_button_group().buttons()[0].clicked.connect(self.left_align)
         self.main.alignment_tool_group.get_button_group().buttons()[1].clicked.connect(self.center_align)
         self.main.alignment_tool_group.get_button_group().buttons()[2].clicked.connect(self.right_align)
+        self.main.alignment_tool_group.get_button_group().buttons()[3].clicked.connect(self.justify_align)
+        for widget in self._character_paragraph_widgets():
+            widget.blockSignals(False)
+
+    def _character_paragraph_widgets(self) -> list:
+        return [
+            *getattr(self.main, "char_style_buttons", {}).values(),
+            *getattr(self.main, "paragraph_spins", {}).values(),
+        ]
+
+    def _show_character_paragraph(self, item) -> None:
+        """The glyph toggles and paragraph fields as `item` has them."""
+        styles = item.char_styles() if hasattr(item, "char_styles") else {}
+        for key, button in getattr(self.main, "char_style_buttons", {}).items():
+            button.setChecked(bool(styles.get(key, False)))
+        values = item.paragraph() if hasattr(item, "paragraph") else {}
+        for key, spin in getattr(self.main, "paragraph_spins", {}).items():
+            spin.setValue(float(values.get(key, 0.0)))
 
     def set_values_for_blk_item(self, text_item: TextBlockItem):
 
@@ -1351,6 +1403,7 @@ class TextController:
                 QtCore.Qt.AlignmentFlag.AlignLeft: 0,
                 QtCore.Qt.AlignmentFlag.AlignCenter: 1,
                 QtCore.Qt.AlignmentFlag.AlignRight: 2,
+                QtCore.Qt.AlignmentFlag.AlignJustify: 3,
             }
 
             alignment = text_item.alignment
@@ -1359,6 +1412,8 @@ class TextController:
             if alignment in alignment_to_button:
                 button_index = alignment_to_button[alignment]
                 button_group.buttons()[button_index].setChecked(True)
+
+            self._show_character_paragraph(text_item)
 
         finally:
             self.unblock_text_item_widgets(self.widgets_to_block)
@@ -1415,6 +1470,7 @@ class TextController:
                 QtCore.Qt.AlignmentFlag.AlignLeft: 0,
                 QtCore.Qt.AlignmentFlag.AlignCenter: 1,
                 QtCore.Qt.AlignmentFlag.AlignRight: 2,
+                QtCore.Qt.AlignmentFlag.AlignJustify: 3,
             }
 
             button_group = self.main.alignment_tool_group.get_button_group()
@@ -1422,6 +1478,9 @@ class TextController:
             if alignment in alignment_to_button:
                 button_index = alignment_to_button[alignment]
                 button_group.buttons()[button_index].setChecked(True)
+
+            if self.main.curr_tblock_item is not None:
+                self._show_character_paragraph(self.main.curr_tblock_item)
 
         finally:
             self.unblock_text_item_widgets(self.widgets_to_block)

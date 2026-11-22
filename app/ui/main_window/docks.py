@@ -19,8 +19,8 @@ from __future__ import annotations
 from PySide6 import QtCore, QtWidgets
 
 DOCK_STATE_KEY = "editor/dock_state"
-#: Bumped when the default arrangement changes, so an older saved layout is
-#: not restored over panels it does not know.
+# Bumped when the default arrangement changes, so an older saved layout is
+# not restored over panels it does not know.
 DOCK_STATE_VERSION = 1
 
 Area = QtCore.Qt.DockWidgetArea
@@ -72,6 +72,7 @@ class DockMixin:
         return host
 
     def _on_dock_host_first_show(self) -> None:
+        self._dock_host_shown = True
         # A restored layout keeps its own sizes; only the default is sized here.
         if not getattr(self, "_dock_state_restored", False):
             self._size_default_docks()
@@ -120,8 +121,8 @@ class DockMixin:
         self.editor_docks.resizeDocks(firsts, heights, QtCore.Qt.Orientation.Vertical)
         self.editor_docks.resizeDocks(firsts[:1], [340], QtCore.Qt.Orientation.Horizontal)
 
-    #: Starting heights of the three groups: the panel worked in most
-    #: (Character) gets the most room.
+    # Starting heights of the three groups: the panel worked in most
+    # (Character) gets the most room.
     DEFAULT_HEIGHTS = {"dock_text": 230, "dock_character": 420, "dock_layers": 260}
 
     def reset_panels(self) -> None:
@@ -158,6 +159,10 @@ class DockMixin:
     def save_dock_state(self) -> None:
         from PySide6.QtCore import QSettings
 
+        # A host never shown (the editor never opened this session) was never
+        # laid out: its state holds no real sizes and would replace a good one.
+        if not getattr(self, "_dock_host_shown", False):
+            return
         settings = QSettings("ComicLabs", "ComicTranslate")
         settings.setValue(DOCK_STATE_KEY, self.editor_docks.saveState(DOCK_STATE_VERSION))
 

@@ -7,7 +7,11 @@ from PySide6 import QtCore, QtWidgets
 @pytest.fixture
 def win(qapp):
     import controller
+    from app.ui.main_window.docks import DOCK_STATE_KEY
 
+    # Start from the default layout, not whatever an earlier test's window
+    # left saved (a panel it closed stays closed, as it should for a user).
+    QtCore.QSettings("ComicLabs", "ComicTranslate").remove(DOCK_STATE_KEY)
     window = controller.ComicTranslate()
     window.resize(1440, 900)
     window.show()
@@ -65,6 +69,9 @@ def test_the_layout_is_remembered_for_the_next_start(qapp):
 
     first = controller.ComicTranslate()
     first.show()
+    first._center_stack.setCurrentWidget(first.main_content_widget)
+    for _ in range(3):
+        qapp.processEvents()
     first.panel_docks["dock_glossary"].setFloating(True)
     first.panel_docks["dock_paragraph"].hide()
     qapp.processEvents()
@@ -75,7 +82,25 @@ def test_the_layout_is_remembered_for_the_next_start(qapp):
         assert second.panel_docks["dock_glossary"].isFloating()
         assert second.panel_docks["dock_paragraph"].isHidden()
     finally:
-        second.reset_panels()
-        second.save_dock_state()
+        from app.ui.main_window.docks import DOCK_STATE_KEY
+
         second._skip_close_prompt = True
         second.close()
+        QtCore.QSettings("ComicLabs", "ComicTranslate").remove(DOCK_STATE_KEY)
+
+
+def test_a_window_whose_editor_was_never_shown_keeps_the_saved_layout(qapp):
+    """Closing from the home screen must not replace a real layout with one
+    that was never laid out (no sizes, every panel where Qt first put it)."""
+    import controller
+    from app.ui.main_window.docks import DOCK_STATE_KEY
+
+    settings = QtCore.QSettings("ComicLabs", "ComicTranslate")
+    settings.setValue(DOCK_STATE_KEY, QtCore.QByteArray(b"saved-by-a-real-session"))
+    window = controller.ComicTranslate()
+    try:
+        window._skip_close_prompt = True
+        window.close()
+        assert bytes(settings.value(DOCK_STATE_KEY)) == b"saved-by-a-real-session"
+    finally:
+        settings.remove(DOCK_STATE_KEY)

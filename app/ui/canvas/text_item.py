@@ -1143,6 +1143,62 @@ class TextBlockItem(QGraphicsTextItem):
         width = self.document().size().width()
         self.setTextWidth(width)
 
+    # The Character panel's glyph toggles (`set_char_style`), as update_text_format names them.
+    CHAR_STYLES = ('all_caps', 'small_caps', 'superscript', 'subscript', 'strikethrough')
+
+    def set_char_style(self, name: str, on: bool) -> None:
+        """All caps, small caps, superscript, subscript or strikethrough, on the
+        selection or the whole text, as Photoshop's Character panel buttons."""
+        if name not in self.CHAR_STYLES:
+            raise ValueError(name)
+        self.update_text_format(name, bool(on))
+
+    def char_styles(self) -> dict:
+        """Which glyph toggles the selection (or, with none, the text's start) has."""
+        cursor = QTextCursor(self.textCursor())
+        if not cursor.hasSelection():
+            cursor = QTextCursor(self.document())
+            cursor.movePosition(QTextCursor.MoveOperation.NextCharacter)
+        fmt = cursor.charFormat()
+        caps = fmt.fontCapitalization()
+        valign = fmt.verticalAlignment()
+        return {
+            'all_caps': caps == QFont.Capitalization.AllUppercase,
+            'small_caps': caps == QFont.Capitalization.SmallCaps,
+            'superscript': valign == QTextCharFormat.VerticalAlignment.AlignSuperScript,
+            'subscript': valign == QTextCharFormat.VerticalAlignment.AlignSubScript,
+            'strikethrough': fmt.fontStrikeOut(),
+        }
+
+    # Photoshop's Paragraph panel fields, in item pixels, as QTextBlockFormat names them.
+    PARAGRAPH_FIELDS = {
+        'indent_left': ('leftMargin', 'setLeftMargin'),
+        'indent_right': ('rightMargin', 'setRightMargin'),
+        'indent_first': ('textIndent', 'setTextIndent'),
+        'space_before': ('topMargin', 'setTopMargin'),
+        'space_after': ('bottomMargin', 'setBottomMargin'),
+    }
+
+    def set_paragraph(self, **values) -> None:
+        """Indents and spacing of the selected paragraphs, or of every paragraph."""
+        block_format = QTextBlockFormat()
+        for key, value in values.items():
+            getattr(block_format, self.PARAGRAPH_FIELDS[key][1])(float(value))
+        cursor = QTextCursor(self.textCursor())
+        if not cursor.hasSelection():
+            cursor = QTextCursor(self.document())
+            cursor.select(QTextCursor.SelectionType.Document)
+        cursor.mergeBlockFormat(block_format)
+        self.update()
+
+    def paragraph(self) -> dict:
+        """The first selected (or first) paragraph's indents and spacing."""
+        cursor = QTextCursor(self.textCursor())
+        if not cursor.hasSelection():
+            cursor = QTextCursor(self.document())
+        fmt = cursor.blockFormat()
+        return {key: float(getattr(fmt, getter)()) for key, (getter, _setter) in self.PARAGRAPH_FIELDS.items()}
+
     def set_alignment(self, alignment):
         if not self.textCursor().hasSelection():
             self.alignment = alignment
@@ -1180,6 +1236,18 @@ class TextBlockItem(QGraphicsTextItem):
             'bold': lambda cf, v: cf.setFontWeight(QFont.Bold if v else QFont.Normal),
             'italic': lambda cf, v: cf.setFontItalic(v),
             'underline': lambda cf, v: cf.setFontUnderline(v),
+            # Photoshop's Character panel toggles (all survive toHtml/setHtml).
+            'all_caps': lambda cf, v: cf.setFontCapitalization(
+                QFont.Capitalization.AllUppercase if v else QFont.Capitalization.MixedCase),
+            'small_caps': lambda cf, v: cf.setFontCapitalization(
+                QFont.Capitalization.SmallCaps if v else QFont.Capitalization.MixedCase),
+            'superscript': lambda cf, v: cf.setVerticalAlignment(
+                QTextCharFormat.VerticalAlignment.AlignSuperScript if v
+                else QTextCharFormat.VerticalAlignment.AlignNormal),
+            'subscript': lambda cf, v: cf.setVerticalAlignment(
+                QTextCharFormat.VerticalAlignment.AlignSubScript if v
+                else QTextCharFormat.VerticalAlignment.AlignNormal),
+            'strikethrough': lambda cf, v: cf.setFontStrikeOut(v),
         }
 
         if attribute not in format_operations:

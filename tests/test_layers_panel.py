@@ -261,7 +261,9 @@ def _ink(icon):
 
 def test_every_layer_row_has_a_thumbnail_of_what_it_holds(ct):
     """Photoshop's Layers panel: a small picture of each layer beside its name."""
-    text = ct.image_viewer.add_text_item(_text_props())
+    # Plain text, as the app makes it: Qt's HTML <p> brings 12 px paragraph
+    # margins, which only Qt can lay out.
+    text = ct.image_viewer.add_text_item(_text_props(text="Hello there"))
     text.selected = True  # its selection frame must not be in the picture
     ct.layers_panel.rebuild()
     row = _object_row(ct.layers_panel, text.object_id)

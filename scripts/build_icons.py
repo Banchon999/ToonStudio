@@ -70,6 +70,7 @@ STROKED = {
     "tabler--align-left": "M4 6h16M4 10h10M4 14h16M4 18h10",
     "tabler--align-center": "M4 6h16M7 10h10M4 14h16M7 18h10",
     "tabler--align-right": "M4 6h16M10 10h10M4 14h16M10 18h10",
+    "tabler--align-justified": "M4 6h16M4 10h16M4 14h16M4 18h10",
     # Navigation rail
     "startup_line": "M4 11l8-6.5 8 6.5M6 9.5V20h12V9.5M10 20v-5h4v5",
     "home_line": "M5 4h9l5 5v11H5zM14 4v5h5M9 16.5l5-5 2 2-5 5H9z",

@@ -308,6 +308,11 @@ class ComicTranslate(ComicTranslateUI):
         self.alignment_tool_group.get_button_group().buttons()[0].clicked.connect(self.text_ctrl.left_align)
         self.alignment_tool_group.get_button_group().buttons()[1].clicked.connect(self.text_ctrl.center_align)
         self.alignment_tool_group.get_button_group().buttons()[2].clicked.connect(self.text_ctrl.right_align)
+        self.alignment_tool_group.get_button_group().buttons()[3].clicked.connect(self.text_ctrl.justify_align)
+        for name, button in self.char_style_buttons.items():
+            button.toggled.connect(lambda on, name=name: self.text_ctrl.on_char_style_toggled(name, on))
+        for key, spin in self.paragraph_spins.items():
+            spin.valueChanged.connect(lambda value, key=key: self.text_ctrl.on_paragraph_changed(key, value))
         self.bold_button.clicked.connect(self.text_ctrl.bold)
         self.italic_button.clicked.connect(self.text_ctrl.italic)
         self.underline_button.clicked.connect(self.text_ctrl.underline)
