@@ -86,6 +86,8 @@ class ImageViewer(QGraphicsView):
         self.zoom = 0
         self.current_tool = None
         self.panning = False
+        self.space_panning = False  # Space held: the hand, whatever the tool
+        self._space_saved = None
         self.pan_start_pos = None
         self.last_pan_pos = QtCore.QPoint()
         self.total_scale_factor = 0.2 
@@ -268,9 +270,25 @@ class ImageViewer(QGraphicsView):
         super().mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event):
+        if self.event_handler.handle_space(event, pressed=True):
+            return
         if self.event_handler.handle_key_press(event):
             return
         super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        if self.event_handler.handle_space(event, pressed=False):
+            return
+        super().keyReleaseEvent(event)
+
+    def focusOutEvent(self, event):
+        # A Space released over another window must not leave the hand stuck.
+        if self.space_panning:
+            self.space_panning = False
+            drag_mode, cursor = self._space_saved
+            self.setDragMode(drag_mode)
+            self.viewport().setCursor(cursor)
+        super().focusOutEvent(event)
 
     def wheelEvent(self, event):
         self.event_handler.handle_wheel(event)

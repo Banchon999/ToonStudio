@@ -23,6 +23,10 @@ class EventHandler:
     # Main Event Handlers
 
     def handle_mouse_press(self, event: QtGui.QMouseEvent):
+        if self.viewer.space_panning:
+            # Space held: the hand, whatever tool is in hand (Photoshop's habit).
+            QtWidgets.QGraphicsView.mousePressEvent(self.viewer, event)
+            return
         scene_pos = self.viewer.mapToScene(event.position().toPoint())
         clicked_item = self._item_at(event.pos())
         ctrl_pressed = bool(event.modifiers() & Qt.KeyboardModifier.ControlModifier)
@@ -165,6 +169,11 @@ class EventHandler:
             QtWidgets.QGraphicsView.mousePressEvent(self.viewer, event)
     
     def handle_mouse_move(self, event: QtGui.QMouseEvent):
+        if self.viewer.space_panning:
+            QtWidgets.QGraphicsView.mouseMoveEvent(self.viewer, event)
+            if self.viewer.webtoon_mode:
+                self.viewer.webtoon_manager.on_scroll()
+            return
         scene_pos = self.viewer.mapToScene(event.position().toPoint())
 
         # Explicitly handle dragging our items first
@@ -203,6 +212,9 @@ class EventHandler:
         self.last_scene_pos = scene_pos
 
     def handle_mouse_release(self, event: QtGui.QMouseEvent):
+        if self.viewer.space_panning:
+            QtWidgets.QGraphicsView.mouseReleaseEvent(self.viewer, event)
+            return
         interaction_finished = False # Flag to track if we handled the event
 
         if event.button() == Qt.LeftButton:
@@ -257,6 +269,32 @@ class EventHandler:
             self.viewer.drawing_manager.lasso_close()
             return True
         return False
+
+    def _typing_on_canvas(self) -> bool:
+        focus = self.viewer.scene().focusItem() if self.viewer.scene() else None
+        return isinstance(focus, TextBlockItem) and focus.editing_mode
+
+    def handle_space(self, event: QtGui.QKeyEvent, pressed: bool) -> bool:
+        """Hold Space to pan with any tool; release to go back to it."""
+        if event.key() != Qt.Key.Key_Space or event.isAutoRepeat():
+            return event.key() == Qt.Key.Key_Space and self.viewer.space_panning
+        if pressed:
+            if self.viewer.space_panning or self._typing_on_canvas() or not self.viewer.hasPhoto():
+                return False
+            if QtWidgets.QApplication.mouseButtons() != Qt.MouseButton.NoButton:
+                return False  # not in the middle of a stroke
+            self.viewer.space_panning = True
+            self.viewer._space_saved = (self.viewer.dragMode(), self.viewer.viewport().cursor())
+            self.viewer.setDragMode(QtWidgets.QGraphicsView.DragMode.ScrollHandDrag)
+            self.viewer.viewport().setCursor(Qt.CursorShape.OpenHandCursor)
+            return True
+        if not self.viewer.space_panning:
+            return False
+        self.viewer.space_panning = False
+        drag_mode, cursor = self.viewer._space_saved
+        self.viewer.setDragMode(drag_mode)
+        self.viewer.viewport().setCursor(cursor)
+        return True
 
     def handle_key_press(self, event: QtGui.QKeyEvent) -> bool:
         """Enter closes an in-progress outline, Escape abandons it."""
