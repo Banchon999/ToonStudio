@@ -890,7 +890,7 @@ class WorkspaceMixin:
         grid.addWidget(self.alignment_tool_group, 0, 1, 1, 3, QtCore.Qt.AlignmentFlag.AlignLeft)
 
         # Stroke (Photoshop's Layer Style > Stroke), with presets.
-        grid = self._character_section(text_render_layout, self.tr("Stroke"))
+        grid = self._character_section(text_render_layout, self.tr("Text Stroke"))
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.outline_checkbox)
         row.addWidget(self.outline_font_color_button)

@@ -28,7 +28,7 @@ from app.ui.dayu_widgets.qt import MIcon
 from core.layers import DEFAULT_GROUP_NAMES, PAINT_ORDER, LayerGroup
 
 COL_VIS, COL_LOCK, COL_NAME = 0, 1, 2
-#: Layer thumbnails, as in Photoshop's Layers panel.
+# Layer thumbnails, as in Photoshop's Layers panel.
 THUMB = QtCore.QSize(36, 26)
 ROLE_GROUP = Qt.ItemDataRole.UserRole
 ROLE_OBJECT = Qt.ItemDataRole.UserRole + 1
