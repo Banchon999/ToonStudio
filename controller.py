@@ -329,6 +329,10 @@ class ComicTranslate(ComicTranslateUI):
         self.style_preset_combo.activated.connect(self.text_ctrl.apply_style_preset)
         self.save_style_button.clicked.connect(self.text_ctrl.save_style_preset)
         self.delete_style_button.clicked.connect(self.text_ctrl.delete_style_preset)
+        self.outline_preset_combo.activated.connect(self.text_ctrl.apply_outline_preset)
+        self.save_outline_preset_button.clicked.connect(self.text_ctrl.save_outline_preset)
+        self.delete_outline_preset_button.clicked.connect(self.text_ctrl.delete_outline_preset)
+        self.text_ctrl.refresh_outline_presets()
 
         # Page List
         self.page_list.currentItemChanged.connect(self.image_ctrl.on_page_list_current_item_changed)
