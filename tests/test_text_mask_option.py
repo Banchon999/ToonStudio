@@ -173,6 +173,7 @@ def test_the_model_file_is_pinned():
 
     spec = ModelDownloader.registry[ModelID.COMIC_TEXT_MASK_ONNX]
     assert spec.files == ["model.onnx"] and len(spec.sha256[0]) == 64
+    assert "/resolve/5ca91878" in spec.url, "a commit, not main"
 
 
 def test_settings_offer_it_default_off_and_remember_it(qapp):

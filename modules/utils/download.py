@@ -566,7 +566,7 @@ def _register_defaults():
     # and published by the project owner (modules/detection/text_mask_onnx.py).
     ModelDownloader.register(ModelSpec(
         id=ModelID.COMIC_TEXT_MASK_ONNX,
-        url='https://huggingface.co/DeWoke/comic-text-mask-onnx/resolve/main/',
+        url='https://huggingface.co/DeWoke/comic-text-mask-onnx/resolve/5ca918781da8ebfecacb4fa6f515138c898d7f94/',
         files=['model.onnx'],
         sha256=['39bc654215441407f2df02177af0143c176af338770ae0da6cd9fad3197dc853'],
         save_dir=os.path.join(models_base_dir, 'detection'),
