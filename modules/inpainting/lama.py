@@ -7,8 +7,7 @@ from ..utils.inpainting import (
     load_jit_model,
 )
 from ..utils.download import ModelDownloader, ModelID
-from modules.utils.onnx import make_session
-from modules.utils.openvino_cpu import make_cpu_session
+from modules.utils.onnx import make_session, make_session_options
 from modules.utils.torch_autocast import TorchAutocastMixin
 from .base import InpaintModel
 from .schema import Config
@@ -30,10 +29,14 @@ class LaMa(TorchAutocastMixin, InpaintModel):
             ModelDownloader.get(ModelID.LAMA_ONNX)
             onnx_path = ModelDownloader.primary_path(ModelID.LAMA_ONNX)
             providers = get_providers(device)
-            self.session = make_cpu_session(
-                onnx_path, device,
-                lambda: make_session(onnx_path, providers=providers),
-                "LaMa inpainter",
+            # ONNX Runtime with its memory arena off, not OpenVINO. Measured
+            # over patches of seven sizes on a 4-core CPU: OpenVINO kept the
+            # memory of every patch size it had seen (2.3 GB, a full-size page
+            # 5 GB) for under 5% of speed; the arena kept 1.1 GB; without it
+            # LaMa holds ~0.5 GB between patches and takes about as long. On a
+            # PC with 8 GB, and a browser open, that is the difference.
+            self.session = make_session(
+                onnx_path, providers=providers, sess_options=make_session_options(low_mem=True),
             )
         else:
             import torch

@@ -85,6 +85,17 @@ class ToolsPage(QtWidgets.QWidget):
             "Downloads a 90 MB model once, and adds a few seconds per page on CPU."
         ))
 
+        self.free_models_checkbox = MCheckBox(
+            self.tr("Free AI model memory after 3 minutes with no work")
+        )
+        self.free_models_checkbox.setChecked(True)
+        self.free_models_checkbox.setToolTip(self.tr(
+            "The detection, text and cleaning models take 1–1.5 GB of memory while loaded.\n"
+            "With this on they are let go when nothing has run for 3 minutes — editing text,\n"
+            "reading or a browser alongside get that memory back — and the next step loads\n"
+            "them again in a few seconds. Turn it off on a PC with plenty of memory."
+        ))
+
         self.denoise_checkbox = MCheckBox(
             self.tr("Tidy JPEG artefacts around cleaned text")
         )
@@ -254,6 +265,7 @@ class ToolsPage(QtWidgets.QWidget):
         layout.addLayout(detector_conf_layout)
         layout.addWidget(self.stitch_detection_checkbox)
         layout.addWidget(self.skia_text_checkbox)
+        layout.addWidget(self.free_models_checkbox)
         layout.addSpacing(10)
         layout.addWidget(ocr_widget)
         layout.addLayout(ocr_padding_layout)

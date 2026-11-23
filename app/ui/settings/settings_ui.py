@@ -250,6 +250,7 @@ class SettingsPageUI(QtWidgets.QWidget):
         self.mask_padding_spinbox = self.tools_page.mask_padding_spinbox
         self.bubble_inset_spinbox = self.tools_page.bubble_inset_spinbox
         self.skia_text_checkbox = self.tools_page.skia_text_checkbox
+        self.free_models_checkbox = self.tools_page.free_models_checkbox
         self.text_segmentation_checkbox = self.tools_page.text_segmentation_checkbox
         self.denoise_checkbox = self.tools_page.denoise_checkbox
         self.smart_fill_textured_combo = self.tools_page.smart_fill_textured_combo

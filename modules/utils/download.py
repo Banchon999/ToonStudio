@@ -33,19 +33,49 @@ def notify_download_event(status: str, name: str):
         pass
 
 
-def calculate_sha256_checksum(file_path: str) -> str:
+# Files already hashed this session, by (path, size, mtime): a model loaded
+# again (after its memory was freed while idle) is not read through again —
+# LaMa's 200 MB took seconds to hash on every load. A changed file has a new
+# size or mtime and is hashed afresh.
+_hashed: dict[tuple, str] = {}
+
+
+def _file_stamp(file_path: str) -> tuple:
+    st = os.stat(file_path)
+    return (os.path.abspath(file_path), st.st_size, st.st_mtime_ns)
+
+
+def _memo_hash(file_path: str, algo: str, compute) -> str:
+    try:
+        key = (*_file_stamp(file_path), algo)
+    except OSError:
+        return compute(file_path)
+    if key not in _hashed:
+        _hashed[key] = compute(file_path)
+    return _hashed[key]
+
+
+def _sha256(file_path: str) -> str:
     sha256_hash = hashlib.sha256()
     with open(file_path, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096), b""):
+        for byte_block in iter(lambda: f.read(1 << 20), b""):
             sha256_hash.update(byte_block)
     return sha256_hash.hexdigest()
 
-def calculate_md5_checksum(file_path: str) -> str:
+
+def calculate_sha256_checksum(file_path: str) -> str:
+    return _memo_hash(file_path, "sha256", _sha256)
+
+def _md5(file_path: str) -> str:
     md5_hash = hashlib.md5()
     with open(file_path, "rb") as f:
-        for byte_block in iter(lambda: f.read(4096), b""):
+        for byte_block in iter(lambda: f.read(1 << 20), b""):
             md5_hash.update(byte_block)
     return md5_hash.hexdigest()
+
+
+def calculate_md5_checksum(file_path: str) -> str:
+    return _memo_hash(file_path, "md5", _md5)
 
 
 class ModelID(Enum):

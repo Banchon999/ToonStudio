@@ -80,7 +80,7 @@ class SettingsPage(QtWidgets.QWidget):
             ui.translated_text_checkbox, ui.inpainted_image_checkbox,
             ui.per_class_fonts_checkbox, ui.stitch_detection_checkbox,
             ui.text_segmentation_checkbox, ui.denoise_checkbox,
-            ui.skia_text_checkbox,
+            ui.skia_text_checkbox, ui.free_models_checkbox,
             ui.use_style_defaults_checkbox,
         ]
         for checkbox in checkboxes:
@@ -168,6 +168,9 @@ class SettingsPage(QtWidgets.QWidget):
 
     def get_use_text_segmentation_model(self) -> bool:
         return self.ui.text_segmentation_checkbox.isChecked()
+
+    def get_free_models_when_idle(self) -> bool:
+        return self.ui.free_models_checkbox.isChecked()
 
     def get_denoise_cleaned_areas(self) -> bool:
         return self.ui.denoise_checkbox.isChecked()
@@ -331,6 +334,7 @@ class SettingsPage(QtWidgets.QWidget):
                 # answers Qt when skia-python is missing, and persisting
                 # that would silently turn the preference off for good.
                 'skia_text_engine': self.ui.skia_text_checkbox.isChecked(),
+                'free_models_when_idle': self.get_free_models_when_idle(),
                 'hd_strategy': self.get_hd_strategy_settings()
             },
             'llm': self.get_llm_settings(),
@@ -521,6 +525,9 @@ class SettingsPage(QtWidgets.QWidget):
         )
         self.ui.denoise_checkbox.setChecked(
             settings.value('denoise_cleaned_areas', True, type=bool)
+        )
+        self.ui.free_models_checkbox.setChecked(
+            settings.value('free_models_when_idle', True, type=bool)
         )
         self.ui.tools_page.set_smart_fill_textured(
             str(settings.value('smart_fill_textured', 'model'))

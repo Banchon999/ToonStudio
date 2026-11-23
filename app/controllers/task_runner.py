@@ -69,6 +69,7 @@ class TaskRunnerController:
         def enhanced_finished_callback():
             if operation["finished_callback"]:
                 operation["finished_callback"]()
+            self._note_activity()
             QtCore.QTimer.singleShot(0, self.main, self._process_next_operation)
 
         def enhanced_error_callback(error_tuple):
@@ -129,14 +130,24 @@ class TaskRunnerController:
         *args,
         **kwargs,
     ):
+        def finished_and_noted():
+            if finished_callback:
+                finished_callback()
+            self._note_activity()
+
         return self._execute_single_operation(
             callback,
             result_callback,
             error_callback,
-            finished_callback,
+            finished_and_noted,
             *args,
             **kwargs,
         )
+
+    def _note_activity(self) -> None:
+        note = getattr(self.main, "note_model_activity", None)
+        if note is not None:
+            note()
 
     def clear_operation_queue(self):
         self.operation_queue.clear()
