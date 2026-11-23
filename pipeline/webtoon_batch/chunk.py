@@ -339,7 +339,7 @@ class ChunkMixin:
             image, mask_blocks,
             default_padding=settings_page.get_mask_padding(),
             bubble_inset=settings_page.get_bubble_inset(),
-            page_text_mask=segment_page(image, settings_page),
+            page_text_mask=segment_page(image, settings_page, mask_blocks),
         )
         if mask is None or not np.any(mask):
             return None, None

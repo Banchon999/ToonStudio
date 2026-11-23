@@ -102,7 +102,7 @@ def make_window(qapp, monkeypatch, tmp_path):
     monkeypatch.setattr(validation, "font_selected", lambda main: True)
     monkeypatch.setattr(text_mod, "font_selected", lambda main: True)
     monkeypatch.setattr(manual_workflow, "OCRProcessor", FakeOCR)
-    monkeypatch.setattr(manual_workflow, "segment_page", lambda image, settings: None)
+    monkeypatch.setattr(manual_workflow, "segment_page", lambda image, settings, blocks=None: None)
     monkeypatch.setattr(smart_workflow.Messages, "show_smart_workflow_done",
                         staticmethod(lambda *a, **k: None))
     windows = []

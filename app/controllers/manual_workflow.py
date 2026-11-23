@@ -195,7 +195,7 @@ class ManualWorkflowController:
         """
         if image is None:
             image = self.main.image_viewer.get_image_array()
-        page_text_mask = segment_page(image, self.main.settings_page) if image is not None else None
+        page_text_mask = segment_page(image, self.main.settings_page, blk_list) if image is not None else None
         build_stroke = self.main.image_viewer.drawing_manager.make_segmentation_stroke_data
         results = []
         for blk in blk_list:

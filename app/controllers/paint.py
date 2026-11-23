@@ -120,7 +120,7 @@ class PaintController:
             from modules.utils.text_segmentation import segment_page
 
             return inpainting.clean_white_balloons(
-                image, blocks, mappings, page_text_mask=segment_page(image, settings)
+                image, blocks, mappings, page_text_mask=segment_page(image, settings, blocks)
             )
 
         def done(result):

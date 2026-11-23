@@ -69,7 +69,7 @@ class SettingsPage(QtWidgets.QWidget):
         combos = [
             ui.lang_combo, ui.theme_combo, ui.translator_combo, ui.ocr_combo,
             ui.detector_combo, ui.inpainter_combo, ui.inpaint_strategy_combo,
-            ui.smart_fill_textured_combo,
+            ui.smart_fill_textured_combo, ui.tools_page.text_seg_engine_combo,
         ]
         for combo in combos:
             combo.currentTextChanged.connect(self._mark_settings_dirty)
@@ -168,6 +168,10 @@ class SettingsPage(QtWidgets.QWidget):
 
     def get_use_text_segmentation_model(self) -> bool:
         return self.ui.text_segmentation_checkbox.isChecked()
+
+    def get_text_segmentation_engine(self) -> str:
+        """Which text segmentation model: "ctd" (comic-text-detector) or "ctm" (comic-text-mask)."""
+        return self.ui.tools_page.text_seg_engine()
 
     def get_free_models_when_idle(self) -> bool:
         return self.ui.free_models_checkbox.isChecked()
@@ -328,6 +332,7 @@ class SettingsPage(QtWidgets.QWidget):
                 'ocr_min_padding': self.get_ocr_padding()[1],
                 'stitch_detection': self.ui.stitch_detection_checkbox.isChecked(),
                 'text_segmentation_model': self.get_use_text_segmentation_model(),
+                'text_segmentation_engine': self.get_text_segmentation_engine(),
                 'denoise_cleaned_areas': self.get_denoise_cleaned_areas(),
                 'smart_fill_textured': self.get_smart_fill_textured(),
                 # The checkbox, not the resolved engine: get_text_engine()
@@ -522,6 +527,9 @@ class SettingsPage(QtWidgets.QWidget):
         self.ui.stitch_detection_checkbox.setChecked(settings.value('stitch_detection', False, type=bool))
         self.ui.text_segmentation_checkbox.setChecked(
             settings.value('text_segmentation_model', True, type=bool)
+        )
+        self.ui.tools_page.set_text_seg_engine(
+            str(settings.value('text_segmentation_engine', 'ctd'))
         )
         self.ui.denoise_checkbox.setChecked(
             settings.value('denoise_cleaned_areas', True, type=bool)

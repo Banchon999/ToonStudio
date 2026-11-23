@@ -521,7 +521,7 @@ class BatchProcessor:
                 image, inpaint_blk_list,
                 default_padding=settings_page.get_mask_padding(),
                 bubble_inset=settings_page.get_bubble_inset(),
-                page_text_mask=segment_page(image, settings_page),
+                page_text_mask=segment_page(image, settings_page, inpaint_blk_list),
             )
             t1 = time.time()
             logger.info("pre-inpaint: mask generated in %.2fs (mask shape=%s)", t1 - t0, getattr(mask, 'shape', None))

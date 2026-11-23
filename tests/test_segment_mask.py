@@ -100,7 +100,7 @@ def test_the_segment_button_computes_the_prediction_on_its_worker(viewer, monkey
     page, smoke, letters, prediction = make_page()
     calls = []
 
-    def fake_segment_page(image, settings):
+    def fake_segment_page(image, settings, blocks=None):
         calls.append(image.shape)
         return prediction
 
@@ -132,7 +132,7 @@ def test_webtoon_strokes_use_the_visible_slice_and_land_in_the_scene(viewer, mon
     seen = []
     monkeypatch.setattr(segmentation_handler, "filter_and_convert_visible_blocks", fake_filter)
     monkeypatch.setattr(segmentation_handler, "segment_page",
-                        lambda image, settings: seen.append(image.shape) or prediction)
+                        lambda image, settings, blocks=None: seen.append(image.shape) or prediction)
     fake_viewer = SimpleNamespace(
         hasPhoto=lambda: True,
         get_visible_area_image=lambda: (page, [{"scene_y_start": 1000}]),

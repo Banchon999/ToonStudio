@@ -444,7 +444,7 @@ class InpaintingHandler:
                     block,
                     require_text_or_translation=False,
                     clip_to_bubble=True,
-                    page_text_mask=segment_page(image, self.main_page.settings_page),
+                    page_text_mask=segment_page(image, self.main_page.settings_page, blk_list),
                 )
                 if fallback_mask is None or fallback_bounds is None:
                     logger.info(

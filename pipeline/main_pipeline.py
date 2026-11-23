@@ -98,6 +98,11 @@ class ComicTranslatePipeline:
             release_segmenter()
         except Exception:
             pass
+        try:
+            from modules.detection.text_mask_onnx import release_masker
+            release_masker()
+        except Exception:
+            pass
 
         # Python's own cleanup, then hand the freed heap back to the system:
         # glibc keeps large freed blocks otherwise, and the RSS would not move.

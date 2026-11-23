@@ -97,6 +97,7 @@ class ModelID(Enum):
     RTDETR_INT8_ONNX = "rtdetr-int8-onnx"
     SPEECH_BUBBLE_SEG_ONNX = "speech-bubble-seg-onnx"
     COMIC_TEXT_SEG_ONNX = "comic-text-detector-onnx"
+    COMIC_TEXT_MASK_ONNX = "comic-text-mask-onnx"
     
     # PPOCRv5 Detection Models
     PPOCR_V5_DET_MOBILE = "ppocr-v5-det-mobile"
@@ -559,6 +560,17 @@ def _register_defaults():
         sha256=['1a86ace74961413cbd650002e7bb4dcec4980ffa21b2f19b86933372071d718f'],
         save_dir=os.path.join(models_base_dir, 'detection'),
         save_as={'comictextdetector.pt.onnx': 'comic-text-detector.onnx'}
+    ))
+
+    # comic-text-mask (TareHimself, MIT), exported from its TorchScript to ONNX
+    # and published by the project owner (modules/detection/text_mask_onnx.py).
+    ModelDownloader.register(ModelSpec(
+        id=ModelID.COMIC_TEXT_MASK_ONNX,
+        url='https://huggingface.co/DeWoke/comic-text-mask-onnx/resolve/main/',
+        files=['model.onnx'],
+        sha256=['39bc654215441407f2df02177af0143c176af338770ae0da6cd9fad3197dc853'],
+        save_dir=os.path.join(models_base_dir, 'detection'),
+        save_as={'model.onnx': 'comic-text-mask.onnx'}
     ))
 
     # PaddleOCR-VL-1.6: a 0.9B vision-language document parser, run through

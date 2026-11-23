@@ -41,7 +41,7 @@ class SegmentationHandler:
         # coordinates, from the text model's prediction for that image, then
         # placed back in the scene. Thresholding each box instead (what this
         # used to leave to the GUI thread) painted artwork with the lettering.
-        page_text_mask = segment_page(visible_image, self.main_page.settings_page)
+        page_text_mask = segment_page(visible_image, self.main_page.settings_page, visible_blocks)
         offset = (0, mappings[0]['scene_y_start'])
         build_stroke = self.main_page.image_viewer.drawing_manager.make_segmentation_stroke_data
         strokes = [
