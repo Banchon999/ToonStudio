@@ -1,5 +1,10 @@
 **ตัวทดลอง (test build)** — ยังไม่ใช่รุ่นจริง แอปจะไม่เสนอให้อัปเดตเป็นตัวนี้ และใช้การตั้งค่า คลังคำศัพท์ และโมเดลชุดเดียวกับรุ่นที่ใช้อยู่ · A test build, not a release: the app never offers it as an update, and it shares your settings, glossaries and models with the installed version.
 
+## ใหม่ตั้งแต่ beta.29 / Since beta.29
+
+- **Hayai อ่านภาษาอังกฤษและญี่ปุ่นได้แล้ว** (ชื่อในตั้งค่าเปลี่ยนเป็น "Hayai") — บนมังงะญี่ปุ่นทดสอบอ่านผิด 2 จาก 22 กล่อง (แค่ตัวเล็ก ぃ) เทียบกับตัวเดิม manga-ocr ที่ผิด 10 กล่อง ใครเลือก Hayai (Korean) ไว้แล้วไม่ต้องตั้งใหม่ · Hayai now reads English and Japanese too; on the Japanese test pages it misread 2 of 22 boxes against 10 for manga-ocr.
+- **ภาพที่ไฟล์ขาดท้าย (ดาวน์โหลดไม่ครบ) ไม่ทำให้หยุดแล้ว** — เดิมขึ้น "image file is truncated" ตอนตรวจจับ ตอนนี้อ่านเท่าที่มี ส่วนที่ขาดเป็นสีเทา · A page file cut off at the end no longer stops Detect.
+
 ## ใหม่ตั้งแต่ beta.28 / Since beta.28
 
 - **OCR เกาหลีตัวใหม่: Hayai (Korean)** — ตั้งค่า › เครื่องมือ › OCR › Hayai (Korean) อ่านทั้งกล่องในครั้งเดียว บนหน้าทดสอบเกาหลีอ่านผิด 0% (ตัวเดิม 10.7%) ตรงทั้งกล่อง 31 จาก 32 (ตัวเดิม 6) แม่นพอ ๆ กับ Gemini แต่ฟรีและไม่ต้องต่อเน็ต ใช้ครั้งแรกดาวน์โหลดประมาณ 265 MB ใช้กับหน้าเกาหลีเท่านั้น หน้าภาษาอื่นใช้ตัวอ่านเดิม · Hayai OCR for Korean pages: 0% Hangul error against 10.7% on the test pages, free and offline.

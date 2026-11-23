@@ -8,16 +8,20 @@ adapted from the model repository's ``inference_onnx.py``
 Measured on the three Korean test pages in ``tests/data/webtoon_ko`` (32 blocks,
 4-core CPU): Hangul error 0.0% against 10.7% for PP-OCRv5 Korean, 31 of 32 blocks
 exact against 6, about the same as gemini-3.1-flash-lite through OpenRouter, at
-~0.15 s a block and ~400 MB. It is offered for Korean only, by the owner's choice.
+~0.15 s a block and ~400 MB. On three Japanese manga pages (22 blocks) it misread
+2 (a small ぃ as い) where manga-ocr, the Default for Japanese, misread 10 (黄昏 → 黄春,
+S級 → ３級, 用済み → 用務み, words it made up). The owner tried it on English and found it
+good. It is offered for Korean, English and Japanese.
 
 Two things differ from the reference script:
 
 * The tokenizer is byte-level BPE, so decoding is a table lookup done here rather
   than through the ``tokenizers`` package, which the app does not otherwise need.
-* The model reads Japanese and Chinese too and has no language hint. With a crop
-  cut tight to the letters it once wrote す and 叶 into Korean lines, so every
-  block is cut with ``PAD`` pixels of room and, for Korean, tokens that would
-  begin a kana or CJK ideograph are never chosen (``_korean_ban``).
+* The model has no language hint. With a crop cut tight to the letters it once
+  wrote す and 叶 into Korean lines, so every block is cut with ``PAD`` pixels of
+  room, and tokens that would begin a character of a script the page's language
+  never uses are never chosen (``script_ban``): kana and ideographs for Korean,
+  those and Hangul (and CJK punctuation) for English, Hangul for Japanese.
 """
 from __future__ import annotations
 
@@ -154,6 +158,10 @@ class ByteLevelVocab:
         return b"".join(self.pieces[i] for i in ids if 0 <= i < len(self.pieces)).decode("utf-8", "replace")
 
 
+#: The languages Hayai is offered for, by the code the factory passes.
+LANGUAGES = ("ko", "en", "ja")
+
+
 def _is_kana_or_han_lead(data: bytes, i: int) -> bool:
     """Does a UTF-8 character starting at ``data[i]`` lie in kana or CJK ideographs?"""
     b = data[i]
@@ -164,13 +172,30 @@ def _is_kana_or_han_lead(data: bytes, i: int) -> bool:
     return b == 0xE3 and 0x90 <= (data[i + 1] if i + 1 < len(data) else 0) <= 0xBF  # U+3400..: ext. A
 
 
-def korean_ban(pieces: list[bytes]) -> np.ndarray:
-    """Tokens a Korean line never needs: any that writes the start of a kana or ideograph."""
+def _forbidden_at(language: str, data: bytes, i: int) -> bool:
+    """Does the character starting at ``data[i]`` belong to a script ``language`` never writes?"""
+    b = data[i]
+    if language == "ja":
+        return 0xEA <= b <= 0xED  # U+A000..U+DFFF: Hangul (and Yi, never used)
+    if language == "en":
+        # Every lead from U+3000 to U+DFFF: CJK punctuation, kana, ideographs, Hangul.
+        # U+2000..U+2FFF (… — ‘ ’ ★ ♥) and full-width forms (U+FFxx) stay allowed.
+        return 0xE3 <= b <= 0xED
+    return _is_kana_or_han_lead(data, i)  # Korean
+
+
+def script_ban(pieces: list[bytes], language: str = "ko") -> np.ndarray:
+    """Tokens a line in ``language`` never needs: any that starts a character of a script
+    that language does not use."""
     ban = np.zeros(len(pieces), dtype=bool)
     for idx, piece in enumerate(pieces):
-        if any(_is_kana_or_han_lead(piece, i) for i in range(len(piece))):
+        if any(_forbidden_at(language, piece, i) for i in range(len(piece))):
             ban[idx] = True
     return ban
+
+
+def korean_ban(pieces: list[bytes]) -> np.ndarray:
+    return script_ban(pieces, "ko")
 
 
 def _continues_kana(pieces: list[bytes]) -> np.ndarray:
@@ -184,12 +209,14 @@ class HayaiOCR(OCREngine):
     def __init__(self):
         self.prefill = None
         self.decode_sess = None
-        self.korean = True
+        self.language = "ko"
         self._ban = None
         self._after_e3 = None
         self._pos_cache: dict[tuple[int, int], np.ndarray] = {}
 
-    def initialize(self, korean: bool = True, **_kwargs) -> None:
+    def initialize(self, language: str = "ko", **_kwargs) -> None:
+        if language not in LANGUAGES:
+            raise ValueError(f"Hayai is offered for {', '.join(LANGUAGES)}, not {language!r}")
         ModelDownloader.get(ModelID.HAYAI_OCR_ONNX)
         path = lambda name: ModelDownloader.get_file_path(ModelID.HAYAI_OCR_ONNX, name)
         with open(path("hayai_onnx_config.json"), encoding="utf-8") as handle:
@@ -204,7 +231,7 @@ class HayaiOCR(OCREngine):
         providers = ["CPUExecutionProvider"]
         self.prefill = make_session(path("hayai_prefill_int8.onnx"), providers=providers, sess_options=options)
         self.decode_sess = make_session(path("hayai_decode_int8.onnx"), providers=providers, sess_options=options)
-        self.korean = korean
+        self.language = language
         self._ban = None
         self._after_e3 = None
 
@@ -260,16 +287,16 @@ class HayaiOCR(OCREngine):
         if self._ban is None or len(self._ban) != size:
             pieces = self.vocab.pieces + [b""] * max(0, size - len(self.vocab.pieces))
             pieces = pieces[:size]
-            self._ban = korean_ban(pieces)
+            self._ban = script_ban(pieces, self.language)
             self._after_e3 = _continues_kana(pieces)
         return self._ban, self._after_e3
 
     def _pick(self, logits: np.ndarray, written: bytes) -> int:
-        if self.korean:
-            ban, after_e3 = self._bans(logits.shape[-1])
-            logits = np.where(ban, -np.inf, logits)
-            if written.endswith(b"\xe3"):
-                logits = np.where(after_e3, -np.inf, logits)
+        ban, after_e3 = self._bans(logits.shape[-1])
+        logits = np.where(ban, -np.inf, logits)
+        # A lone 0xE3 is allowed only for Korean (「」 begin with it); kana may not follow.
+        if self.language == "ko" and written.endswith(b"\xe3"):
+            logits = np.where(after_e3, -np.inf, logits)
         return int(np.argmax(logits))
 
     def read(self, crop: np.ndarray) -> str:

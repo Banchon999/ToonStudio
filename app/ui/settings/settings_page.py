@@ -487,6 +487,8 @@ class SettingsPage(QtWidgets.QWidget):
             self.ui.translator_combo.setCurrentIndex(-1)
 
         ocr = settings.value('ocr', 'Default')
+        if ocr == 'Hayai (Korean)':  # its name while it read Korean only
+            ocr = 'Hayai'
         translated_ocr = self.ui.reverse_mappings.get(ocr, ocr)
         # An engine chosen on a machine that had its packages, opened on one
         # that does not, would otherwise be restored and then fail at OCR time.

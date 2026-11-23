@@ -16,8 +16,17 @@ from modules.utils.openrouter_models import uses_openrouter
 
 logger = logging.getLogger(__name__)
 
-# The name Settings lists Hayai OCR under (modules/ocr/hayai_ocr.py).
-HAYAI_KOREAN = 'Hayai (Korean)'
+# The name Settings lists Hayai OCR under (modules/ocr/hayai_ocr.py), and the
+# name it had while it read Korean only, which saved settings may still hold.
+HAYAI = 'Hayai'
+HAYAI_NAMES = (HAYAI, 'Hayai (Korean)')
+# The page languages Hayai reads (explicit names and Auto's script buckets).
+# "latin" is Auto's bucket for Latin script, which here is English comics.
+HAYAI_LANGUAGES = {
+    'Korean': 'ko', 'korean': 'ko',
+    'English': 'en', 'latin': 'en',
+    'Japanese': 'ja', 'japanese': 'ja',
+}
 
 
 class OCRFactory:
@@ -215,12 +224,14 @@ class OCRFactory:
         if ocr_model == 'Pororo (Korean)':
             return cls._create_pororo_ocr(settings, effective_backend)
 
-        # Korean only, by the owner's choice: any other page is read by the
-        # engine Default would pick for its language.
-        if ocr_model == HAYAI_KOREAN:
-            if source_lang_english in ('Korean', 'korean'):
-                return cls._create_hayai_ocr(settings)
-            logger.info("Hayai reads Korean only; %s is read by the default engine", source_lang_english)
+        # Korean, English and Japanese, by the owner's choice: any other page
+        # is read by the engine Default would pick for its language.
+        if ocr_model in HAYAI_NAMES:
+            language = HAYAI_LANGUAGES.get(source_lang_english)
+            if language:
+                return cls._create_hayai_ocr(settings, language)
+            logger.info("Hayai reads Korean, English and Japanese; %s is read by the default engine",
+                        source_lang_english)
             ocr_model = 'Default'
 
         if ocr_model == 'EasyOCR':
@@ -236,11 +247,11 @@ class OCRFactory:
         return
     
     @staticmethod
-    def _create_hayai_ocr(settings) -> OCREngine:
+    def _create_hayai_ocr(settings, language: str = 'ko') -> OCREngine:
         from .hayai_ocr import HayaiOCR
 
         engine = HayaiOCR()
-        engine.initialize(korean=True)
+        engine.initialize(language=language)
         return engine
 
     @staticmethod

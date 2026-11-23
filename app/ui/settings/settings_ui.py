@@ -60,7 +60,7 @@ class SettingsPageUI(QtWidgets.QWidget):
             self.tr("Default"),
             'PaddleOCR',
             'PaddleOCR (Server)',
-            'Hayai (Korean)',
+            'Hayai',
             'Pororo (Korean)',
             'PaddleOCR-VL',
             'EasyOCR',
@@ -157,7 +157,7 @@ class SettingsPageUI(QtWidgets.QWidget):
             "PaddleOCR": "PaddleOCR",
             "PaddleOCR (Server)": "PaddleOCR (Server)",
             "Pororo (Korean)": "Pororo (Korean)",
-            "Hayai (Korean)": "Hayai (Korean)",
+            "Hayai": "Hayai",
             "EasyOCR": "EasyOCR",
             "PaddleOCR-VL": "PaddleOCR-VL",
 

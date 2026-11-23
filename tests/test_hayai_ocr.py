@@ -49,32 +49,50 @@ class TestDecoding:
         assert H.ByteLevelVocab(str(path)).decode([0, 1]) == "탑"
 
 
-class TestKoreanOnly:
-    def test_kana_and_ideographs_are_never_chosen(self, vocab):
+class TestScriptsALanguageNeverWrites:
+    def test_korean_never_chooses_kana_or_ideographs(self, vocab):
         v, words = vocab
-        ban = H.korean_ban(v.pieces)
-        banned = {words[i] for i in np.flatnonzero(ban)}
+        banned = {words[i] for i in np.flatnonzero(H.script_ban(v.pieces, "ko"))}
         assert {"す", "叶", "あ"} <= banned
-
-    def test_hangul_latin_and_brackets_are_kept(self, vocab):
-        v, words = vocab
-        ban = H.korean_ban(v.pieces)
         for word in ("탑", "?", "...", " 이", "「", "」", "HP"):
-            assert not ban[words.index(word)], word
+            assert word not in banned, word
 
-    def test_a_lone_lead_byte_cannot_become_kana(self):
+    def test_english_never_chooses_cjk_or_hangul(self, vocab):
+        v, words = vocab
+        banned = {words[i] for i in np.flatnonzero(H.script_ban(v.pieces, "en"))}
+        assert {"す", "叶", "あ", "탑", " 이", "「", "」"} <= banned
+        for word in ("?", "...", "HP"):
+            assert word not in banned, word
+
+    def test_english_keeps_its_own_punctuation(self):
+        pieces = ["…".encode(), "—".encode(), "’".encode(), "♥".encode(), "！".encode()]
+        assert not H.script_ban(pieces, "en").any(), "U+2000..U+2FFF and full-width forms stay"
+
+    def test_japanese_never_chooses_hangul(self, vocab):
+        v, words = vocab
+        banned = {words[i] for i in np.flatnonzero(H.script_ban(v.pieces, "ja"))}
+        assert {"탑", " 이"} <= banned
+        for word in ("す", "叶", "あ", "「", "」", "?", "HP"):
+            assert word not in banned, word
+
+    def test_a_lone_lead_byte_cannot_become_kana_in_korean(self):
         engine = H.HayaiOCR()
-        engine.korean = True
+        engine.language = "ko"
         engine.vocab = type("V", (), {"pieces": [b"\x81\x82", b"\x80\x8c", b"a"]})()
         logits = np.array([5.0, 1.0, 0.0])
         assert engine._pick(logits, b"\xe3") == 1, "「 (E3 80 8C) may follow, あ (E3 81 82) may not"
         assert engine._pick(logits, b"x") == 0
 
-    def test_other_languages_are_not_restricted(self):
+    def test_japanese_may_write_kana(self):
         engine = H.HayaiOCR()
-        engine.korean = False
+        engine.language = "ja"
         engine.vocab = type("V", (), {"pieces": ["す".encode(), "탑".encode()]})()
         assert engine._pick(np.array([3.0, 1.0]), b"") == 0
+        assert engine._pick(np.array([1.0, 3.0]), b"") == 0, "Hangul never, even when likelier"
+
+    def test_an_unoffered_language_is_refused(self):
+        with pytest.raises(ValueError):
+            H.HayaiOCR().initialize(language="zh")
 
 
 def test_naflex_sizes_stay_in_whole_patches_within_the_budget():
@@ -120,35 +138,50 @@ class TestChoosingIt:
 
         made = []
         monkeypatch.setattr(OCRFactory, "_engines", {})
-        monkeypatch.setattr(OCRFactory, "_create_hayai_ocr", staticmethod(lambda s: made.append("hayai") or "hayai"))
+        monkeypatch.setattr(OCRFactory, "_create_hayai_ocr",
+                            staticmethod(lambda s, lang: made.append(("hayai", lang)) or ("hayai", lang)))
         monkeypatch.setattr(OCRFactory, "_create_ppocr", staticmethod(lambda s, lang, *a, **k: made.append(lang) or lang))
         monkeypatch.setattr(OCRFactory, "_create_manga_ocr", staticmethod(lambda s, *a: made.append("manga") or "manga"))
         settings = type("S", (), {"get_credentials": lambda s, k: {}, "is_gpu_enabled": lambda s: False})()
         return OCRFactory, settings, made
 
-    @pytest.mark.parametrize("language", ["Korean", "korean"])
-    def test_korean_is_read_by_hayai(self, factory, language):
+    @pytest.mark.parametrize("language, code", [("Korean", "ko"), ("korean", "ko"), ("English", "en"),
+                                                ("latin", "en"), ("Japanese", "ja"), ("japanese", "ja")])
+    @pytest.mark.parametrize("name", ["Hayai", "Hayai (Korean)"])
+    def test_korean_english_and_japanese_are_read_by_hayai(self, factory, language, code, name):
         f, settings, made = factory
-        assert f.create_engine(settings, language, "Hayai (Korean)") == "hayai"
+        assert f.create_engine(settings, language, name) == ("hayai", code)
 
-    @pytest.mark.parametrize("language, default", [("Japanese", "manga"), ("English", "en"), ("chinese", "ch")])
+    @pytest.mark.parametrize("language, default", [("Chinese", "ch"), ("chinese", "ch"), ("Russian", "ru")])
     def test_other_languages_get_their_default_engine(self, factory, language, default):
         f, settings, made = factory
-        assert f.create_engine(settings, language, "Hayai (Korean)") == default
-        assert "hayai" not in made
+        assert f.create_engine(settings, language, "Hayai") == default
+        assert not any(isinstance(m, tuple) for m in made)
 
     def test_settings_list_it_and_map_it(self, qapp):
         from app.ui.settings.settings_ui import SettingsPageUI
 
         ui = SettingsPageUI()
-        assert "Hayai (Korean)" in ui.ocr_engines
-        assert ui.value_mappings["Hayai (Korean)"] == "Hayai (Korean)"
+        assert "Hayai" in ui.ocr_engines and "Hayai (Korean)" not in ui.ocr_engines
+        assert ui.value_mappings["Hayai"] == "Hayai"
         combo = ui.tools_page.ocr_combo if hasattr(ui, "tools_page") else None
         if combo is not None:
             from PySide6 import QtCore
 
-            tip = combo.itemData(combo.findText("Hayai (Korean)"), QtCore.Qt.ItemDataRole.ToolTipRole)
-            assert tip and "Korean" in tip
+            tip = combo.itemData(combo.findText("Hayai"), QtCore.Qt.ItemDataRole.ToolTipRole)
+            assert tip and "Korean, English and Japanese" in tip
+
+    def test_a_setting_saved_under_the_old_name_still_picks_it(self, qapp):
+        from PySide6.QtCore import QSettings
+
+        from app.ui.settings.settings_page import SettingsPage
+
+        store = QSettings("ComicLabs", "ComicTranslate")
+        store.beginGroup("tools"); store.setValue("ocr", "Hayai (Korean)"); store.endGroup()
+        page = SettingsPage()
+        page.load_settings()
+        assert page.ui.ocr_combo.currentText() == "Hayai"
+        store.remove("tools/ocr")
 
 
 def test_the_model_files_are_pinned():
@@ -174,7 +207,7 @@ def test_real_model_reads_the_korean_test_pages():
     from modules.utils.textblock import TextBlock
 
     engine = H.HayaiOCR()
-    engine.initialize(korean=True)
+    engine.initialize(language="ko")
     root = os.path.join(os.path.dirname(__file__), "data", "webtoon_ko")
     cases = [  # boxes RT-DETR-v2 found; PP-OCRv5 read the first as "탄2 리?"
         ("page_01.png", [704, 622, 801, 679], "...탑?"),
@@ -187,3 +220,20 @@ def test_real_model_reads_the_korean_test_pages():
         engine.process_image(img, [blk])
         # Spacing round a dash varies with the ONNX Runtime build; the letters may not.
         assert blk.text.replace(" ", "") == expected.replace(" ", ""), (name, blk.text)
+
+
+@pytest.mark.skipif(not _model_here(), reason="Hayai's files are not downloaded here")
+def test_real_model_reads_english_lettering():
+    from PIL import Image
+
+    from modules.utils.textblock import TextBlock
+
+    engine = H.HayaiOCR()
+    engine.initialize(language="en")
+    page = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "images", "demo", "page.png")
+    img = np.asarray(Image.open(page).convert("RGB"))
+    for box, expected in (([103, 545, 275, 665], "TO THE OLD LIGHTHOUSE, MINA."),
+                          ([613, 261, 840, 357], "WHERE ARE WE GOING, JUN?")):
+        blk = TextBlock(text_bbox=np.array(box))
+        engine.process_image(img, [blk])
+        assert blk.text == expected
