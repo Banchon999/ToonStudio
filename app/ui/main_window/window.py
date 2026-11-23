@@ -192,6 +192,9 @@ class ComicTranslateUI(
 
         self._center_stack.setCurrentWidget(self.startup_home)
         self._set_document_tools_visible(False)
+        # Floating panels belong to the editor: hidden on every other page.
+        self._center_stack.currentChanged.connect(self._on_center_page_changed)
+        self.sync_floating_panels(False)
 
         self.main_layout.addWidget(self._center_stack)
 

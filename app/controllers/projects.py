@@ -619,7 +619,8 @@ class ProjectController:
         as an archive, without the packing)."""
         if not self.main.image_files:
             return
-        export_rows = self._build_export_rows()
+        # A chapter folder is named after the folder its images came from.
+        export_rows = self._build_export_rows(folder_names=True)
         if self._should_show_partition_dialog(export_rows):
             partition_result = self._prompt_for_partition(
                 export_rows, os.path.join(self._get_default_export_dir(), "untitled")
@@ -724,8 +725,9 @@ class ProjectController:
         changed = False
         for file_path, group_name in chapter_names_by_path.items():
             state = self.main.image_states.ensure_page(file_path)
-            if state.get("export_group_name") != group_name:
+            if state.get("export_group_name") != group_name or not state.get("export_group_named"):
                 state["export_group_name"] = group_name
+                state["export_group_named"] = True  # the user's, not a default
                 changed = True
         if changed:
             self.main.mark_project_dirty()
@@ -999,10 +1001,13 @@ class ProjectController:
         sanitized = re.sub(r"\s+", " ", sanitized).strip().strip(".")
         return sanitized.strip("._-") or "chapter"
 
-    def _default_export_group_name(self, file_path: str) -> str:
+    def _default_export_group_name(self, file_path: str, folder_names: bool = False) -> str:
         state = self.main.image_states.get_page_state(file_path, {})
         group_name = str(state.get("export_group_name", "")).strip()
-        if group_name:
+        # Every page is created with a default name (the project's, or the
+        # first image's); for a folder of images only a name the user gave in
+        # the chapters dialog beats the folder the images came from.
+        if group_name and (not folder_names or state.get("export_group_named")):
             return group_name
         try:
             source_label = self.main.file_handler.get_prepared_source_label(file_path)
@@ -1010,9 +1015,28 @@ class ProjectController:
             source_label = None
         if source_label:
             return source_label
-        return self._get_export_bundle_name()
+        if folder_names:
+            folder = self._source_folder_name(file_path)
+            if folder:
+                return folder
+        return group_name or self._get_export_bundle_name()
 
-    def _build_export_rows(self) -> list[ExportChapterRow]:
+    def _source_folder_name(self, file_path: str) -> str:
+        """The name of the folder a page's image came from ("ตอนที่ 3"), or ""
+        when it is in the app's own temporary folder (a reopened project with
+        no record of where its pages were)."""
+        original = (getattr(self.main, "path_originals", None) or {}).get(file_path, file_path)
+        folder = os.path.dirname(os.path.abspath(original))
+        app_temp = getattr(self.main, "temp_dir", "")
+        if app_temp:
+            try:
+                if os.path.commonpath([folder, os.path.abspath(app_temp)]) == os.path.abspath(app_temp):
+                    return ""
+            except ValueError:  # another drive on Windows
+                pass
+        return os.path.basename(folder.rstrip(os.sep))
+
+    def _build_export_rows(self, folder_names: bool = False) -> list[ExportChapterRow]:
         rows: list[ExportChapterRow] = []
         for page_index, file_path in enumerate(self.main.image_files):
             rows.append(
@@ -1020,7 +1044,7 @@ class ProjectController:
                     page_index=page_index,
                     file_path=file_path,
                     file_name=os.path.basename(file_path),
-                    group_name=self._default_export_group_name(file_path),
+                    group_name=self._default_export_group_name(file_path, folder_names),
                 )
             )
         return rows

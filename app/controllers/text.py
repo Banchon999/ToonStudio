@@ -429,9 +429,12 @@ class TextController:
 
         if self.main.curr_tblock_item == text_item and not self._is_updating_from_edit:
             self.main.curr_tblock = blk
-            self.main.t_text_edit.blockSignals(True)
-            self.main.t_text_edit.setPlainText(new_text)
-            self.main.t_text_edit.blockSignals(False)
+            # A format change leaves the text as it was: rewriting the box
+            # would drop the words picked in it, one change per pick.
+            if self.main.t_text_edit.toPlainText() != new_text:
+                self.main.t_text_edit.blockSignals(True)
+                self.main.t_text_edit.setPlainText(new_text)
+                self.main.t_text_edit.blockSignals(False)
 
         self._schedule_text_change_command(text_item, new_text, blk)
 
@@ -749,10 +752,36 @@ class TextController:
             items.append(item)
         self._push_commands(f"change_{target}_color", commands, items)
 
+    def _text_span(self, item) -> tuple[int, int] | None:
+        """The words picked in `item`: in the translation box, else on the canvas."""
+        if item is None:
+            return None
+        span = self.panel_selection() if item is self.main.curr_tblock_item else None
+        if span is not None and span[1] > span[0]:
+            return span
+        cursor = item.textCursor()
+        if cursor.hasSelection():
+            return cursor.selectionStart(), cursor.selectionEnd()
+        return None
+
+    def _push_one(self, name: str, item, change) -> None:
+        command = TextFormatCommand(self.main.image_viewer, item)
+        change()
+        command.finalize_new_state()
+        self._push_commands(name, [command], [item])
+
     def apply_gradient_preset(self, start: str, end: str) -> None:
-        """The Gradients panel: the selected layers fade from `start` to `end`,
-        at the angle each already has, one undo step for all of them."""
+        """The Gradients panel: with words picked in the current text, just
+        those words fade from `start` to `end`; otherwise the selected layers
+        do, at the angle each already has. One undo step."""
         start_color, end_color = QColor(start), QColor(end)
+        item = self.main.curr_tblock_item
+        span = self._text_span(item)
+        if span is not None:
+            angle = self._dropdown_value(self.main.gradient_angle_dropdown, 0.0)
+            self._push_one("apply_gradient_preset", item,
+                           lambda: item.set_range_gradient(*span, start_color, end_color, angle))
+            return
 
         def apply(item):
             item.set_color(start_color)
@@ -771,11 +800,25 @@ class TextController:
         if panel is not None:
             panel.set_colors(fill=start_color)
 
+    @staticmethod
+    def _colour_at(item, position: int) -> QColor:
+        """The solid colour of the character at `position`, else the item's."""
+        cursor = QTextCursor(item.document())
+        cursor.setPosition(min(position + 1, max(0, item.document().characterCount() - 1)))
+        brush = cursor.charFormat().foreground()
+        if brush.style() == QtCore.Qt.BrushStyle.SolidPattern:
+            return QColor(brush.color())
+        return QColor(item.text_color or "#000000")
+
     def save_gradient_from_selection(self) -> None:
         """The Gradients panel's "+": the selected text's gradient into My Gradients
         (or, with none on it, the toolbar's text and gradient colours)."""
         item = self.main.curr_tblock_item
-        if item is not None and getattr(item, "gradient_enabled", False):
+        span = self._text_span(item)
+        picked = item.range_gradient_at(span[0]) if span is not None else None
+        if picked is not None:
+            start, end = QColor(picked[2]), QColor(picked[3])
+        elif item is not None and getattr(item, "gradient_enabled", False):
             start, end = QColor(item.text_color or "#000000"), QColor(item.gradient_color)
         else:
             start = QColor(self.main.block_font_color_button.property('selected_color') or "#000000")
@@ -1288,6 +1331,21 @@ class TextController:
         if not self.main.curr_tblock_item:
             return
         item = self.main.curr_tblock_item
+        span = self._text_span(item)
+        if span is not None:
+            # Words picked: the gradient goes on (or comes off) just those,
+            # from the colour they start with to the gradient colour.
+            if self.main.gradient_checkbox.isChecked():
+                existing = item.range_gradient_at(span[0])
+                first = QColor(existing[2]) if existing else self._colour_at(item, span[0])
+                last = QColor(self.main.gradient_color_button.property('selected_color') or "#ffffff")
+                angle = self._dropdown_value(self.main.gradient_angle_dropdown, 0.0)
+                self._push_one("change_text_gradient", item,
+                               lambda: item.set_range_gradient(*span, first, last, angle))
+            elif item.range_gradient_at(span[0]) or any(
+                    s < span[1] and e > span[0] for s, e, *_ in item.range_gradients):
+                self._push_one("change_text_gradient", item, lambda: item.remove_range_gradients(*span))
+            return
         command = TextFormatCommand(self.main.image_viewer, item)
         item.set_gradient(
             self.main.gradient_checkbox.isChecked(),
@@ -1409,6 +1467,26 @@ class TextController:
         for widget in self._character_paragraph_widgets():
             widget.blockSignals(False)
 
+    def _show_range_gradient(self, item) -> None:
+        """Highlighted words inside a range gradient: the gradient controls show it."""
+        span = self._text_span(item)
+        entry = item.range_gradient_at(span[0]) if span is not None else None
+        if entry is None:
+            self.main.gradient_checkbox.setChecked(bool(getattr(item, "gradient_enabled", False)))
+            return
+        self.main.gradient_checkbox.setChecked(True)
+        end = QColor(entry[3])
+        self.main.gradient_color_button.setStyleSheet(
+            f"background-color: {end.name()}; border: none; border-radius: 5px;"
+        )
+        self.main.gradient_color_button.setProperty('selected_color', end.name())
+        self.main.gradient_angle_dropdown.setCurrentText(f"{round(entry[4]):g}")
+        dial = getattr(self.main, "gradient_angle_dial", None)
+        if dial is not None:
+            dial.blockSignals(True)
+            dial.set_angle(entry[4])
+            dial.blockSignals(False)
+
     def _character_paragraph_widgets(self) -> list:
         return [
             *getattr(self.main, "char_style_buttons", {}).values(),
@@ -1525,6 +1603,7 @@ class TextController:
                 button_group.buttons()[button_index].setChecked(True)
 
             self._show_character_paragraph(text_item)
+            self._show_range_gradient(text_item)
 
         finally:
             self.unblock_text_item_widgets(self.widgets_to_block)
@@ -1592,6 +1671,7 @@ class TextController:
 
             if self.main.curr_tblock_item is not None:
                 self._show_character_paragraph(self.main.curr_tblock_item)
+                self._show_range_gradient(self.main.curr_tblock_item)
 
         finally:
             self.unblock_text_item_widgets(self.widgets_to_block)
