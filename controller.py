@@ -294,6 +294,10 @@ class ComicTranslate(ComicTranslateUI):
         # Rendering
         self.font_dropdown.currentTextChanged.connect(self.text_ctrl.on_font_dropdown_change)
         self.font_dropdown.currentTextChanged.connect(self._sync_font_favourite_star)
+        # The font menu previews the selected text itself.
+        self.font_dropdown.sample_text = lambda: (
+            self.curr_tblock_item.toPlainText() if self.curr_tblock_item is not None else ''
+        )
         self.font_favourite_toggle.clicked.connect(self._on_font_favourite_toggled)
         self.font_favourites_menu.aboutToShow.connect(self._rebuild_font_favourites_menu)
         font_favourites().changed.connect(self._sync_font_favourite_star)
@@ -304,6 +308,15 @@ class ComicTranslate(ComicTranslateUI):
         self.alignment_tool_group.get_button_group().buttons()[0].clicked.connect(self.text_ctrl.left_align)
         self.alignment_tool_group.get_button_group().buttons()[1].clicked.connect(self.text_ctrl.center_align)
         self.alignment_tool_group.get_button_group().buttons()[2].clicked.connect(self.text_ctrl.right_align)
+        self.alignment_tool_group.get_button_group().buttons()[3].clicked.connect(self.text_ctrl.justify_align)
+        for name, button in self.char_style_buttons.items():
+            button.toggled.connect(lambda on, name=name: self.text_ctrl.on_char_style_toggled(name, on))
+        for key, spin in self.paragraph_spins.items():
+            spin.valueChanged.connect(lambda value, key=key: self.text_ctrl.on_paragraph_changed(key, value))
+        self.color_panel.preview.connect(self.text_ctrl.preview_panel_color)
+        self.color_panel.committed.connect(self.text_ctrl.commit_panel_color)
+        self.gradients_panel.chosen.connect(self.text_ctrl.apply_gradient_preset)
+        self.gradients_panel.save_requested.connect(self.text_ctrl.save_gradient_from_selection)
         self.bold_button.clicked.connect(self.text_ctrl.bold)
         self.italic_button.clicked.connect(self.text_ctrl.italic)
         self.underline_button.clicked.connect(self.text_ctrl.underline)
@@ -324,11 +337,24 @@ class ComicTranslate(ComicTranslateUI):
         self.gradient_checkbox.stateChanged.connect(self.text_ctrl.apply_gradient_settings)
         self.gradient_color_button.clicked.connect(self.text_ctrl.on_gradient_color_change)
         self.gradient_angle_dropdown.currentTextChanged.connect(self.text_ctrl.apply_gradient_settings)
+        self.gradient_angle_dropdown.currentTextChanged.connect(self.text_ctrl.on_gradient_angle_typed)
+        self.gradient_angle_dial.angle_changed.connect(self.text_ctrl.on_gradient_dial_moved)
+        self.gradient_angle_dial.angle_committed.connect(self.text_ctrl.on_gradient_dial_committed)
+        self.shadow_angle_dial.angle_committed.connect(self.text_ctrl.on_shadow_direction_changed)
+        self.shadow_distance_dropdown.currentTextChanged.connect(self.text_ctrl.on_shadow_direction_changed)
+        self.glow_checkbox.stateChanged.connect(self.text_ctrl.apply_glow_settings)
+        self.glow_color_button.clicked.connect(self.text_ctrl.on_glow_color_change)
+        self.glow_size_dropdown.currentTextChanged.connect(self.text_ctrl.apply_glow_settings)
+        self.glow_strength_dropdown.currentTextChanged.connect(self.text_ctrl.apply_glow_settings)
         self.curvature_dropdown.currentTextChanged.connect(self.text_ctrl.apply_curvature)
         self.warp_style_combo.currentIndexChanged.connect(self.text_ctrl.apply_curvature)
         self.style_preset_combo.activated.connect(self.text_ctrl.apply_style_preset)
         self.save_style_button.clicked.connect(self.text_ctrl.save_style_preset)
         self.delete_style_button.clicked.connect(self.text_ctrl.delete_style_preset)
+        self.outline_preset_combo.activated.connect(self.text_ctrl.apply_outline_preset)
+        self.save_outline_preset_button.clicked.connect(self.text_ctrl.save_outline_preset)
+        self.delete_outline_preset_button.clicked.connect(self.text_ctrl.delete_outline_preset)
+        self.text_ctrl.refresh_outline_presets()
 
         # Page List
         self.page_list.currentItemChanged.connect(self.image_ctrl.on_page_list_current_item_changed)
@@ -1112,7 +1138,7 @@ class ComicTranslate(ComicTranslateUI):
             apply_step_states(self)
         except Exception:  # decoration only: never let it break an operation's finish
             logging.getLogger(__name__).exception("Step bar refresh failed")
-        if self.inspector_tabs.currentWidget() is self.glossary_peek:
+        if self.glossary_peek.isVisible():
             self.glossary_peek.refresh(self)
 
     def block_detect(self, load_rects: bool = True):
@@ -1232,6 +1258,10 @@ class ComicTranslate(ComicTranslateUI):
     def closeEvent(self, event):
         try:
             self.text_ctrl._commit_pending_text_command()
+        except Exception:
+            pass
+        try:
+            self.save_dock_state()  # where the panel windows are, for the next start
         except Exception:
             pass
         if not getattr(self, "_skip_close_prompt", False):

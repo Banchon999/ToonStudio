@@ -18,6 +18,7 @@ from app.ui.dayu_widgets.slider import MSlider
 from app.ui.dayu_widgets.text_edit import MTextEdit
 from app.ui.dayu_widgets.tool_button import MToolButton
 from app.ui.file_tree_panel import FileTreePanel
+from app.ui.font_picker import PickerFontComboBox
 from app.ui.layers_panel import LayersPanel
 from app.ui.search_replace_panel import SearchReplacePanel
 from app.ui.main_window.constants import supported_source_languages, supported_target_languages
@@ -142,6 +143,12 @@ class WorkspaceMixin:
         header_layout.addWidget(self.translate_button)
         header_layout.addWidget(self.cancel_button)
         header_layout.addWidget(self.chapter_queue_button)
+        # Window ▾: show/hide each panel, or put them all back (Photoshop's Window menu).
+        self.window_menu_button = MToolButton().svg("panels.svg").icon_only()
+        self.window_menu_button.setToolTip(self.tr("Panels: show, hide or reset the panel windows"))
+        self.window_menu_button.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+        self.window_menu_button.setPopupMode(QtWidgets.QToolButton.ToolButtonPopupMode.InstantPopup)
+        header_layout.addWidget(self.window_menu_button)
         header_layout.addWidget(self.batch_report_button)
 
         self.search_panel = SearchReplacePanel(self)
@@ -232,9 +239,9 @@ class WorkspaceMixin:
         input_layout.addLayout(t_combo_text_layout)
 
         text_render_layout = QtWidgets.QVBoxLayout()
-        font_settings_layout = QtWidgets.QHBoxLayout()
 
-        self.font_dropdown = MFontComboBox().small()
+        # The arrow opens the Photoshop-style font menu (app/ui/font_picker.py).
+        self.font_dropdown = PickerFontComboBox().small()
         self.font_dropdown.setToolTip(self.tr("Font"))
 
         # Favourite fonts: a star that adds/removes the current font, and a
@@ -281,20 +288,7 @@ class WorkspaceMixin:
         self.horizontal_scale_dropdown.setFixedWidth(60)
         self.horizontal_scale_dropdown.set_editable(True)
 
-        # Two rows, so the controls fit the one-column inspector: the face,
-        # then its metrics.
         self.font_dropdown.setMinimumWidth(120)
-        font_settings_layout.addWidget(self.font_dropdown, 1)
-        font_settings_layout.addWidget(self.font_favourite_toggle)
-        font_settings_layout.addWidget(self.font_favourites_button)
-        font_metrics_layout = QtWidgets.QHBoxLayout()
-        font_metrics_layout.addWidget(self.font_size_dropdown)
-        font_metrics_layout.addWidget(self.line_spacing_dropdown)
-        font_metrics_layout.addWidget(self.letter_spacing_dropdown)
-        font_metrics_layout.addWidget(self.horizontal_scale_dropdown)
-        font_metrics_layout.addStretch()
-
-        main_text_settings_layout = QtWidgets.QHBoxLayout()
 
         settings = QSettings("ComicLabs", "ComicTranslate")
         settings.beginGroup("text_rendering")
@@ -313,6 +307,7 @@ class WorkspaceMixin:
             {"svg": "tabler--align-left.svg", "checkable": True, "tooltip": "Align Left"},
             {"svg": "tabler--align-center.svg", "checkable": True, "tooltip": "Align Center"},
             {"svg": "tabler--align-right.svg", "checkable": True, "tooltip": "Align Right"},
+            {"svg": "tabler--align-justified.svg", "checkable": True, "tooltip": "Justify"},
         ]
         self.alignment_tool_group.set_button_list(alignment_tools)
         self.alignment_tool_group.set_dayu_checked(1)
@@ -324,14 +319,7 @@ class WorkspaceMixin:
         self.underline_button = self.create_tool_button(svg="underline.svg", checkable=True)
         self.underline_button.setToolTip(self.tr("Underline"))
 
-        main_text_settings_layout.addWidget(self.block_font_color_button)
-        main_text_settings_layout.addWidget(self.alignment_tool_group)
-        main_text_settings_layout.addWidget(self.bold_button)
-        main_text_settings_layout.addWidget(self.italic_button)
-        main_text_settings_layout.addWidget(self.underline_button)
-        main_text_settings_layout.addStretch()
 
-        outline_settings_layout = QtWidgets.QHBoxLayout()
 
         self.outline_checkbox = MCheckBox(self.tr("Outline"))
         self.outline_checkbox.setChecked(dflt_outline_check)
@@ -355,13 +343,7 @@ class WorkspaceMixin:
             "Stack extra strokes outside the outline, e.g. white then black."
         ))
 
-        outline_settings_layout.addWidget(self.outline_checkbox)
-        outline_settings_layout.addWidget(self.outline_font_color_button)
-        outline_settings_layout.addWidget(self.outline_width_dropdown)
-        outline_settings_layout.addWidget(self.stroke_layers_button)
-        outline_settings_layout.addStretch()
 
-        shadow_settings_layout = QtWidgets.QHBoxLayout()
 
         self.shadow_checkbox = MCheckBox(self.tr("Shadow"))
 
@@ -399,15 +381,7 @@ class WorkspaceMixin:
         self.shadow_opacity_dropdown.setFixedWidth(60)
         self.shadow_opacity_dropdown.set_editable(True)
 
-        shadow_settings_layout.addWidget(self.shadow_checkbox)
-        shadow_settings_layout.addWidget(self.shadow_color_button)
-        shadow_settings_layout.addWidget(self.shadow_opacity_dropdown)
-        shadow_settings_layout.addWidget(self.shadow_offset_x_dropdown)
-        shadow_settings_layout.addWidget(self.shadow_offset_y_dropdown)
-        shadow_settings_layout.addWidget(self.shadow_blur_dropdown)
-        shadow_settings_layout.addStretch()
 
-        effects_settings_layout = QtWidgets.QHBoxLayout()
 
         self.gradient_checkbox = MCheckBox(self.tr("Gradient"))
         self.gradient_checkbox.setToolTip(self.tr(
@@ -440,10 +414,6 @@ class WorkspaceMixin:
         self.curvature_dropdown.setFixedWidth(60)
         self.curvature_dropdown.set_editable(True)
 
-        effects_settings_layout.addWidget(self.gradient_checkbox)
-        effects_settings_layout.addWidget(self.gradient_color_button)
-        effects_settings_layout.addWidget(self.gradient_angle_dropdown)
-        effects_settings_layout.addStretch()
         self.perspective_button = MPushButton(self.tr("Perspective")).small()
         self.perspective_button.setCheckable(True)
         self.perspective_button.setToolTip(self.tr(
@@ -461,15 +431,7 @@ class WorkspaceMixin:
             self.warp_style_combo.addItem(label, key)
         self.warp_style_combo.setFixedWidth(96)
 
-        curve_layout = QtWidgets.QHBoxLayout()
-        curve_layout.addWidget(curve_label)
-        curve_layout.addWidget(self.warp_style_combo)
-        curve_layout.addWidget(self.curvature_dropdown)
-        curve_layout.addWidget(self.perspective_button)
-        curve_layout.addWidget(self.reset_transform_button)
-        curve_layout.addStretch()
 
-        style_layout = QtWidgets.QHBoxLayout()
         style_label = MLabel(self.tr("Style"))
         self.style_preset_combo = MComboBox().small()
         self.style_preset_combo.setToolTip(self.tr(
@@ -480,21 +442,8 @@ class WorkspaceMixin:
         self.save_style_button.setToolTip(self.tr("Save the selected text's look as a new style."))
         self.delete_style_button = MPushButton(self.tr("Delete")).small()
         self.delete_style_button.setToolTip(self.tr("Delete the chosen style (built-in styles cannot be deleted)."))
-        style_layout.addWidget(style_label)
-        style_layout.addWidget(self.style_preset_combo, 1)
-        style_layout.addWidget(self.save_style_button)
-        style_layout.addWidget(self.delete_style_button)
 
-        rendering_divider_top = MDivider()
-        text_render_layout.addWidget(rendering_divider_top)
-        text_render_layout.addLayout(style_layout)
-        text_render_layout.addLayout(font_settings_layout)
-        text_render_layout.addLayout(font_metrics_layout)
-        text_render_layout.addLayout(main_text_settings_layout)
-        text_render_layout.addLayout(outline_settings_layout)
-        text_render_layout.addLayout(shadow_settings_layout)
-        text_render_layout.addLayout(effects_settings_layout)
-        text_render_layout.addLayout(curve_layout)
+        self._build_character_panel(text_render_layout, style_label, curve_label)
 
         self.pan_button = self.create_tool_button(svg="pan_tool.svg", checkable=True)
         self.pan_button.setToolTip(self.tr("Pan Image"))
@@ -790,11 +739,11 @@ class WorkspaceMixin:
         central_layout.setContentsMargins(0, 0, 0, 0)
         central_layout.setSpacing(0)
 
-        # --- Inspector: Text · Layers · Glossary tabs on the right. ---
+        # --- Panels: dockable windows around the canvas, as in Photoshop. ---
         text_tab = QtWidgets.QWidget()
         text_tab_layout = QtWidgets.QVBoxLayout(text_tab)
         text_tab_layout.setContentsMargins(10, 10, 10, 10)
-        # Source over target: the inspector is one column wide.
+        # Source over target: a panel is one column wide.
         input_layout.setDirection(QtWidgets.QBoxLayout.Direction.TopToBottom)
         self.s_text_edit.setFixedHeight(84)
         self.t_text_edit.setFixedHeight(84)
@@ -805,40 +754,37 @@ class WorkspaceMixin:
         text_tab_layout.addLayout(set_all_row)
         text_tab_layout.addLayout(text_render_layout)
         text_tab_layout.addStretch(1)
-        text_scroll = QtWidgets.QScrollArea()
-        text_scroll.setWidgetResizable(True)
-        text_scroll.setWidget(text_tab)
-        text_scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        text_scroll.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
-        text_scroll.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
 
         self.glossary_peek = GlossaryPeekPanel()
         self.glossary_peek.open_glossary.connect(self.show_glossary_dialog)
-
-        self.inspector_tabs = QtWidgets.QTabWidget()
-        self.inspector_tabs.setObjectName("toonInspector")
-        self.inspector_tabs.setDocumentMode(True)
-        self.inspector_tabs.addTab(text_scroll, self.tr("Text"))
         if self.layers_panel.layout() is not None:
             self.layers_panel.layout().setContentsMargins(10, 8, 10, 8)
-        self.inspector_tabs.addTab(self.layers_panel, self.tr("Layers"))
-        self.inspector_tabs.addTab(self.glossary_peek, self.tr("Glossary"))
-        self.inspector_tabs.currentChanged.connect(self._on_inspector_tab_changed)
 
-        right_widget = self.inspector_tabs
+        panels = [
+            ("dock_text", self.tr("Text"), text_tab, True),
+            ("dock_glossary", self.tr("Glossary"), self.glossary_peek, False),
+            ("dock_character", self.tr("Character"), self.character_panel, True),
+            ("dock_paragraph", self.tr("Paragraph"), self.paragraph_panel, True),
+            ("dock_layer_style", self.tr("Layer Style"), self.layer_style_panel, True),
+            ("dock_layers", self.tr("Layers"), self.layers_panel, False),
+        ]
+        panels += self._extra_panels()
+        dock_host = self._build_dock_host(central_widget, panels)
+        self.window_menu_button.setMenu(self.build_window_menu(self.window_menu_button))
+        layers_dock = self.panel_docks["dock_layers"]
+        layers_dock.visibilityChanged.connect(self._on_layers_dock_visibility)
+        self.panel_docks["dock_glossary"].visibilityChanged.connect(
+            lambda visible: visible and self.glossary_peek.refresh(self)
+        )
 
         splitter = QtWidgets.QSplitter()
         splitter.addWidget(left_widget)
-        splitter.addWidget(central_widget)
-        splitter.addWidget(right_widget)
-
-        right_widget.setMinimumWidth(340)
+        splitter.addWidget(dock_host)
         left_widget.setMinimumWidth(170)
 
         splitter.setStretchFactor(0, 20)
-        splitter.setStretchFactor(1, 80)
-        splitter.setStretchFactor(2, 10)
-        splitter.setSizes([210, 890, 340])
+        splitter.setStretchFactor(1, 90)
+        splitter.setSizes([210, 1230])
 
         body = QtWidgets.QHBoxLayout()
         body.setContentsMargins(0, 0, 0, 0)
@@ -864,16 +810,288 @@ class WorkspaceMixin:
 
         return content_widget
 
-    def _on_inspector_tab_changed(self, index: int) -> None:
-        """Keep the layers button in step with the Layers tab, refresh the Glossary tab."""
-        tabs = self.inspector_tabs
-        on_layers = tabs.widget(index) is self.layers_panel
-        if self.layers_button.isChecked() != on_layers:
+    # --- Character panel ---------------------------------------------------
+    #
+    # The Text tab laid out like Photoshop's Character, Paragraph and Layer
+    # Style panels (and PhotoCraft's, which follow them): a heading per group
+    # and a name on every field. The widgets and their attribute names are the
+    # ones the controllers always used — only where they sit changed.
+
+    def _character_section(self, parent_layout: QtWidgets.QVBoxLayout, title: str) -> QtWidgets.QGridLayout:
+        heading = MLabel(title)
+        heading.setObjectName("toonSectionLabel")
+        heading.setContentsMargins(0, 8, 0, 0)
+        parent_layout.addWidget(heading)
+        grid = QtWidgets.QGridLayout()
+        grid.setHorizontalSpacing(6)
+        grid.setVerticalSpacing(6)
+        grid.setColumnStretch(1, 1)
+        grid.setColumnStretch(3, 1)
+        parent_layout.addLayout(grid)
+        self.character_sections.append(heading)
+        return grid
+
+    def _field_label(self, text: str, tooltip: str = "") -> MLabel:
+        label = MLabel(text).secondary()
+        if tooltip:
+            label.setToolTip(tooltip)
+        return label
+
+    @staticmethod
+    def _panel_body() -> tuple[QtWidgets.QWidget, QtWidgets.QVBoxLayout]:
+        widget = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(widget)
+        layout.setContentsMargins(10, 6, 10, 10)
+        layout.setSpacing(6)
+        return widget, layout
+
+    def _build_character_panel(self, text_render_layout, style_label, curve_label) -> None:
+        """Build the Character, Paragraph and Layer Style panels' contents.
+
+        Each becomes a dock of its own (`_build_dock_host`), as Photoshop's
+        Character and Paragraph panels and its Layer Style effects are; the
+        widgets and their attribute names are the ones the controllers use."""
+        self.character_sections: list[MLabel] = []
+        self.character_panel, character_layout = self._panel_body()
+        self.paragraph_panel, paragraph_layout = self._panel_body()
+        self.layer_style_panel, style_layout = self._panel_body()
+        for combo in (
+            self.font_size_dropdown, self.line_spacing_dropdown, self.letter_spacing_dropdown,
+            self.horizontal_scale_dropdown, self.outline_width_dropdown, self.shadow_opacity_dropdown,
+            self.shadow_offset_x_dropdown, self.shadow_offset_y_dropdown, self.shadow_blur_dropdown,
+            self.gradient_angle_dropdown, self.curvature_dropdown, self.warp_style_combo,
+        ):
+            # Let each field take its grid column instead of a fixed 60 px.
+            combo.setMinimumWidth(56)
+            combo.setMaximumWidth(16777215)
+            combo.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
+
+        # Styles: a whole look in one pick.
+        grid = self._character_section(character_layout, self.tr("Style"))
+        style_label.setVisible(False)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.style_preset_combo, 1)
+        row.addWidget(self.save_style_button)
+        row.addWidget(self.delete_style_button)
+        grid.addLayout(row, 0, 0, 1, 4)
+
+        # Character.
+        grid = self._character_section(character_layout, self.tr("Character"))
+        font_row = QtWidgets.QHBoxLayout()
+        font_row.addWidget(self.font_dropdown, 1)
+        font_row.addWidget(self.font_favourite_toggle)
+        font_row.addWidget(self.font_favourites_button)
+        grid.addLayout(font_row, 0, 0, 1, 4)
+        grid.addWidget(self._field_label(self.tr("Size"), self.tr("Font Size")), 1, 0)
+        grid.addWidget(self.font_size_dropdown, 1, 1)
+        grid.addWidget(self._field_label(self.tr("Leading"), self.tr("Line Spacing")), 1, 2)
+        grid.addWidget(self.line_spacing_dropdown, 1, 3)
+        grid.addWidget(self._field_label(self.tr("Tracking"), self.tr("Letter Spacing")), 2, 0)
+        grid.addWidget(self.letter_spacing_dropdown, 2, 1)
+        grid.addWidget(self._field_label(self.tr("Width %"), self.horizontal_scale_dropdown.toolTip()), 2, 2)
+        grid.addWidget(self.horizontal_scale_dropdown, 2, 3)
+        grid.addWidget(self._field_label(self.tr("Colour"), self.tr("Font Color")), 3, 0)
+        grid.addWidget(self.block_font_color_button, 3, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        # Photoshop's row of glyph toggles: faux bold, italic, underline, then
+        # all caps, small caps, superscript, subscript and strikethrough.
+        self.char_style_buttons = {}
+        style_row = QtWidgets.QHBoxLayout()
+        style_row.setSpacing(2)
+        style_row.addWidget(self.bold_button)
+        style_row.addWidget(self.italic_button)
+        style_row.addWidget(self.underline_button)
+        style_row.addSpacing(6)
+        for key, glyph, tip in (
+            ("all_caps", "TT", self.tr("All Caps")),
+            ("small_caps", "Tᴛ", self.tr("Small Caps")),
+            ("superscript", "T¹", self.tr("Superscript")),
+            ("subscript", "T₁", self.tr("Subscript")),
+            ("strikethrough", "S", self.tr("Strikethrough")),
+        ):
+            button = MToolButton().text_only()
+            button.setText(glyph)
+            button.setCheckable(True)
+            button.setToolTip(tip)
+            button.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+            if key == "strikethrough":
+                # A combining stroke (S̶) is missing from most UI faces.
+                button.setStyleSheet("text-decoration: line-through;")
+            self.char_style_buttons[key] = button
+            style_row.addWidget(button)
+        style_row.addStretch(1)
+        grid.addLayout(style_row, 4, 0, 1, 4)
+        hint = MLabel(self.tr(
+            "Select words in the translation box (or inside the text on the page) to change only them."
+        )).secondary()
+        hint.setWordWrap(True)
+        self.character_hint = hint
+        grid.addWidget(hint, 5, 0, 1, 4)
+
+        # Paragraph.
+        grid = self._character_section(paragraph_layout, self.tr("Paragraph"))
+        grid.addWidget(self._field_label(self.tr("Align")), 0, 0)
+        grid.addWidget(self.alignment_tool_group, 0, 1, 1, 3, QtCore.Qt.AlignmentFlag.AlignLeft)
+        # Indents and spacing, as Photoshop's Paragraph panel (item pixels).
+        self.paragraph_spins = {}
+        for row, pair in enumerate((
+            (("indent_left", self.tr("Indent left")), ("indent_right", self.tr("Indent right"))),
+            (("indent_first", self.tr("First line")), None),
+            (("space_before", self.tr("Space before")), ("space_after", self.tr("Space after"))),
+        ), start=1):
+            for column, field in enumerate(pair):
+                if field is None:
+                    continue
+                key, label = field
+                spin = QtWidgets.QDoubleSpinBox()
+                spin.setRange(-200.0 if key == "indent_first" else 0.0, 400.0)
+                spin.setDecimals(0)
+                spin.setSuffix(" px")
+                spin.setToolTip(label)
+                spin.setKeyboardTracking(False)  # one change per entry, not per digit
+                self.paragraph_spins[key] = spin
+                grid.addWidget(self._field_label(label), row, column * 2)
+                grid.addWidget(spin, row, column * 2 + 1)
+
+        # Stroke (Photoshop's Layer Style > Stroke), with presets.
+        grid = self._character_section(style_layout, self.tr("Text Stroke"))
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.outline_checkbox)
+        row.addWidget(self.outline_font_color_button)
+        row.addStretch(1)
+        grid.addLayout(row, 0, 0, 1, 2)
+        grid.addWidget(self._field_label(self.tr("Width"), self.tr("Outline Width")), 0, 2)
+        grid.addWidget(self.outline_width_dropdown, 0, 3)
+        self.outline_preset_combo = MComboBox().small()
+        self.outline_preset_combo.setToolTip(self.tr(
+            "Apply a saved outline — colour, width and any extra strokes — to the selected text."
+        ))
+        self.save_outline_preset_button = MPushButton(self.tr("Save…")).small()
+        self.save_outline_preset_button.setToolTip(self.tr("Save the selected text's outline as a preset."))
+        self.delete_outline_preset_button = MPushButton(self.tr("Delete")).small()
+        self.delete_outline_preset_button.setToolTip(self.tr(
+            "Delete the chosen outline preset (built-in presets cannot be deleted)."
+        ))
+        grid.addWidget(self._field_label(self.tr("Preset")), 1, 0)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.outline_preset_combo, 1)
+        row.addWidget(self.save_outline_preset_button)
+        row.addWidget(self.delete_outline_preset_button)
+        grid.addLayout(row, 1, 1, 1, 3)
+        grid.addWidget(self.stroke_layers_button, 2, 1, 1, 3, QtCore.Qt.AlignmentFlag.AlignLeft)
+
+        # Drop shadow: a direction dial and a distance, as in Photoshop. The
+        # X/Y offsets stay (hidden) as what the dial and distance write.
+        from app.ui.angle_dial import AngleDial
+
+        grid = self._character_section(style_layout, self.tr("Drop Shadow"))
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.shadow_checkbox)
+        row.addWidget(self.shadow_color_button)
+        row.addStretch(1)
+        grid.addLayout(row, 0, 0, 1, 2)
+        grid.addWidget(self._field_label(self.tr("Opacity"), self.shadow_opacity_dropdown.toolTip()), 0, 2)
+        grid.addWidget(self.shadow_opacity_dropdown, 0, 3)
+        self.shadow_angle_dial = AngleDial(45.0)
+        self.shadow_angle_dial.setToolTip(self.tr(
+            "Direction: drag the needle to where the shadow should fall. Shift snaps to 15°."
+        ))
+        self.shadow_distance_dropdown = MComboBox().small()
+        self.shadow_distance_dropdown.setToolTip(self.tr("Shadow Distance (px)"))
+        self.shadow_distance_dropdown.addItems(["0", "2", "3", "4", "6", "8", "12", "16", "24"])
+        self.shadow_distance_dropdown.set_editable(True)
+        self.shadow_distance_dropdown.setMinimumWidth(56)
+        grid.addWidget(self._field_label(self.tr("Direction"), self.shadow_angle_dial.toolTip()), 1, 0)
+        grid.addWidget(self.shadow_angle_dial, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        grid.addWidget(self._field_label(self.tr("Distance"), self.shadow_distance_dropdown.toolTip()), 1, 2)
+        grid.addWidget(self.shadow_distance_dropdown, 1, 3)
+        grid.addWidget(self._field_label(self.tr("Blur"), self.shadow_blur_dropdown.toolTip()), 2, 0)
+        grid.addWidget(self.shadow_blur_dropdown, 2, 1)
+        for hidden in (self.shadow_offset_x_dropdown, self.shadow_offset_y_dropdown):
+            grid.addWidget(hidden, 3, 0)
+            hidden.setVisible(False)
+
+        # Outer glow.
+        grid = self._character_section(style_layout, self.tr("Outer Glow"))
+        self.glow_checkbox = MCheckBox(self.tr("Glow"))
+        self.glow_checkbox.setToolTip(self.tr("A soft halo of one colour around the text and its outline."))
+        self.glow_color_button = QtWidgets.QPushButton()
+        self.glow_color_button.setToolTip(self.tr("Glow Color"))
+        self.glow_color_button.setFixedSize(30, 30)
+        self.glow_color_button.setStyleSheet("background-color: #ffffff; border: none; border-radius: 5px;")
+        self.glow_color_button.setProperty("selected_color", "#ffffff")
+        self.glow_size_dropdown = MComboBox().small()
+        self.glow_size_dropdown.setToolTip(self.tr("Glow Size (px): how far the glow reaches"))
+        self.glow_size_dropdown.addItems(["4", "6", "8", "12", "16", "24", "32"])
+        self.glow_size_dropdown.setCurrentText("8")
+        self.glow_size_dropdown.set_editable(True)
+        self.glow_strength_dropdown = MComboBox().small()
+        self.glow_strength_dropdown.setToolTip(self.tr("Glow Strength (%)"))
+        self.glow_strength_dropdown.addItems(["100", "90", "75", "60", "45", "30"])
+        self.glow_strength_dropdown.setCurrentText("90")
+        self.glow_strength_dropdown.set_editable(True)
+        for combo in (self.glow_size_dropdown, self.glow_strength_dropdown):
+            combo.setMinimumWidth(56)
+            combo.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.glow_checkbox)
+        row.addWidget(self.glow_color_button)
+        row.addStretch(1)
+        grid.addLayout(row, 0, 0, 1, 2)
+        grid.addWidget(self._field_label(self.tr("Strength"), self.glow_strength_dropdown.toolTip()), 0, 2)
+        grid.addWidget(self.glow_strength_dropdown, 0, 3)
+        grid.addWidget(self._field_label(self.tr("Size"), self.glow_size_dropdown.toolTip()), 1, 0)
+        grid.addWidget(self.glow_size_dropdown, 1, 1)
+
+        # Gradient fill, with the same dial for its direction.
+        grid = self._character_section(style_layout, self.tr("Gradient"))
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.gradient_checkbox)
+        row.addWidget(self.gradient_color_button)
+        row.addStretch(1)
+        grid.addLayout(row, 0, 0, 1, 4)
+        self.gradient_angle_dial = AngleDial(90.0)
+        self.gradient_angle_dial.setToolTip(self.tr(
+            "Direction: drag the needle toward where the second colour should be. Shift snaps to 15°."
+        ))
+        grid.addWidget(self._field_label(self.tr("Direction"), self.gradient_angle_dial.toolTip()), 1, 0)
+        grid.addWidget(self.gradient_angle_dial, 1, 1, QtCore.Qt.AlignmentFlag.AlignLeft)
+        grid.addWidget(self._field_label(self.tr("Angle"), self.gradient_angle_dropdown.toolTip()), 1, 2)
+        grid.addWidget(self.gradient_angle_dropdown, 1, 3)
+
+        # Warp and transform.
+        grid = self._character_section(style_layout, self.tr("Warp"))
+        curve_label.setText(self.tr("Style"))
+        curve_label.setProperty("secondary", True)
+        grid.addWidget(curve_label, 0, 0)
+        grid.addWidget(self.warp_style_combo, 0, 1)
+        grid.addWidget(self._field_label(self.tr("Bend"), self.curvature_dropdown.toolTip()), 0, 2)
+        grid.addWidget(self.curvature_dropdown, 0, 3)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.perspective_button)
+        row.addWidget(self.reset_transform_button)
+        row.addStretch(1)
+        grid.addLayout(row, 1, 0, 1, 4)
+        for layout in (character_layout, paragraph_layout, style_layout):
+            layout.addStretch(1)
+
+    def _extra_panels(self) -> list:
+        """The Color and Gradients panels: (name, title, widget, scroll)."""
+        from app.ui.color_panel import ColorPanel
+        from app.ui.gradients_panel import GradientsPanel
+
+        self.color_panel = ColorPanel()
+        self.gradients_panel = GradientsPanel()
+        return [
+            ("dock_color", self.tr("Color"), self.color_panel, False),
+            ("dock_gradients", self.tr("Gradients"), self.gradients_panel, True),
+        ]
+
+    def _on_layers_dock_visibility(self, visible: bool) -> None:
+        """Keep the layers button in step with whether the Layers panel shows."""
+        if self.layers_button.isChecked() != visible:
             self.layers_button.blockSignals(True)
-            self.layers_button.setChecked(on_layers)
+            self.layers_button.setChecked(visible)
             self.layers_button.blockSignals(False)
-        if tabs.widget(index) is self.glossary_peek:
-            self.glossary_peek.refresh(self)
 
     def _build_selection_options(self, options: QtWidgets.QHBoxLayout) -> None:
         """The selection part of the options bar.
@@ -1049,9 +1267,16 @@ class WorkspaceMixin:
         self.box_options.setVisible(not (show_selection or show_paint))
 
     def show_layers_tab(self, show: bool) -> None:
-        """The layers button: open the Layers tab, or go back to Text."""
-        target = self.layers_panel if show else self.inspector_tabs.widget(0)
-        self.inspector_tabs.setCurrentWidget(target)
+        """The layers button: show the Layers panel (and bring it to the front), or hide it."""
+        dock = self.panel_docks.get("dock_layers")
+        if dock is None:
+            return
+        if show:
+            dock.show()
+            dock.raise_()
+        else:
+            dock.hide()
+
     def create_tool_button(self, text: str = "", svg: str = "", checkable: bool = False):
         if text:
             button = MToolButton().svg(svg).text_beside_icon()

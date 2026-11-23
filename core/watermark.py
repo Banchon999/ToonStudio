@@ -60,6 +60,11 @@ class WatermarkSettings:
     position: str = "bottom-right"
     #: Distance from the page's edges, as a percentage of the page width.
     margin: float = 2.0
+    #: Credit pages, added as pages of their own before the first and after
+    #: the last page of every exported chapter — whether or not the watermark
+    #: itself is on. Copied into the user data folder when chosen.
+    credit_first: str = ""
+    credit_last: str = ""
 
     @classmethod
     def from_dict(cls, data: dict | None) -> "WatermarkSettings":
@@ -107,6 +112,55 @@ class WatermarkSettings:
     def is_active(self) -> bool:
         """On, and with something to draw."""
         return self.enabled and (self.uses_text() or self.uses_image())
+
+    def credit_pages(self) -> tuple[str, str]:
+        """(opening, closing) credit images that exist on disk; "" for none."""
+        import os
+
+        return tuple(p if p and os.path.isfile(p) else "" for p in (self.credit_first, self.credit_last))
+
+
+def credit_image(path: str, width: int) -> np.ndarray | None:
+    """A credit page as an RGB array `width` wide (aspect kept), or None.
+
+    Transparency is laid over white — a reader shows a credit page on its own,
+    with nothing behind it. A page width of 0 keeps the image's own size.
+    """
+    from PIL import Image
+
+    try:
+        with Image.open(path) as im:
+            im.load()
+            if im.mode in ("RGBA", "LA", "P"):
+                rgba = im.convert("RGBA")
+                image = Image.new("RGB", rgba.size, (255, 255, 255))
+                image.paste(rgba, mask=rgba.getchannel("A"))
+            else:
+                image = im.convert("RGB")
+    except (OSError, ValueError):
+        return None
+    if width > 0 and image.width != width:
+        height = max(1, round(image.height * width / image.width))
+        image = image.resize((width, height), Image.BOX if width < image.width else Image.BICUBIC)
+    return np.asarray(image)
+
+
+def export_names(page_names: list[str], has_first: bool, has_last: bool, credit_ext: str = ".png") -> list[str]:
+    """File names for one chapter's export, in reading order.
+
+    Without credit pages the pages keep their own names, as before. With one,
+    every file is numbered (001, 002, …) so the credit pages sort before and
+    after the pages in any reader, whatever the pages were called.
+    """
+    if not (has_first or has_last):
+        return list(page_names)
+    import os
+
+    total = len(page_names) + int(has_first) + int(has_last)
+    pad = max(3, len(str(total)))
+    exts = ([credit_ext] if has_first else []) + [os.path.splitext(n)[1] or ".png" for n in page_names] \
+        + ([credit_ext] if has_last else [])
+    return [f"{i:0{pad}d}{ext}" for i, ext in enumerate(exts, 1)]
 
 
 def place(page_w: int, page_h: int, mark_w: int, mark_h: int, position: str, margin: int) -> tuple[int, int]:

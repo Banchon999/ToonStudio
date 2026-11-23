@@ -104,10 +104,17 @@ def test_style_with_size_does_not_mutate_the_original():
 
 
 def test_default_measurer_is_qt_when_qt_is_present(qapp):
+    """With the Qt engine, the measurer Qt's. The engine itself is pinned: it
+    is process-wide, Skia where installed, and set by every window built."""
+    from core import text_engine
+
+    before = text_engine.engine()
+    text_engine.set_engine(text_engine.QT)
     set_measurer(None)
     try:
         assert get_measurer().name == "qt"
     finally:
+        text_engine.set_engine(before)
         set_measurer(None)
 
 

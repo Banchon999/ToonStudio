@@ -15,6 +15,7 @@ from app.ui.settings.settings_page import SettingsPage
 from app.ui.startup_home import StartupHomeScreen
 from app.ui.title_bar import CustomTitleBar, RESIZE_MARGIN
 from .builders import MainWindowBuildersMixin
+from .docks import DockMixin
 from .frame import EdgeResizer
 from .tools import ToolStateMixin
 
@@ -54,7 +55,8 @@ if sys.platform == "win32":
 
 
 class ComicTranslateUI(
-    MainWindowBuildersMixin, 
+    MainWindowBuildersMixin,
+    DockMixin,
     ToolStateMixin, 
     QtWidgets.QMainWindow
 ):
@@ -134,6 +136,7 @@ class ComicTranslateUI(
             0: QtCore.Qt.AlignmentFlag.AlignLeft,
             1: QtCore.Qt.AlignmentFlag.AlignCenter,
             2: QtCore.Qt.AlignmentFlag.AlignRight,
+            3: QtCore.Qt.AlignmentFlag.AlignJustify,
         }
 
         self._init_ui()
@@ -176,6 +179,8 @@ class ComicTranslateUI(
         self.main_layout.addWidget(MDivider(orientation=QtCore.Qt.Vertical))
 
         self.main_content_widget = self._create_main_content()
+        # The panel windows where the user left them last time (or the default layout).
+        self.restore_dock_state()
         self.title_bar.set_undo_redo_widget(self.undo_tool_group)
         self._center_stack = QtWidgets.QStackedWidget()
 

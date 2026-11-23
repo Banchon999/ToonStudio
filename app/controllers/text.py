@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import copy
+from contextlib import contextmanager
 import numpy as np
 from typing import TYPE_CHECKING
 
@@ -52,6 +53,10 @@ class TextController:
             self.main.shadow_offset_y_dropdown,
             self.main.shadow_blur_dropdown,
             self.main.shadow_opacity_dropdown,
+            self.main.shadow_distance_dropdown,
+            self.main.glow_checkbox,
+            self.main.glow_size_dropdown,
+            self.main.glow_strength_dropdown,
             self.main.gradient_checkbox,
             self.main.gradient_color_button,
             self.main.gradient_angle_dropdown,
@@ -68,6 +73,7 @@ class TextController:
         self._suspend_text_command = False
         self._is_updating_from_edit = False
         self._render_macro_stack = None
+        self._live_color = None  # the Color panel's drag: [(item, command)]
 
     def connect_text_item_signals(self, text_item: TextBlockItem, force_reconnect: bool = False):
         if getattr(text_item, "_ct_signals_connected", False) and not force_reconnect:
@@ -299,7 +305,44 @@ class TextController:
             return selected_items
         return [self.main.curr_tblock_item] if self.main.curr_tblock_item else []
 
-    def _apply_format_to_selected(self, macro_name: str, apply_fn):
+    def panel_selection(self) -> tuple[int, int] | None:
+        """The words selected in the translation box, as (start, end) in the
+        current text item — when they can stand for a range of it.
+
+        The box holds the item's plain text, character for character, so its
+        selection is the same range of the item. A selection made on the
+        canvas wins; a box that no longer matches the item stands for nothing.
+        """
+        item = self.main.curr_tblock_item
+        edit = getattr(self.main, "t_text_edit", None)
+        if item is None or edit is None:
+            return None
+        cursor = edit.textCursor()
+        if not cursor.hasSelection() or item.textCursor().hasSelection():
+            return None
+        if edit.toPlainText() != item.toPlainText():
+            return None
+        return cursor.selectionStart(), cursor.selectionEnd()
+
+    @contextmanager
+    def _in_panel_range(self, item):
+        """Run a format change on just the words selected in the translation
+        box, by selecting them in `item` for the duration of the change."""
+        span = self.panel_selection() if item is self.main.curr_tblock_item else None
+        if span is None:
+            yield
+            return
+        saved = QTextCursor(item.textCursor())
+        cursor = QTextCursor(item.document())
+        cursor.setPosition(span[0])
+        cursor.setPosition(span[1], QTextCursor.MoveMode.KeepAnchor)
+        item.setTextCursor(cursor)
+        try:
+            yield
+        finally:
+            item.setTextCursor(saved)
+
+    def _apply_format_to_selected(self, macro_name: str, apply_fn, use_panel_range: bool = True):
         items = self._selected_text_items()
         if not items:
             return
@@ -307,10 +350,28 @@ class TextController:
         commands = []
         for item in items:
             command = TextFormatCommand(self.main.image_viewer, item)
-            apply_fn(item)
+            with (self._in_panel_range(item) if use_panel_range else self._whole_item(item)):
+                apply_fn(item)
             command.finalize_new_state()
             commands.append(command)
+        self._push_commands(macro_name, commands, items)
 
+    @contextmanager
+    def _whole_item(self, item):
+        """Run an item-wide change (a gradient) with no selection in the item."""
+        saved = QTextCursor(item.textCursor())
+        if not saved.hasSelection():
+            yield
+            return
+        cursor = QTextCursor(saved)
+        cursor.clearSelection()
+        item.setTextCursor(cursor)
+        try:
+            yield
+        finally:
+            item.setTextCursor(saved)
+
+    def _push_commands(self, macro_name: str, commands, items) -> None:
         stack = self.main.undo_group.activeStack()
         if stack is None:
             return
@@ -632,12 +693,133 @@ class TextController:
             command.finalize_new_state()
             self.main.push_command(command)
 
+    # --- the Color and Gradients panels --------------------------------------
+
+    def _set_panel_color(self, item, target: str, color: QColor) -> None:
+        if target == "stroke":
+            if getattr(item, "outline", False) and item.outline_width:
+                width = float(item.outline_width)
+            else:
+                width = self._dropdown_value(self.main.outline_width_dropdown, 1.0)
+            item.set_outline(QColor(color), width)
+            return
+        item.set_color(QColor(color))
+        # set_color lays a plain colour over the document; the gradient,
+        # which starts at the text colour, goes back on top.
+        if getattr(item, "gradient_enabled", False) and not item.textCursor().hasSelection():
+            item.set_gradient(True)
+
+    def _show_toolbar_color(self, target: str, color: QColor) -> None:
+        button = self.main.outline_font_color_button if target == "stroke" else self.main.block_font_color_button
+        button.setStyleSheet(f"background-color: {color.name()}; border: none; border-radius: 5px;")
+        button.setProperty('selected_color', color.name())
+        if target == "stroke" and not self.main.outline_checkbox.isChecked():
+            self.main.outline_checkbox.blockSignals(True)
+            self.main.outline_checkbox.setChecked(True)
+            self.main.outline_checkbox.blockSignals(False)
+
+    def preview_panel_color(self, target: str, color: QColor) -> None:
+        """The Color panel is being dragged: show the colour on the selected
+        layers; `commit_panel_color` makes it one undo step."""
+        items = self._selected_text_items()
+        if not items:
+            return
+        if self._live_color is None:
+            self._live_color = [(item, TextFormatCommand(self.main.image_viewer, item)) for item in items]
+        for item, _command in self._live_color:
+            with self._in_panel_range(item):
+                self._set_panel_color(item, target, color)
+
+    def commit_panel_color(self, target: str, color: QColor) -> None:
+        self._show_toolbar_color(target, color)
+        live, self._live_color = self._live_color, None
+        if live is None:
+            self._apply_format_to_selected(
+                f"change_{target}_color", lambda item: self._set_panel_color(item, target, color)
+            )
+            return
+        commands, items = [], []
+        for item, command in live:
+            if item.scene() is None:
+                continue
+            with self._in_panel_range(item):
+                self._set_panel_color(item, target, color)
+            command.finalize_new_state()
+            commands.append(command)
+            items.append(item)
+        self._push_commands(f"change_{target}_color", commands, items)
+
+    def apply_gradient_preset(self, start: str, end: str) -> None:
+        """The Gradients panel: the selected layers fade from `start` to `end`,
+        at the angle each already has, one undo step for all of them."""
+        start_color, end_color = QColor(start), QColor(end)
+
+        def apply(item):
+            item.set_color(start_color)
+            item.set_gradient(True, end_color, getattr(item, "gradient_angle", None))
+
+        self._apply_format_to_selected("apply_gradient_preset", apply, use_panel_range=False)
+        self._show_toolbar_color("fill", start_color)
+        self.main.gradient_color_button.setStyleSheet(
+            f"background-color: {end_color.name()}; border: none; border-radius: 5px;"
+        )
+        self.main.gradient_color_button.setProperty('selected_color', end_color.name())
+        self.main.gradient_checkbox.blockSignals(True)
+        self.main.gradient_checkbox.setChecked(True)
+        self.main.gradient_checkbox.blockSignals(False)
+        panel = getattr(self.main, "color_panel", None)
+        if panel is not None:
+            panel.set_colors(fill=start_color)
+
+    def save_gradient_from_selection(self) -> None:
+        """The Gradients panel's "+": the selected text's gradient into My Gradients
+        (or, with none on it, the toolbar's text and gradient colours)."""
+        item = self.main.curr_tblock_item
+        if item is not None and getattr(item, "gradient_enabled", False):
+            start, end = QColor(item.text_color or "#000000"), QColor(item.gradient_color)
+        else:
+            start = QColor(self.main.block_font_color_button.property('selected_color') or "#000000")
+            end = QColor(self.main.gradient_color_button.property('selected_color') or "#ffffff")
+        self.main.gradients_panel.add_custom(start.name(), end.name())
+
+    def justify_align(self):
+        if self.main.curr_tblock_item:
+            item = self.main.curr_tblock_item
+            command = TextFormatCommand(self.main.image_viewer, item)
+            item.set_alignment(QtCore.Qt.AlignmentFlag.AlignJustify)
+            command.finalize_new_state()
+            self.main.push_command(command)
+
+    # Photoshop's glyph toggles: caps and small caps exclude each other, as do
+    # superscript and subscript (each pair is one Qt property).
+    _CHAR_STYLE_PARTNER = {
+        "all_caps": "small_caps", "small_caps": "all_caps",
+        "superscript": "subscript", "subscript": "superscript",
+    }
+
+    def on_char_style_toggled(self, name: str, on: bool) -> None:
+        partner = self._CHAR_STYLE_PARTNER.get(name)
+        buttons = getattr(self.main, "char_style_buttons", {})
+        if on and partner in buttons:
+            buttons[partner].blockSignals(True)
+            buttons[partner].setChecked(False)
+            buttons[partner].blockSignals(False)
+        self._apply_format_to_selected(
+            f"change_{name}", lambda item: item.set_char_style(name, on)
+        )
+
+    def on_paragraph_changed(self, key: str, value: float) -> None:
+        self._apply_format_to_selected(
+            f"change_{key}", lambda item: item.set_paragraph(**{key: value})
+        )
+
     def bold(self):
         if self.main.curr_tblock_item:
             item = self.main.curr_tblock_item
             command = TextFormatCommand(self.main.image_viewer, item)
             state = self.main.bold_button.isChecked()
-            item.set_bold(state)
+            with self._in_panel_range(item):
+                item.set_bold(state)
             command.finalize_new_state()
             self.main.push_command(command)
 
@@ -646,7 +828,8 @@ class TextController:
             item = self.main.curr_tblock_item
             command = TextFormatCommand(self.main.image_viewer, item)
             state = self.main.italic_button.isChecked()
-            item.set_italic(state)
+            with self._in_panel_range(item):
+                item.set_italic(state)
             command.finalize_new_state()
             self.main.push_command(command)
 
@@ -655,7 +838,8 @@ class TextController:
             item = self.main.curr_tblock_item
             command = TextFormatCommand(self.main.image_viewer, item)
             state = self.main.underline_button.isChecked()
-            item.set_underline(state)
+            with self._in_panel_range(item):
+                item.set_underline(state)
             command.finalize_new_state()
             self.main.push_command(command)
 
@@ -671,7 +855,8 @@ class TextController:
             if self.main.curr_tblock_item and self.main.outline_checkbox.isChecked():
                 item = self.main.curr_tblock_item
                 command = TextFormatCommand(self.main.image_viewer, item)
-                item.set_outline(outline_color, outline_width)
+                with self._in_panel_range(item):
+                    item.set_outline(outline_color, outline_width)
                 command.finalize_new_state()
                 self.main.push_command(command)
 
@@ -682,7 +867,8 @@ class TextController:
             outline_width = float(self.main.outline_width_dropdown.currentText())
             color_str = self.main.outline_font_color_button.property('selected_color')
             color = QColor(color_str)
-            item.set_outline(color, outline_width)
+            with self._in_panel_range(item):
+                item.set_outline(color, outline_width)
             command.finalize_new_state()
             self.main.push_command(command)
 
@@ -691,13 +877,14 @@ class TextController:
         if self.main.curr_tblock_item:
             item = self.main.curr_tblock_item
             command = TextFormatCommand(self.main.image_viewer, item)
-            if not enabled:
-                item.set_outline(None, None)
-            else:
-                outline_width = float(self.main.outline_width_dropdown.currentText())
-                color_str = self.main.outline_font_color_button.property('selected_color')
-                color = QColor(color_str)
-                item.set_outline(color, outline_width)
+            with self._in_panel_range(item):
+                if not enabled:
+                    item.set_outline(None, None)
+                else:
+                    outline_width = float(self.main.outline_width_dropdown.currentText())
+                    color_str = self.main.outline_font_color_button.property('selected_color')
+                    color = QColor(color_str)
+                    item.set_outline(color, outline_width)
             command.finalize_new_state()
             self.main.push_command(command)
 
@@ -728,6 +915,70 @@ class TextController:
         item.set_shadow(self.main.shadow_checkbox.isChecked(), color, offset, blur)
         command.finalize_new_state()
         self.main.push_command(command)
+
+    def on_shadow_direction_changed(self, *_):
+        """The dial and the distance write the shadow's X/Y offset, then apply it."""
+        from app.ui.angle_dial import offset_for
+
+        distance = max(0.0, self._dropdown_value(self.main.shadow_distance_dropdown, 4.0))
+        dx, dy = offset_for(self.main.shadow_angle_dial.angle(), distance)
+        for combo, value in ((self.main.shadow_offset_x_dropdown, dx), (self.main.shadow_offset_y_dropdown, dy)):
+            combo.blockSignals(True)
+            combo.setCurrentText(f"{value:g}")
+            combo.blockSignals(False)
+        self.apply_shadow_settings()
+
+    def _show_shadow_direction(self, offset) -> None:
+        from app.ui.angle_dial import polar_of
+
+        angle, distance = polar_of(float(offset[0]), float(offset[1]))
+        self.main.shadow_angle_dial.set_angle(angle)
+        self.main.shadow_distance_dropdown.blockSignals(True)
+        self.main.shadow_distance_dropdown.setCurrentText(f"{round(distance, 1):g}")
+        self.main.shadow_distance_dropdown.blockSignals(False)
+
+    def on_gradient_dial_moved(self, angle: float):
+        combo = self.main.gradient_angle_dropdown
+        combo.blockSignals(True)
+        combo.setCurrentText(f"{round(angle):g}")
+        combo.blockSignals(False)
+
+    def on_gradient_dial_committed(self, angle: float):
+        self.on_gradient_dial_moved(angle)
+        self.apply_gradient_settings()
+
+    def on_gradient_angle_typed(self, text: str):
+        try:
+            self.main.gradient_angle_dial.set_angle(float(text))
+        except (TypeError, ValueError):
+            pass
+
+    # Outer glow
+    def _glow_settings(self):
+        color = QColor(self.main.glow_color_button.property('selected_color') or "#ffffff")
+        strength = min(100.0, max(0.0, self._dropdown_value(self.main.glow_strength_dropdown, 90.0)))
+        color.setAlphaF(strength / 100.0)
+        size = max(0.0, self._dropdown_value(self.main.glow_size_dropdown, 8.0))
+        return color, size
+
+    def apply_glow_settings(self, *_):
+        items = self._selected_text_items()
+        if not items:
+            return
+        color, size = self._glow_settings()
+        enabled = self.main.glow_checkbox.isChecked()
+        self._apply_format_to_selected("change_text_glow", lambda item: item.set_glow(enabled, color, size))
+
+    def on_glow_color_change(self):
+        color = self.main.get_color()
+        if not (color and color.isValid()):
+            return
+        self.main.glow_color_button.setStyleSheet(
+            f"background-color: {color.name()}; border: none; border-radius: 5px;"
+        )
+        self.main.glow_color_button.setProperty('selected_color', color.name())
+        if self.main.glow_checkbox.isChecked():
+            self.apply_glow_settings()
 
     def edit_stroke_layers(self, *_):
         item = self.main.curr_tblock_item
@@ -760,8 +1011,156 @@ class TextController:
             store = self._preset_store = TextPresetStore()
         return store
 
+    # Outline presets
+    @property
+    def outline_preset_store(self):
+        store = getattr(self, '_outline_preset_store', None)
+        if store is None:
+            from modules.utils.outline_presets import OutlinePresetStore
+
+            store = self._outline_preset_store = OutlinePresetStore()
+        return store
+
+    def _outline_preset_label(self, preset) -> str:
+        if not preset.builtin:
+            return preset.name
+        labels = {
+            "Thin black": self.main.tr("Thin black"),
+            "Thick black": self.main.tr("Thick black"),
+            "Thin white": self.main.tr("Thin white"),
+            "Thick white": self.main.tr("Thick white"),
+            "White, black edge": self.main.tr("White, black edge"),
+            "Black, white edge": self.main.tr("Black, white edge"),
+        }
+        return labels.get(preset.name, preset.name)
+
+    @staticmethod
+    def _outline_swatch(preset):
+        """A ring per stroke around a disc of the outline colour."""
+        from PySide6 import QtGui
+
+        size = 18
+        pixmap = QtGui.QPixmap(size, size)
+        pixmap.fill(QtCore.Qt.GlobalColor.transparent)
+        painter = QtGui.QPainter(pixmap)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+        rings = [preset.color] + [c for c, _ in preset.strokes]
+        radius = size / 2 - 1
+        step = radius / (len(rings) + 1)
+        for index, colour in enumerate(reversed(rings)):
+            r = radius - index * step
+            painter.setPen(QtGui.QPen(QtGui.QColor("#808080"), 0.6))
+            painter.setBrush(QtGui.QColor(colour))
+            painter.drawEllipse(QtCore.QPointF(size / 2, size / 2), r, r)
+        painter.end()
+        return QtGui.QIcon(pixmap)
+
+    def refresh_outline_presets(self, select: str | None = None):
+        combo = getattr(self.main, "outline_preset_combo", None)
+        if combo is None:
+            return
+        keep = select if select is not None else combo.currentData()
+        combo.blockSignals(True)
+        combo.clear()
+        combo.addItem(self.main.tr("Choose a preset…"), "")
+        for preset in self.outline_preset_store.all():
+            combo.addItem(self._outline_swatch(preset), self._outline_preset_label(preset), preset.name)
+        combo.setCurrentIndex(max(0, combo.findData(keep or "")))
+        combo.blockSignals(False)
+
+    def apply_outline_preset(self, *_):
+        name = self.main.outline_preset_combo.currentData()
+        preset = self.outline_preset_store.get(name) if name else None
+        items = self._selected_text_items()
+        if preset is None or not items:
+            return
+        color = QColor(preset.color)
+        width = float(preset.width)
+        # The toolbar shows what was applied.
+        for widget in (self.main.outline_checkbox, self.main.outline_width_dropdown):
+            widget.blockSignals(True)
+        self.main.outline_checkbox.setChecked(True)
+        self.main.outline_width_dropdown.setCurrentText(f"{width:g}")
+        for widget in (self.main.outline_checkbox, self.main.outline_width_dropdown):
+            widget.blockSignals(False)
+        self.main.outline_font_color_button.setStyleSheet(
+            f"background-color: {color.name()}; border: none; border-radius: 5px;"
+        )
+        self.main.outline_font_color_button.setProperty('selected_color', color.name())
+
+        stack = self.main.undo_group.activeStack()
+        if stack is not None and len(items) > 1:
+            stack.beginMacro("apply_outline_preset")
+        try:
+            for item in items:
+                command = TextFormatCommand(self.main.image_viewer, item)
+                partial = item is self.main.curr_tblock_item and (
+                    self.panel_selection() is not None or item.textCursor().hasSelection()
+                )
+                with self._in_panel_range(item):
+                    item.set_outline(color, width)
+                if not partial:
+                    # Strokes are item-wide; a preset picked for a few words sets only their outline.
+                    item.set_stroke_layers(preset.strokes)
+                command.finalize_new_state()
+                self.main.push_command(command)
+        finally:
+            if stack is not None and len(items) > 1:
+                stack.endMacro()
+
+    def save_outline_preset(self, *_):
+        from modules.utils.outline_presets import OutlinePreset
+
+        item = self.main.curr_tblock_item
+        if item is None:
+            return
+        if not getattr(item, "outline", False) or not getattr(item, "outline_color", None):
+            QtWidgets.QMessageBox.information(
+                self.main, self.main.tr("Save Outline Preset"),
+                self.main.tr("The selected text has no outline to save."),
+            )
+            return
+        name, ok = QtWidgets.QInputDialog.getText(
+            self.main, self.main.tr("Save Outline Preset"), self.main.tr("Name for this outline:")
+        )
+        name = (name or "").strip()
+        if not ok or not name:
+            return
+        store = self.outline_preset_store
+        if store.is_builtin_name(name):
+            QtWidgets.QMessageBox.warning(
+                self.main, self.main.tr("Save Outline Preset"),
+                self.main.tr("\"{0}\" is the name of a built-in preset. Choose another name.").format(name),
+            )
+            return
+        colour = QColor(item.outline_color).name()
+        strokes = [(layer.color, layer.width) for layer in getattr(item, "stroke_layers", []) or []]
+        store.put(OutlinePreset(name, colour, float(item.outline_width), strokes))
+        self.refresh_outline_presets(select=name)
+
+    def delete_outline_preset(self, *_):
+        name = self.main.outline_preset_combo.currentData()
+        preset = self.outline_preset_store.get(name) if name else None
+        if preset is None:
+            return
+        if preset.builtin:
+            QtWidgets.QMessageBox.information(
+                self.main, self.main.tr("Delete Outline Preset"),
+                self.main.tr("Built-in presets cannot be deleted."),
+            )
+            return
+        answer = QtWidgets.QMessageBox.question(
+            self.main, self.main.tr("Delete Outline Preset"),
+            self.main.tr("Delete the outline preset \"{0}\"?").format(name),
+        )
+        if answer != QtWidgets.QMessageBox.StandardButton.Yes:
+            return
+        self.outline_preset_store.remove(name)
+        self.refresh_outline_presets(select="")
+
     def refresh_preset_widgets(self, bubble=None, free=None):
         """Refill the inspector's style list and Settings' default-style combos."""
+        self.refresh_outline_presets()
         names = self.preset_store.names()
         combo = self.main.style_preset_combo
         keep = combo.currentData()
@@ -990,6 +1389,9 @@ class TextController:
         self.main.alignment_tool_group.get_button_group().buttons()[0].clicked.disconnect(self.left_align)
         self.main.alignment_tool_group.get_button_group().buttons()[1].clicked.disconnect(self.center_align)
         self.main.alignment_tool_group.get_button_group().buttons()[2].clicked.disconnect(self.right_align)
+        self.main.alignment_tool_group.get_button_group().buttons()[3].clicked.disconnect(self.justify_align)
+        for widget in self._character_paragraph_widgets():
+            widget.blockSignals(True)
 
     def unblock_text_item_widgets(self, widgets):
         # Unblock signals
@@ -1003,6 +1405,28 @@ class TextController:
         self.main.alignment_tool_group.get_button_group().buttons()[0].clicked.connect(self.left_align)
         self.main.alignment_tool_group.get_button_group().buttons()[1].clicked.connect(self.center_align)
         self.main.alignment_tool_group.get_button_group().buttons()[2].clicked.connect(self.right_align)
+        self.main.alignment_tool_group.get_button_group().buttons()[3].clicked.connect(self.justify_align)
+        for widget in self._character_paragraph_widgets():
+            widget.blockSignals(False)
+
+    def _character_paragraph_widgets(self) -> list:
+        return [
+            *getattr(self.main, "char_style_buttons", {}).values(),
+            *getattr(self.main, "paragraph_spins", {}).values(),
+        ]
+
+    def _show_character_paragraph(self, item) -> None:
+        """The glyph toggles and paragraph fields as `item` has them."""
+        styles = item.char_styles() if hasattr(item, "char_styles") else {}
+        for key, button in getattr(self.main, "char_style_buttons", {}).items():
+            button.setChecked(bool(styles.get(key, False)))
+        values = item.paragraph() if hasattr(item, "paragraph") else {}
+        for key, spin in getattr(self.main, "paragraph_spins", {}).items():
+            spin.setValue(float(values.get(key, 0.0)))
+        panel = getattr(self.main, "color_panel", None)
+        if panel is not None:
+            stroke = getattr(item, "outline_color", None) if getattr(item, "outline", False) else None
+            panel.set_colors(fill=getattr(item, "text_color", None), stroke=stroke)
 
     def set_values_for_blk_item(self, text_item: TextBlockItem):
 
@@ -1010,7 +1434,9 @@ class TextController:
 
         try:
             # Set values
-            self.main.set_font(text_item.font_family)
+            # A typed box has no family of its own until one is picked; show
+            # the face it is drawn in rather than an empty "Please Select".
+            self.main.set_font(text_item.font_family or text_item.document().defaultFont().family())
             self.main.font_size_dropdown.setCurrentText(str(int(text_item.font_size)))
 
             self.main.line_spacing_dropdown.setCurrentText(str(text_item.line_spacing))
@@ -1051,6 +1477,16 @@ class TextController:
             self.main.shadow_offset_y_dropdown.setCurrentText(str(offset_y))
             self.main.shadow_blur_dropdown.setCurrentText(str(getattr(text_item, 'shadow_blur', 0.0)))
             self.main.shadow_opacity_dropdown.setCurrentText(str(round(shadow_color.alphaF() * 100)))
+            self._show_shadow_direction((offset_x, offset_y))
+
+            glow_color = QColor(getattr(text_item, 'glow_color', None) or QColor(255, 255, 255, 230))
+            self.main.glow_color_button.setStyleSheet(
+                f"background-color: {glow_color.name()}; border: none; border-radius: 5px;"
+            )
+            self.main.glow_color_button.setProperty('selected_color', glow_color.name())
+            self.main.glow_size_dropdown.setCurrentText(f"{float(getattr(text_item, 'glow_size', 8.0)):g}")
+            self.main.glow_strength_dropdown.setCurrentText(str(round(glow_color.alphaF() * 100)))
+            self.main.glow_checkbox.setChecked(bool(getattr(text_item, 'glow_enabled', False)))
             self._show_stroke_layer_count(text_item)
             self.main.shadow_checkbox.setChecked(bool(getattr(text_item, 'shadow_enabled', False)))
 
@@ -1062,6 +1498,7 @@ class TextController:
             self.main.gradient_angle_dropdown.setCurrentText(
                 str(getattr(text_item, 'gradient_angle', 90.0))
             )
+            self.main.gradient_angle_dial.set_angle(float(getattr(text_item, 'gradient_angle', 90.0) or 0.0))
             self.main.gradient_checkbox.setChecked(bool(getattr(text_item, 'gradient_enabled', False)))
             warp_style = getattr(text_item, 'warp_style', '') or ''
             bend = getattr(text_item, 'warp_bend', 0.0) if warp_style else getattr(text_item, 'curvature', 0.0)
@@ -1077,6 +1514,7 @@ class TextController:
                 QtCore.Qt.AlignmentFlag.AlignLeft: 0,
                 QtCore.Qt.AlignmentFlag.AlignCenter: 1,
                 QtCore.Qt.AlignmentFlag.AlignRight: 2,
+                QtCore.Qt.AlignmentFlag.AlignJustify: 3,
             }
 
             alignment = text_item.alignment
@@ -1085,6 +1523,8 @@ class TextController:
             if alignment in alignment_to_button:
                 button_index = alignment_to_button[alignment]
                 button_group.buttons()[button_index].setChecked(True)
+
+            self._show_character_paragraph(text_item)
 
         finally:
             self.unblock_text_item_widgets(self.widgets_to_block)
@@ -1141,6 +1581,7 @@ class TextController:
                 QtCore.Qt.AlignmentFlag.AlignLeft: 0,
                 QtCore.Qt.AlignmentFlag.AlignCenter: 1,
                 QtCore.Qt.AlignmentFlag.AlignRight: 2,
+                QtCore.Qt.AlignmentFlag.AlignJustify: 3,
             }
 
             button_group = self.main.alignment_tool_group.get_button_group()
@@ -1148,6 +1589,9 @@ class TextController:
             if alignment in alignment_to_button:
                 button_index = alignment_to_button[alignment]
                 button_group.buttons()[button_index].setChecked(True)
+
+            if self.main.curr_tblock_item is not None:
+                self._show_character_paragraph(self.main.curr_tblock_item)
 
         finally:
             self.unblock_text_item_widgets(self.widgets_to_block)

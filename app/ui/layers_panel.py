@@ -28,6 +28,8 @@ from app.ui.dayu_widgets.qt import MIcon
 from core.layers import DEFAULT_GROUP_NAMES, PAINT_ORDER, LayerGroup
 
 COL_VIS, COL_LOCK, COL_NAME = 0, 1, 2
+# Layer thumbnails, as in Photoshop's Layers panel.
+THUMB = QtCore.QSize(36, 26)
 ROLE_GROUP = Qt.ItemDataRole.UserRole
 ROLE_OBJECT = Qt.ItemDataRole.UserRole + 1
 
@@ -43,6 +45,7 @@ class LayersPanel(QtWidgets.QWidget):
             "lock": MIcon("lock.svg"),
             "lock-open": MIcon("lock-open.svg"),
         }
+        self._group_icon = MIcon("folder-open.svg")
 
         self.tree = QtWidgets.QTreeWidget()
         self.tree.setColumnCount(3)
@@ -61,6 +64,8 @@ class LayersPanel(QtWidgets.QWidget):
         header.setSectionResizeMode(COL_LOCK, QtWidgets.QHeaderView.ResizeMode.Fixed)
         self.tree.setColumnWidth(COL_VIS, 26)
         self.tree.setColumnWidth(COL_LOCK, 26)
+        self.tree.setIconSize(THUMB)
+        self._thumb_cache: dict[str, tuple[object, QtGui.QIcon]] = {}
 
         self.opacity_label = QtWidgets.QLabel(self.tr("Opacity"))
         self.opacity_slider = QtWidgets.QSlider(Qt.Orientation.Horizontal)
@@ -80,20 +85,23 @@ class LayersPanel(QtWidgets.QWidget):
         self.delete_button.setIcon(MIcon("trash_line.svg"))
         self.delete_button.setToolTip(self.tr("Delete the selected layers (Delete)"))
 
-        title = QtWidgets.QLabel(self.tr("Layers"))
-        title.setStyleSheet("font-weight: bold;")
+        # Photoshop's arrangement: opacity above the list, the layer buttons
+        # in a strip below it with the trash at the far right.
+        top = QtWidgets.QHBoxLayout()
+        top.addWidget(self.opacity_label)
+        top.addWidget(self.opacity_slider, 1)
+        top.addWidget(self.opacity_value)
 
         bottom = QtWidgets.QHBoxLayout()
-        bottom.addWidget(self.opacity_label)
-        bottom.addWidget(self.opacity_slider, 1)
-        bottom.addWidget(self.opacity_value)
+        bottom.addStretch(1)
         bottom.addWidget(self.up_button)
         bottom.addWidget(self.down_button)
+        bottom.addSpacing(8)
         bottom.addWidget(self.delete_button)
 
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 4, 0, 0)
-        layout.addWidget(title)
+        layout.addLayout(top)
         layout.addWidget(self.tree, 1)
         layout.addLayout(bottom)
 
@@ -192,6 +200,74 @@ class LayersPanel(QtWidgets.QWidget):
         idx = layout.get_page_at_position(item.sceneBoundingRect().center().y())
         return f"  · p{idx + 1}"
 
+    # --- thumbnails ------------------------------------------------------------
+
+    @staticmethod
+    def _thumb_key(item):
+        """What a thumbnail depends on: when it is unchanged, the cached one is reused."""
+        rect = item.boundingRect()
+        geometry = (round(rect.width(), 1), round(rect.height(), 1))
+        if isinstance(item, QtWidgets.QGraphicsPixmapItem):
+            return ("pixmap", item.pixmap().cacheKey(), geometry)
+        if isinstance(item, QtWidgets.QGraphicsPathItem):
+            path = item.path()
+            return ("path", path.elementCount(), geometry, item.pen().color().rgba(), item.brush().color().rgba())
+        if hasattr(item, "document"):
+            extra = tuple(str(getattr(item, name, "")) for name in
+                          ("selection_outlines", "stroke_layers", "shadow_enabled", "gradient_enabled"))
+            return ("text", hash(item.document().toHtml()), geometry, extra)
+        return ("item", type(item).__name__, geometry)
+
+    @staticmethod
+    def _checkerboard(painter: QtGui.QPainter, size: QtCore.QSize) -> None:
+        light, dark = QtGui.QColor("#f2f2f2"), QtGui.QColor("#d4d4d4")
+        cell = 5
+        for y in range(0, size.height(), cell):
+            for x in range(0, size.width(), cell):
+                painter.fillRect(x, y, cell, cell, light if (x // cell + y // cell) % 2 == 0 else dark)
+
+    def _render_thumbnail(self, item) -> QtGui.QIcon:
+        """The item drawn small over a checkerboard (transparency), as in an image editor."""
+        ratio = self.devicePixelRatioF() or 1.0
+        pixmap = QtGui.QPixmap(int(THUMB.width() * ratio), int(THUMB.height() * ratio))
+        pixmap.setDevicePixelRatio(ratio)
+        pixmap.fill(QtCore.Qt.GlobalColor.transparent)
+        painter = QtGui.QPainter(pixmap)
+        try:
+            painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
+            painter.setRenderHint(QtGui.QPainter.RenderHint.SmoothPixmapTransform)
+            self._checkerboard(painter, THUMB)
+            rect = item.boundingRect()
+            if rect.width() > 0 and rect.height() > 0:
+                scale = min((THUMB.width() - 2) / rect.width(), (THUMB.height() - 2) / rect.height())
+                painter.translate(THUMB.width() / 2, THUMB.height() / 2)
+                painter.scale(scale, scale)
+                painter.translate(-rect.center())
+                # Text and boxes draw their selection frame and handles while
+                # selected; a thumbnail shows the layer, not the selection.
+                was_selected = getattr(item, "selected", None)
+                if was_selected:
+                    item.selected = False
+                try:
+                    item.paint(painter, QtWidgets.QStyleOptionGraphicsItem(), None)
+                finally:
+                    if was_selected:
+                        item.selected = was_selected
+        except Exception:  # noqa: BLE001 — a thumbnail is decoration; never break the panel
+            pass
+        finally:
+            painter.end()
+        return QtGui.QIcon(pixmap)
+
+    def _thumbnail(self, key: str, item) -> QtGui.QIcon:
+        stamp = self._thumb_key(item)
+        cached = self._thumb_cache.get(key)
+        if cached is not None and cached[0] == stamp:
+            return cached[1]
+        icon = self._render_thumbnail(item)
+        self._thumb_cache[key] = (stamp, icon)
+        return icon
+
     def _set_state_icons(self, row, visible: bool, locked: bool, lockable: bool = True):
         row.setIcon(COL_VIS, self._icons["eye" if visible else "eye-off"])
         row.setToolTip(COL_VIS, (self.tr("Hide") if visible else self.tr("Show"))
@@ -217,6 +293,7 @@ class LayersPanel(QtWidgets.QWidget):
 
         self._rebuilding = True
         self.tree.setUpdatesEnabled(False)
+        seen_thumbs: set[str] = set()
         try:
             self.tree.clear()
             for group in reversed(PAINT_ORDER):  # topmost first, like an editor
@@ -231,6 +308,12 @@ class LayersPanel(QtWidgets.QWidget):
                 grow.setFont(COL_NAME, font)
                 self._set_state_icons(grow, gprops.visible, gprops.locked,
                                       lockable=group is not LayerGroup.RAW)
+                photo = getattr(self._ctrl.viewer, "photo", None)
+                if group is LayerGroup.RAW and photo is not None and not photo.pixmap().isNull():
+                    grow.setIcon(COL_NAME, self._thumbnail("__page__", photo))
+                    seen_thumbs.add("__page__")
+                else:
+                    grow.setIcon(COL_NAME, self._group_icon)
 
                 # scene.items() is topmost-first, the order an editor lists layers.
                 count = len(members)
@@ -243,6 +326,8 @@ class LayersPanel(QtWidgets.QWidget):
                     orow.setData(COL_NAME, ROLE_GROUP, group.value)
                     orow.setFlags(orow.flags() | Qt.ItemFlag.ItemIsEditable)
                     self._set_state_icons(orow, props.visible, props.locked)
+                    orow.setIcon(COL_NAME, self._thumbnail(oid, item))
+                    seen_thumbs.add(oid)
                     if not gprops.visible or not props.visible:
                         # Shown greyed while it is not on the canvas, whether
                         # it or its whole group is hidden.
@@ -262,6 +347,8 @@ class LayersPanel(QtWidgets.QWidget):
         finally:
             self.tree.setUpdatesEnabled(True)
             self._rebuilding = False
+        for stale in set(self._thumb_cache) - seen_thumbs:
+            del self._thumb_cache[stale]
         self._update_controls()
 
     # --- reactions ---------------------------------------------------------------
@@ -362,8 +449,11 @@ class LayersPanel(QtWidgets.QWidget):
         targets = self._selected_targets()
         if self._ctrl is None:
             return
+        object_ids = [oid for oid, _group in targets if oid]
         if len(targets) == 1 and targets[0][0]:
             self._ctrl.select_on_canvas(targets[0][0])
+        elif len(object_ids) > 1 and self._ctrl.select_many_on_canvas(object_ids):
+            pass  # several text layers: all selected on the canvas, as one edit target
         else:
             self._ctrl.clear_highlight()
 

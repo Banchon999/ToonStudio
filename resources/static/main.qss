@@ -1453,6 +1453,64 @@ QTabWidget#toonInspector QTabBar::tab:selected {
 QTabWidget#toonInspector QTabBar::tab:hover {
     color: @primary_text_color;
 }
+/* Panel windows (app/ui/main_window/docks.py): Photoshop-style tabs and title bars. */
+QMainWindow#toonDockHost::separator {
+    background: @border_color;
+    width: 3px;
+    height: 3px;
+}
+QMainWindow#toonDockHost QTabBar::tab {
+    background: transparent;
+    color: @secondary_text_color;
+    padding: 6px 12px;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+QMainWindow#toonDockHost QTabBar::tab:selected {
+    color: @primary_text_color;
+    border-bottom: 2px solid @primary_color;
+}
+QMainWindow#toonDockHost QTabBar::tab:hover {
+    color: @primary_text_color;
+}
+QDockWidget {
+    color: @secondary_text_color;
+    titlebar-close-icon: none;
+}
+QDockWidget::title {
+    background: @background_in_color;
+    padding: 2px 8px;
+    text-align: left;
+}
+/* The font menu (app/ui/font_picker.py). */
+QFrame#toonFontPicker {
+    background: @background_color;
+    border: 1px solid @border_color;
+    border-radius: 6px;
+}
+QFrame#toonFontPicker QLabel#toonFontPickerName {
+    color: @secondary_text_color;
+    background: transparent;
+}
+QFrame#toonFontPicker QLabel#toonFontPickerPreview {
+    color: @primary_text_color;
+    background: @background_in_color;
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+QFrame#toonFontPicker QListWidget, QFrame#toonFontPicker QTreeWidget {
+    background: @background_in_color;
+    border: none;
+}
+QFrame#toonFontPicker QToolButton, QFrame#toonFontPicker QPushButton {
+    background: transparent;
+    color: @secondary_text_color;
+    border: none;
+    padding: 2px 6px;
+}
+QFrame#toonFontPicker QToolButton:checked, QFrame#toonFontPicker QPushButton:hover {
+    color: @primary_color;
+}
 QLabel#toonSectionLabel {
     color: @secondary_text_color;
     font-weight: 600;

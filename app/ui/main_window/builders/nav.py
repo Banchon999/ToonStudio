@@ -114,6 +114,12 @@ class NavRailMixin:
 
         self.export_menu = MMenu(parent=self)
         self.export_menu.setMinimumWidth(80)
+        export_folder_action = self.export_menu.addAction(
+            MIcon("folder-open.svg"),
+            self.tr("Images (Folder)"),
+        )
+        export_folder_action.triggered.connect(self._on_export_folder_requested)
+
         export_archive_action = self.export_menu.addAction(
             MIcon("flowbite--file-zip-outline.svg"),
             self.tr("ZIP"),
@@ -323,6 +329,11 @@ class NavRailMixin:
         if project_ctrl is None or not hasattr(project_ctrl, "start_export_as"):
             return
         project_ctrl.start_export_as(extension)
+
+    def _on_export_folder_requested(self):
+        project_ctrl = getattr(self, "project_ctrl", None)
+        if project_ctrl is not None:
+            project_ctrl.start_export_as_folder()
 
     def _on_export_psd_requested(self):
         project_ctrl = getattr(self, "project_ctrl", None)

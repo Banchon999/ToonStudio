@@ -65,6 +65,27 @@ def _collect_qt_cycles_on_the_gui_thread():
     non-GUI thread, reached from _PyObject_ClearManagedDict. Whether it
     happened depended only on when collection ran, so adding or removing any
     one test file moved it.
+
+    Closed main windows are deleted here first. A ComicTranslate window is
+    never collected: Qt-owned objects (dock helpers, shortcut and signal
+    closures) keep Python references to it that the collector cannot see as
+    garbage, so its C++ side — scene, page images, every widget — stayed for
+    the rest of the run, ~70 MB a window. With a few hundred window tests that
+    reached 14 GB and the run was killed for memory (here by the OOM killer,
+    on CI as a "runner shutdown"). In the app there is one window and closing
+    it quits, so only the suite paid for it. Deleting the C++ object on the
+    GUI thread, now, keeps the rule above.
     """
     yield
+    from PySide6 import QtCore, QtWidgets
+
+    if QtWidgets.QApplication.instance() is not None:
+        closed = [
+            widget for widget in QtWidgets.QApplication.topLevelWidgets()
+            if type(widget).__name__ == "ComicTranslate" and not widget.isVisible()
+        ]
+        for window in closed:
+            window.deleteLater()
+        if closed:
+            QtCore.QCoreApplication.sendPostedEvents(None, QtCore.QEvent.Type.DeferredDelete)
     gc.collect()

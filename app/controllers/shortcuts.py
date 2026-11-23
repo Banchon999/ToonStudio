@@ -5,7 +5,13 @@ from typing import TYPE_CHECKING
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtCore import QSettings
 
-from app.shortcuts import get_default_shortcuts, get_shortcut_definitions
+from app.shortcuts import (
+    TOOL_GROUPS,
+    brush_size_step,
+    get_default_shortcuts,
+    get_shortcut_definitions,
+    next_tool,
+)
 
 if TYPE_CHECKING:
     from controller import ComicTranslate
@@ -17,6 +23,7 @@ class ShortcutController:
     def __init__(self, main: "ComicTranslate"):
         self.main = main
         self._shortcuts: dict[str, QtGui.QShortcut] = {}
+        self._cycle_shortcuts: dict[str, QtGui.QShortcut] = {}
         self._register_shortcuts()
 
     def _register_shortcuts(self) -> None:
@@ -27,6 +34,14 @@ class ShortcutController:
                 lambda shortcut_id=definition.id: self._activate_shortcut(shortcut_id)
             )
             self._shortcuts[definition.id] = shortcut
+            if definition.id in TOOL_GROUPS and len(TOOL_GROUPS[definition.id]) > 1:
+                # Shift + the group's key steps through the group, as in Photoshop.
+                cycle = QtGui.QShortcut(self.main)
+                cycle.setContext(QtCore.Qt.ShortcutContext.WindowShortcut)
+                cycle.activated.connect(
+                    lambda shortcut_id=definition.id: self._activate_tool_group(shortcut_id, cycle=True)
+                )
+                self._cycle_shortcuts[definition.id] = cycle
 
         self.apply_shortcuts()
 
@@ -34,6 +49,19 @@ class ShortcutController:
         current_shortcuts = self.get_current_shortcuts()
         for shortcut_id, shortcut in self._shortcuts.items():
             shortcut.setKey(QtGui.QKeySequence(current_shortcuts.get(shortcut_id, "")))
+        for shortcut_id, shortcut in self._cycle_shortcuts.items():
+            shortcut.setKey(self._shifted(current_shortcuts.get(shortcut_id, "")))
+
+    @staticmethod
+    def _shifted(sequence: str) -> QtGui.QKeySequence:
+        """Shift + a single plain key; nothing when the key already has a modifier."""
+        keys = QtGui.QKeySequence(sequence)
+        if keys.count() != 1:
+            return QtGui.QKeySequence()
+        combo = keys[0]
+        if combo.keyboardModifiers() != QtCore.Qt.KeyboardModifier.NoModifier:
+            return QtGui.QKeySequence()
+        return QtGui.QKeySequence(QtCore.QKeyCombination(QtCore.Qt.KeyboardModifier.ShiftModifier, combo.key()))
 
     def get_current_shortcuts(self) -> dict[str, str]:
         shortcuts = get_default_shortcuts()
@@ -61,9 +89,41 @@ class ShortcutController:
             "deselect": lambda: self._selection("deselect"),
             "invert_selection": lambda: self._selection("invert"),
         }
+        if shortcut_id in TOOL_GROUPS:
+            self._activate_tool_group(shortcut_id, cycle=False)
+            return
+        if shortcut_id in ("brush_smaller", "brush_larger"):
+            self._step_brush_size(shortcut_id == "brush_larger")
+            return
         handler = handlers.get(shortcut_id)
         if handler is not None:
             handler()
+
+    def _tool_keys_allowed(self) -> bool:
+        """Single-letter keys belong to whatever is being typed into."""
+        return (
+            self._workspace_is_active()
+            and not self._is_text_input_focused()
+            and not self._canvas_text_is_being_edited()
+        )
+
+    def _activate_tool_group(self, group_id: str, cycle: bool) -> None:
+        if not self._tool_keys_allowed():
+            return
+        group = tuple(t for t in TOOL_GROUPS[group_id] if t in self.main.tool_buttons)
+        if not group:
+            return
+        tool = next_tool(group, self.main.image_viewer.current_tool, cycle)
+        button = self.main.tool_buttons[tool]
+        if button.isEnabled() and not button.isChecked():
+            button.click()
+
+    def _step_brush_size(self, larger: bool) -> None:
+        if not self._tool_keys_allowed():
+            return
+        slider = self.main.brush_eraser_slider
+        value = brush_size_step(slider.value(), larger)
+        slider.setValue(max(slider.minimum(), min(slider.maximum(), value)))
 
     def _workspace_is_active(self) -> bool:
         try:

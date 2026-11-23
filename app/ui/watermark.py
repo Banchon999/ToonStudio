@@ -32,15 +32,19 @@ def logo_store_path(source: str) -> str:
     return os.path.join(folder, f"logo{ext}")
 
 
-def keep_logo(source: str) -> str:
-    """Copy `source` into the user data folder and return the copy's path."""
+def keep_logo(source: str, stem: str = "logo") -> str:
+    """Copy `source` into the user data folder and return the copy's path.
+
+    `stem` names the slot: "logo", or "credit_first"/"credit_last" for the
+    credit pages, each kept as one file."""
     target = logo_store_path(source)
+    target = os.path.join(os.path.dirname(target), stem + os.path.splitext(target)[1])
     os.makedirs(os.path.dirname(target), exist_ok=True)
     if os.path.abspath(source) != os.path.abspath(target):
-        # Any previous logo with another extension goes, so only one is kept.
+        # Any previous file of this slot with another extension goes, so only one is kept.
         folder = os.path.dirname(target)
         for name in os.listdir(folder):
-            if name.startswith("logo.") and os.path.join(folder, name) != target:
+            if name.startswith(stem + ".") and os.path.join(folder, name) != target:
                 try:
                     os.remove(os.path.join(folder, name))
                 except OSError:

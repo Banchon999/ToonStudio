@@ -228,6 +228,11 @@ def can_paint(item) -> bool:
     # condensed or widened item with the same stretched font.
     if abs(float(getattr(item, "horizontal_scale", 100.0) or 100.0) - 100.0) > 1e-6:
         return False
+    # Caps, small caps, super/subscript, strikethrough and paragraph indents or
+    # spacing (the Character and Paragraph panels) have no counterpart in the
+    # Skia paragraph this draws with; Qt lays them out and paints them.
+    if _needs_qt_layout(item):
+        return False
     families = {getattr(item, "font_family", "") or ""}
     try:
         families.add(item.document().defaultFont().family())
@@ -236,6 +241,32 @@ def can_paint(item) -> bool:
     except Exception:
         pass
     return all(has_family(family) for family in families)
+
+
+def _needs_qt_layout(item) -> bool:
+    try:
+        document = item.document()
+    except Exception:
+        return False
+    if document is None:
+        return False
+    from PySide6.QtGui import QFont, QTextCharFormat
+
+    block = document.begin()
+    while block.isValid():
+        fmt = block.blockFormat()
+        if fmt.leftMargin() or fmt.rightMargin() or fmt.textIndent() or fmt.topMargin() or fmt.bottomMargin():
+            return True
+        iterator = block.begin()
+        while not iterator.atEnd():
+            char = iterator.fragment().charFormat()
+            if (char.fontCapitalization() != QFont.Capitalization.MixedCase
+                    or char.verticalAlignment() != QTextCharFormat.VerticalAlignment.AlignNormal
+                    or char.fontStrikeOut()):
+                return True
+            iterator += 1
+        block = block.next()
+    return False
 
 
 def paint_item(painter: QPainter, item) -> bool:

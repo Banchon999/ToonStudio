@@ -84,6 +84,12 @@ def apply_preset_to_item(item, preset: TextPreset, only=None) -> None:
             QColor(values["gradient_color"]) if "gradient_color" in values else None,
             values.get("gradient_angle"),
         )
+    if any(key.startswith("glow_") for key in values):
+        item.set_glow(
+            values.get("glow_enabled", item.glow_enabled),
+            QColor(values["glow_color"]) if "glow_color" in values else None,
+            values.get("glow_size"),
+        )
     if "curvature" in values:
         item.set_curvature(float(values["curvature"]))
     if "warp_style" in values or "warp_bend" in values:
@@ -116,6 +122,9 @@ def preset_from_item(item, name: str) -> TextPreset:
         gradient_enabled=bool(item.gradient_enabled),
         gradient_color=_hex(item.gradient_color),
         gradient_angle=float(item.gradient_angle),
+        glow_enabled=bool(getattr(item, "glow_enabled", False)),
+        glow_color=_hex(item.glow_color) if getattr(item, "glow_enabled", False) else None,
+        glow_size=float(item.glow_size) if getattr(item, "glow_enabled", False) else None,
         warp_style=item.warp_style or "",
         warp_bend=float(item.warp_bend or 0.0),
         curvature=float(item.curvature or 0.0),
