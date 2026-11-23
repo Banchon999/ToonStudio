@@ -32,6 +32,12 @@ class ToolsPage(QtWidgets.QWidget):
         ocr_widget, self.ocr_combo = create_title_and_combo(self.tr("Text Recognition"), self.ocr_engines, h4=True)
         set_combo_box_width(self.ocr_combo, self.ocr_engines)
         self._mark_unavailable_ocr_engines()
+        hayai = self.ocr_combo.findText("Hayai (Korean)")
+        if hayai >= 0:
+            self.ocr_combo.setItemData(hayai, self.tr(
+                "Reads Korean pages only, the whole block at once (~265 MB download on first use).\n"
+                "Pages in other languages are read by the Default engine for their language."
+            ), QtCore.Qt.ItemDataRole.ToolTipRole)
 
         detector_widget, self.detector_combo = create_title_and_combo(self.tr("Text Detector"), self.detectors, h4=True)
         set_combo_box_width(self.detector_combo, self.detectors)

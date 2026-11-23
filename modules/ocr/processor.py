@@ -178,6 +178,7 @@ class OCRProcessor:
             'PaddleOCR': 'PaddleOCR',
             'PaddleOCR (Server)': 'PaddleOCR (Server)',
             'Pororo (Korean)': 'Pororo (Korean)',
+            'Hayai (Korean)': 'Hayai (Korean)',
             'EasyOCR': 'EasyOCR',
             'PaddleOCR-VL': 'PaddleOCR-VL',
         }

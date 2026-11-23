@@ -3684,176 +3684,176 @@ Restart now?</source>
     <name>SettingsPageUI</name>
     <message>
         <location filename="../../app/ui/settings/settings_ui.py" line="60"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="153"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="154"/>
         <source>Default</source>
         <translation>ค่าเริ่มต้น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="66"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="154"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="67"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="155"/>
         <source>Microsoft OCR</source>
         <translation>Microsoft OCR</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="67"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="68"/>
         <source>Gemini-2.5-Flash-Lite</source>
         <translation>Gemini-2.5-Flash-Lite</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="85"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="172"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="86"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="174"/>
         <source>Resize</source>
         <translation>ย่อ/ขยาย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="85"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="173"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="86"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="175"/>
         <source>Original</source>
         <translation>ขนาดเดิม</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="85"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="174"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="86"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="176"/>
         <source>Crop</source>
         <translation>ครอบตัด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="86"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="135"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="87"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="136"/>
         <source>Dark</source>
         <translation>มืด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="86"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="136"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="87"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="137"/>
         <source>Light</source>
         <translation>สว่าง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="87"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="177"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="88"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="179"/>
         <source>Left</source>
         <translation>ชิดซ้าย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="87"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="178"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="88"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="180"/>
         <source>Center</source>
         <translation>กึ่งกลาง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="87"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="179"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="88"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="181"/>
         <source>Right</source>
         <translation>ชิดขวา</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="90"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="102"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="139"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="182"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="91"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="103"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="140"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="184"/>
         <source>Custom</source>
         <translation>กำหนดเอง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="68"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="91"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="101"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="140"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="69"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="92"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="102"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="141"/>
         <source>OpenRouter</source>
         <translation>OpenRouter</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="95"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="147"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="96"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="148"/>
         <source>Gemini-3.1-Flash-Lite</source>
         <translation>Gemini-3.1-Flash-Lite</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="96"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="142"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="97"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="143"/>
         <source>GPT-4.1</source>
         <translation>GPT-4.1</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="97"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="143"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="98"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="144"/>
         <source>GPT-4.1-mini</source>
         <translation>GPT-4.1-mini</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="98"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="145"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="99"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="146"/>
         <source>Claude-4.6-Sonnet</source>
         <translation>Claude-4.6-Sonnet</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="99"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="146"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="100"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="147"/>
         <source>Claude-4.5-Haiku</source>
         <translation>Claude-4.5-Haiku</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="100"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="141"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="183"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="101"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="142"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="185"/>
         <source>Deepseek</source>
         <translation>Deepseek</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="144"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="188"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="145"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="190"/>
         <source>DeepL</source>
         <translation>DeepL</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="148"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="149"/>
         <source>Gemini-2.5-Pro</source>
         <translation>Gemini-2.5-Pro</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="149"/>
-        <location filename="../../app/ui/settings/settings_ui.py" line="190"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="150"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="192"/>
         <source>Yandex</source>
         <translation>Yandex</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="150"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="151"/>
         <source>Microsoft Translator</source>
         <translation>Microsoft Translator</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="155"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="156"/>
         <source>Google Cloud Vision</source>
         <translation>Google Cloud Vision</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="184"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="186"/>
         <source>Open AI GPT</source>
         <translation>Open AI GPT</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="185"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="187"/>
         <source>Microsoft Azure</source>
         <translation>Microsoft Azure</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="186"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="188"/>
         <source>Google Cloud</source>
         <translation>Google Cloud</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="187"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="189"/>
         <source>Google Gemini</source>
         <translation>Google Gemini</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="189"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="191"/>
         <source>Anthropic Claude</source>
         <translation>Anthropic Claude</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="364"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="366"/>
         <source>Personalization</source>
         <translation>การปรับแต่งส่วนตัว</translation>
     </message>
@@ -3862,42 +3862,42 @@ Restart now?</source>
         <translation type="vanished">บัญชี</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="364"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="366"/>
         <source>Tools</source>
         <translation>เครื่องมือ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="364"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="366"/>
         <source>LLMs</source>
         <translation>โมเดลภาษา (LLM)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="365"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="367"/>
         <source>Text Rendering</source>
         <translation>การแสดงผลข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="365"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="367"/>
         <source>Project</source>
         <translation>โปรเจกต์</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="365"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="367"/>
         <source>Export</source>
         <translation>ส่งออก</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="365"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="367"/>
         <source>Shortcuts</source>
         <translation>คีย์ลัด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="366"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="368"/>
         <source>Advanced</source>
         <translation>ขั้นสูง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/settings_ui.py" line="366"/>
+        <location filename="../../app/ui/settings/settings_ui.py" line="368"/>
         <source>About</source>
         <translation>เกี่ยวกับ</translation>
     </message>
@@ -4772,27 +4772,34 @@ whatever the toolbar happens to show (the toolbar follows the selected text).</s
         <translation>การอ่านข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="36"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="38"/>
+        <source>Reads Korean pages only, the whole block at once (~265 MB download on first use).
+Pages in other languages are read by the Default engine for their language.</source>
+        <translation>อ่านเฉพาะหน้าภาษาเกาหลี ทีละกล่องทั้งกล่อง (ดาวน์โหลดครั้งแรกประมาณ 265 MB)
+หน้าภาษาอื่นจะใช้ตัวอ่านค่าเริ่มต้นของภาษานั้น</translation>
+    </message>
+    <message>
+        <location filename="../../app/ui/settings/tools_page.py" line="42"/>
         <source>Text Detector</source>
         <translation>ตัวตรวจจับข้อความ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="40"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="46"/>
         <source>Detector Confidence (%):</source>
         <translation>ค่าความมั่นใจของตัวตรวจจับ (%):</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="47"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="53"/>
         <source>Lower values detect more (possibly noisy) text; higher values keep only confident detections.</source>
         <translation>ค่าต่ำจะตรวจจับข้อความได้มากขึ้น (แต่อาจมีสิ่งรบกวน) ค่าสูงจะเก็บเฉพาะผลที่มั่นใจ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="54"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="60"/>
         <source>Stitch neighboring pages during batch detection (long-strip chapters)</source>
         <translation>ต่อภาพหน้าข้างเคียงขณะตรวจจับแบบชุด (สำหรับตอนแบบภาพยาว)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="57"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="63"/>
         <source>For webtoon/strip chapters split into image files: adds part of the previous and next
 page as context when detecting text, so speech bubbles cut off at page borders are still found.
 Only pages with the same width are stitched.</source>
@@ -4801,12 +4808,12 @@ Only pages with the same width are stitched.</source>
 จะต่อเฉพาะหน้าที่มีความกว้างเท่ากันเท่านั้น</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="63"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="69"/>
         <source>Draw text with Skia</source>
         <translation>วาดข้อความด้วย Skia</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="67"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="73"/>
         <source>Lays out and draws translated text with Skia instead of Qt.
 On by default: it fits text to a bubble about twenty times faster,
 and the editor preview and the exported page match exactly.
@@ -4821,17 +4828,17 @@ Turn it off to go back to Qt&apos;s renderer; curved text uses Qt either way.</s
 ปิดเพื่อกลับไปใช้ตัววาดของ Qt ส่วนข้อความโค้งใช้ Qt เสมอ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="75"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="81"/>
         <source>Image Cleaning</source>
         <translation>การลบข้อความออกจากภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="78"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="84"/>
         <source>Use the AI text segmentation model (more precise cleaning)</source>
         <translation>ใช้โมเดล AI แยกพิกเซลตัวอักษร (ลบข้อความแม่นยำขึ้น)</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="82"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="88"/>
         <source>Works out which pixels are lettering with a neural model instead of by
 thresholding each box on its own. Much more accurate on text over artwork,
 gradients and screentone, and on coloured text.
@@ -4841,12 +4848,12 @@ Downloads a 90 MB model once, and adds a few seconds per page on CPU.</source>
 ดาวน์โหลดโมเดลขนาด 90 MB ครั้งเดียว และใช้เวลาเพิ่มไม่กี่วินาทีต่อหน้าเมื่อรันบน CPU</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="89"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="95"/>
         <source>Free AI model memory after 3 minutes with no work</source>
         <translation>คืนหน่วยความจำของโมเดล AI เมื่อไม่มีงาน 3 นาที</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="93"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="99"/>
         <source>The detection, text and cleaning models take 1–1.5 GB of memory while loaded.
 With this on they are let go when nothing has run for 3 minutes — editing text,
 reading or a browser alongside get that memory back — and the next step loads
@@ -4857,12 +4864,12 @@ them again in a few seconds. Turn it off on a PC with plenty of memory.</source>
 เครื่องที่แรมเหลือเฟือปิดตัวเลือกนี้ได้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="100"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="106"/>
         <source>Tidy JPEG artefacts around cleaned text</source>
         <translation>เก็บงานรอยหยักจาก JPEG รอบข้อความที่ลบแล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="104"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="110"/>
         <source>Smooths the ring of pixels just around each cleaned area, where a low-quality
 JPEG leaves a halo that inpainting blends into the patch. The rest of the page
 is left untouched, and an area whose surroundings are a flat fill is skipped
@@ -4873,73 +4880,73 @@ entirely — so a clean source loses nothing by leaving this on.</source>
 หากเปิดตัวเลือกนี้ทิ้งไว้</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="111"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="117"/>
         <source>Text Mask Expansion (px):</source>
         <translation>ระยะขยายมาสก์ข้อความ (พิกเซล):</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="117"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="123"/>
         <source>How far the text-removal mask grows past the detected glyphs.</source>
         <translation>มาสก์สำหรับลบข้อความจะขยายเลยขอบตัวอักษรที่ตรวจพบออกไปเท่าใด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="124"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="130"/>
         <source>Bubble Protection Inset (px):</source>
         <translation>ระยะเว้นขอบฟองคำพูด (พิกเซล):</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="130"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="136"/>
         <source>Keeps the cleaning mask this many pixels away from the speech bubble outline.
 Increase it if cleaning eats into bubble borders.</source>
         <translation>เว้นระยะมาสก์ให้ห่างจากเส้นขอบฟองคำพูดตามจำนวนพิกเซลนี้
 เพิ่มค่านี้หากการลบข้อความกินเข้าไปในเส้นขอบฟอง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="138"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="144"/>
         <source>OCR Box Padding (%):</source>
         <translation>ระยะขยายกล่องก่อน OCR (%):</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="144"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="150"/>
         <source>How much larger than the detected box the crop sent to text recognition is.
 Raise it when recognised text comes back clipped or garbled.</source>
         <translation>ภาพที่ตัดส่งให้ระบบอ่านข้อความจะใหญ่กว่ากล่องที่ตรวจจับได้เท่าใด
 เพิ่มค่านี้เมื่อข้อความที่อ่านได้ขาดหายหรืออ่านออกมามั่ว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="150"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="156"/>
         <source>Minimum (px):</source>
         <translation>อย่างน้อย (พิกเซล):</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="156"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="162"/>
         <source>A percentage of a small box is still a small number of pixels, which is
 why tight boxes around short lines get clipped. This is the floor in pixels.</source>
         <translation>เปอร์เซ็นต์ของกล่องเล็กก็ยังเป็นพิกเซลจำนวนน้อยอยู่ดี กล่องที่รัดข้อความสั้น ๆ
 จึงถูกตัดขาด ค่านี้คือขั้นต่ำที่รับประกันเป็นพิกเซล</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="163"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="169"/>
         <source>Inpainter</source>
         <translation>ตัวเติมภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="165"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="171"/>
         <source>AOT</source>
         <translation>AOT</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="172"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="178"/>
         <source>Send to the AI model (LaMa) — best, slowest</source>
         <translation>ส่งให้โมเดล AI (LaMa) — สวยสุด ช้าสุด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="173"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="179"/>
         <source>Spot heal — copy texture from nearby, no model, fast</source>
         <translation>ซ่อมจุด — คัดลอกลายจากบริเวณใกล้ ๆ ไม่ใช้โมเดล เร็ว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="184"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="190"/>
         <source>Smart Fill paints white bubbles and heals smooth backgrounds without any model.
 This decides what happens to lettering over texture:
 • AI model — LaMa rebuilds the texture. Best result, the slow part of Clean.
@@ -4956,80 +4963,80 @@ This decides what happens to lettering over texture:
 • ปล่อยไว้ — ตัวอักษรยังอยู่ ให้ลบเองด้วยแปรงซ่อมภาพหรือ clone</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="174"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="180"/>
         <source>Leave as is — fix by hand</source>
         <translation>ปล่อยไว้ — แก้เองด้วยมือ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="177"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="183"/>
         <source>Smart Fill: text over screentone or artwork</source>
         <translation>Smart Fill: ตัวอักษรบนสกรีนโทนหรือลายภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="194"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="200"/>
         <source>HD Strategy</source>
         <translation>กลยุทธ์สำหรับภาพความละเอียดสูง</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="196"/>
-        <location filename="../../app/ui/settings/tools_page.py" line="335"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="202"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="341"/>
         <source>Resize</source>
         <translation>ย่อ/ขยาย</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="206"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="212"/>
         <source>Resize Limit:</source>
         <translation>ขีดจำกัดการย่อขนาด:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="207"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="213"/>
         <source>Resize the longer side of the image to a specific size,
 then do inpainting on the resized image.</source>
         <translation>ย่อด้านที่ยาวกว่าของภาพให้เหลือขนาดที่กำหนด
 แล้วจึงเติมภาพบนภาพที่ย่อแล้ว</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="223"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="229"/>
         <source>Crop masking area from the original image to do inpainting.</source>
         <translation>ครอบตัดเฉพาะบริเวณมาสก์จากภาพต้นฉบับเพื่อนำไปเติมภาพ</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="225"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="231"/>
         <source>Crop Margin:</source>
         <translation>ระยะขอบการครอบตัด:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="235"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="241"/>
         <source>Crop Trigger Size:</source>
         <translation>ขนาดที่เริ่มครอบตัด:</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="257"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="263"/>
         <source>Use GPU</source>
         <translation>ใช้ GPU</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="316"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="322"/>
         <source>{0} needs: {1}</source>
         <translation>{0} ต้องใช้: {1}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="318"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="324"/>
         <source>Install with: {0}</source>
         <translation>ติดตั้งด้วย: {0}</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="319"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="325"/>
         <source>Restart the app afterwards.</source>
         <translation>ติดตั้งเสร็จแล้วเปิดแอปใหม่</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="336"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="342"/>
         <source>Crop</source>
         <translation>ครอบตัด</translation>
     </message>
     <message>
-        <location filename="../../app/ui/settings/tools_page.py" line="337"/>
+        <location filename="../../app/ui/settings/tools_page.py" line="343"/>
         <source>Original</source>
         <translation>ขนาดเดิม</translation>
     </message>
@@ -7145,18 +7152,18 @@ It may have been moved, renamed, or deleted.
 <context>
     <name>settings.ui</name>
     <message>
-        <location filename="../../modules/ocr/factory.py" line="226"/>
+        <location filename="../../modules/ocr/factory.py" line="248"/>
         <location filename="../../modules/translation/microsoft.py" line="25"/>
         <source>Microsoft Azure</source>
         <translation>Microsoft Azure</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/factory.py" line="236"/>
+        <location filename="../../modules/ocr/factory.py" line="258"/>
         <source>Google Cloud</source>
         <translation>Google Cloud</translation>
     </message>
     <message>
-        <location filename="../../modules/ocr/factory.py" line="243"/>
+        <location filename="../../modules/ocr/factory.py" line="265"/>
         <location filename="../../modules/translation/llm/gpt.py" line="41"/>
         <source>Open AI GPT</source>
         <translation>Open AI GPT</translation>

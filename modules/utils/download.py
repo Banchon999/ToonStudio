@@ -84,6 +84,7 @@ class ModelID(Enum):
     MANGA_OCR_INT8_ONNX = "manga-ocr-int8-onnx"
     PORORO = "pororo"
     PORORO_ONNX = "pororo-onnx"
+    HAYAI_OCR_ONNX = "hayai-ocr-v2.7-onnx"
     LAMA_ONNX = "lama-manga-dynamic"
     AOT_JIT = "aot-traced"
     AOT_ONNX = "aot-onnx"
@@ -431,6 +432,23 @@ def _register_defaults():
             'dd471474e91d78e54b179333439fea58158ad1a605df010ea0936dcf4387a8c2'
         ],
         save_dir=os.path.join(models_base_dir, 'ocr', 'pororo-onnx')
+    ))
+
+    # Hayai OCR v2.7 Supernova, int8 ONNX (Apache-2.0; modules/ocr/hayai_ocr.py).
+    # Pinned to a commit: the repository's files are replaced in place.
+    ModelDownloader.register(ModelSpec(
+        id=ModelID.HAYAI_OCR_ONNX,
+        url='https://huggingface.co/JustANormalTinkerer/hayai-ocr-v2.7-supernova-onnx/resolve/bc1e39f962b6c500a4855bd8eb4e02f11483bedb/',
+        files=['hayai_prefill_int8.onnx', 'hayai_decode_int8.onnx', 'tokenizer.json',
+               'pos_embedding.npy', 'hayai_onnx_config.json'],
+        sha256=[
+            'b6365221e9467dd40f0a20dde706aab54e4214f29ccf7b5372a4eb238d623ea2',
+            'd753e4234d4b271782b16f5fa29b30ab0ddd62467f9070b3646a1c01f4c1286f',
+            'f8a0a909c628a684fe463094614e236a8b1d3609e7770f77e7beafaf1056bf13',
+            '39f018f1ad06c8183d0eaa1531186b7241706678304f1bf50814604211ac1039',
+            'f864080a1a5e77fc904165ec8891b13200007c0b674b6d97e2c3937c3400d600',
+        ],
+        save_dir=os.path.join(models_base_dir, 'ocr', 'hayai-ocr-v2.7-onnx')
     ))
 
     # Inpainting: LaMa ONNX (single file)

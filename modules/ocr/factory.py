@@ -1,5 +1,6 @@
 import json
 import hashlib
+import logging
 
 from modules.utils.device import resolve_device, torch_available
 from .base import OCREngine
@@ -12,6 +13,11 @@ from .pororo.onnx_engine import PororoOCREngineONNX
 from .gemini_ocr import GeminiOCR
 from .openrouter_ocr import OpenRouterOCR
 from modules.utils.openrouter_models import uses_openrouter
+
+logger = logging.getLogger(__name__)
+
+# The name Settings lists Hayai OCR under (modules/ocr/hayai_ocr.py).
+HAYAI_KOREAN = 'Hayai (Korean)'
 
 
 class OCRFactory:
@@ -209,6 +215,14 @@ class OCRFactory:
         if ocr_model == 'Pororo (Korean)':
             return cls._create_pororo_ocr(settings, effective_backend)
 
+        # Korean only, by the owner's choice: any other page is read by the
+        # engine Default would pick for its language.
+        if ocr_model == HAYAI_KOREAN:
+            if source_lang_english in ('Korean', 'korean'):
+                return cls._create_hayai_ocr(settings)
+            logger.info("Hayai reads Korean only; %s is read by the default engine", source_lang_english)
+            ocr_model = 'Default'
+
         if ocr_model == 'EasyOCR':
             return cls._create_easyocr(settings, source_lang_english)
 
@@ -221,6 +235,14 @@ class OCRFactory:
 
         return
     
+    @staticmethod
+    def _create_hayai_ocr(settings) -> OCREngine:
+        from .hayai_ocr import HayaiOCR
+
+        engine = HayaiOCR()
+        engine.initialize(korean=True)
+        return engine
+
     @staticmethod
     def _create_microsoft_ocr(settings) -> OCREngine:
         credentials = settings.get_credentials(settings.ui.tr("Microsoft Azure"))
