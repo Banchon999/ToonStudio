@@ -1,5 +1,12 @@
 **ตัวทดลอง (test build)** — ยังไม่ใช่รุ่นจริง แอปจะไม่เสนอให้อัปเดตเป็นตัวนี้ และใช้การตั้งค่า คลังคำศัพท์ และโมเดลชุดเดียวกับรุ่นที่ใช้อยู่ · A test build, not a release: the app never offers it as an update, and it shares your settings, glossaries and models with the installed version.
 
+## แก้จากตัวทดลองก่อน (beta.27) / Since beta.27
+
+- **ไล่สีเฉพาะคำที่เลือก** — เลือกคำในช่องคำแปล (หรือบนภาพ) แล้วคลิกไล่สีในแผงไล่สี หรือเปิดสวิตช์ไล่สีในสไตล์เลเยอร์ จะไล่สีเฉพาะคำนั้น ไม่เลือกคำ = ไล่ทั้งข้อความเหมือนเดิม · A gradient on just the picked words, from the Gradients panel or the Layer Style switch.
+- **เลือกคำครั้งเดียวปรับได้หลายอย่าง** — เดิมเปลี่ยนได้ครั้งเดียวแล้วคำที่เลือกหาย · Picked words stay picked for several changes.
+- **หน้าต่างแผงที่ลากออกมาแสดงเฉพาะหน้า editor** — ไม่ค้างทับหน้าตั้งค่าหรือหน้าแรกแล้ว และเปิดแอปใหม่จะกลับมาที่เดิมเมื่อเข้าหน้า editor · Floating panels show on the editor page only, and come back where they were after a restart.
+- **ส่งออกเป็นโฟลเดอร์: ชื่อโฟลเดอร์ = ชื่อตอน** (ชื่อโฟลเดอร์ต้นทางของรูป) แล้วรูปอยู่ข้างใน — เดิมได้ชื่อโปรเจกต์หรือ "001" · Export › Images (Folder) names each chapter folder after the folder its images came from.
+
 ## แผงแบบ Photoshop / Photoshop-style panels
 
 - **ทุกแผงเป็นหน้าต่างลากออกได้** — ข้อความ, คลังคำศัพท์, ตัวอักษร, ย่อหน้า, สไตล์เลเยอร์, สี, ไล่สี และเลเยอร์ ลากหัวแผงออกมาเป็นหน้าต่างลอย ปรับขนาดได้ หรือวางทับแผงอื่นให้เป็นแท็บรวมกัน ปุ่มแผงบนแถบด้านบนใช้เปิด/ปิดแต่ละแผง และ **จัดแผงกลับค่าเริ่มต้น** ตำแหน่งจำไว้ให้ครั้งหน้า · Every panel can float as its own resizable window or be tabbed with another; the panels button shows, hides and resets them, and the layout is remembered.
