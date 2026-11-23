@@ -4,17 +4,50 @@ from __future__ import annotations
 import os
 from io import BytesIO
 import numpy as np
-from PIL import Image
+import logging
+
+from PIL import Image, ImageFile
 from .utils import ensure_uint8
+
+logger = logging.getLogger(__name__)
+
+
+def _is_truncated(exc: Exception) -> bool:
+    return "truncated" in str(exc).lower()
+
+
+def accept_truncated(exc: Exception, path: str = "") -> bool:
+    """True, with Pillow switched to reading cut-off files, when ``exc`` is that
+    error; the caller then reads the file again. False for any other error."""
+    if not isinstance(exc, OSError) or not _is_truncated(exc):
+        return False
+    logger.warning("Image file is cut off at the end; reading what is there: %s (%s)", path, exc)
+    ImageFile.LOAD_TRUNCATED_IMAGES = True
+    return True
 
 
 def read_image(path: str) -> np.ndarray:
-    """Read an image file and return as RGB numpy array."""
-    im = Image.open(path)
-    if im.mode != "RGB":
-        im = im.convert("RGB")
-    arr = np.array(im)
-    return arr
+    """Read an image file and return as RGB numpy array.
+
+    A file cut off at the end (a download that stopped a few bytes short) is
+    read anyway, with the missing rows left grey: browsers and Qt show such a
+    file, so it is on the canvas, and refusing it made Detect stop with
+    "OSError: image file is truncated". Pillow decides by a module flag; it is
+    turned on the first time a page needs it and left on.
+    """
+    try:
+        return _read(path)
+    except OSError as exc:
+        if not accept_truncated(exc, path):
+            raise
+        return _read(path)
+
+
+def _read(path: str) -> np.ndarray:
+    with Image.open(path) as im:
+        if im.mode != "RGB":
+            im = im.convert("RGB")
+        return np.array(im)
 
 
 def write_image(path: str, array: np.ndarray) -> None:

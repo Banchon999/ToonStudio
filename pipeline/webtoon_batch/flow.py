@@ -9,6 +9,7 @@ import numpy as np
 from PIL import Image, UnidentifiedImageError
 
 from core.path_materialization import ensure_path_materialized
+from imkit.io import accept_truncated
 from modules.utils.textblock import sort_blk_list
 from modules.detection.heuristic_lines import annotate_blocks_with_heuristic_lines
 from modules.utils.language_utils import to_canonical_language_name
@@ -162,14 +163,24 @@ class FlowMixin:
         self: WebtoonBatchProcessor, vpage: VirtualPage
     ) -> Optional[np.ndarray]:
         ensure_path_materialized(vpage.physical_page_path)
-        try:
+
+        def read():
             with Image.open(vpage.physical_page_path) as image:
                 crop = image.crop(
                     (0, int(vpage.crop_top), int(vpage.physical_width), int(vpage.crop_bottom))
                 )
                 if crop.mode != "RGB":
                     crop = crop.convert("RGB")
-                arr = np.array(crop)
+                return np.array(crop)
+
+        try:
+            try:
+                arr = read()
+            except OSError as exc:
+                # A file cut off at the end is read as far as it goes (imkit.read_image).
+                if not accept_truncated(exc, vpage.physical_page_path):
+                    raise
+                arr = read()
         except (UnidentifiedImageError, OSError, ValueError) as exc:
             self._report_image_load_failure(vpage.physical_page_path, exc)
             return None
