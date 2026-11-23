@@ -1,6 +1,12 @@
 **ตัวทดลอง (test build)** — ยังไม่ใช่รุ่นจริง แอปจะไม่เสนอให้อัปเดตเป็นตัวนี้ และใช้การตั้งค่า คลังคำศัพท์ และโมเดลชุดเดียวกับรุ่นที่ใช้อยู่ · A test build, not a release: the app never offers it as an update, and it shares your settings, glossaries and models with the installed version.
 
-## แก้จากตัวทดลองก่อน (beta.27) / Since beta.27
+## ใหม่ตั้งแต่ beta.28 / Since beta.28
+
+- **OCR เกาหลีตัวใหม่: Hayai (Korean)** — ตั้งค่า › เครื่องมือ › OCR › Hayai (Korean) อ่านทั้งกล่องในครั้งเดียว บนหน้าทดสอบเกาหลีอ่านผิด 0% (ตัวเดิม 10.7%) ตรงทั้งกล่อง 31 จาก 32 (ตัวเดิม 6) แม่นพอ ๆ กับ Gemini แต่ฟรีและไม่ต้องต่อเน็ต ใช้ครั้งแรกดาวน์โหลดประมาณ 265 MB ใช้กับหน้าเกาหลีเท่านั้น หน้าภาษาอื่นใช้ตัวอ่านเดิม · Hayai OCR for Korean pages: 0% Hangul error against 10.7% on the test pages, free and offline.
+- **ตัวแยกพิกเซลตัวอักษรแบบใหม่: comic-text-mask** — ตั้งค่า › เครื่องมือ › โมเดลแยกพิกเซลตัวอักษร อ่านทีละกล่องข้อความ ใช้แรมน้อยกว่า (~150 MB เทียบ ~420 MB) และเร็วกว่า บนหน้าทดสอบลบข้อความบนลายภาพได้หมด (ตัวเดิมเหลือ 3 ตัวอักษร) ค่าเริ่มต้นยังเป็นตัวเดิม · comic-text-mask as a lighter text segmentation choice; it removed the text the default left on the test pages.
+- **ใช้แรมน้อยลง** — คืนแรมของโมเดล AI อัตโนมัติเมื่อไม่ได้ใช้งาน 3 นาที (ตั้งค่า › เครื่องมือ ปิดได้) และ LaMa ไม่กินแรมสะสมจนเครื่องค้างแล้ว เหมาะกับเครื่อง 8 GB ที่เปิดเพลงหรือเบราว์เซอร์ไปด้วย · Uses less memory: models are freed after 3 idle minutes, and LaMa no longer piles up memory.
+
+## แก้จาก beta.27 (อยู่ใน beta.28 แล้ว) / Since beta.27
 
 - **ไล่สีเฉพาะคำที่เลือก** — เลือกคำในช่องคำแปล (หรือบนภาพ) แล้วคลิกไล่สีในแผงไล่สี หรือเปิดสวิตช์ไล่สีในสไตล์เลเยอร์ จะไล่สีเฉพาะคำนั้น ไม่เลือกคำ = ไล่ทั้งข้อความเหมือนเดิม · A gradient on just the picked words, from the Gradients panel or the Layer Style switch.
 - **เลือกคำครั้งเดียวปรับได้หลายอย่าง** — เดิมเปลี่ยนได้ครั้งเดียวแล้วคำที่เลือกหาย · Picked words stay picked for several changes.
@@ -32,6 +38,9 @@
 - **รวมภาพ (Stitch) ทั้งเรื่องในครั้งเดียว** — เลือกโฟลเดอร์เรื่องที่มีโฟลเดอร์ย่อยเป็นแต่ละตอน ระบบจะต่อแต่ละตอนแยกกันลงโฟลเดอร์ตามชื่อตอน · Stitch a whole series folder: each chapter is stitched into its own folder.
 
 ## อยากให้ช่วยลอง / Please try
+
+- เลือก **Hayai (Korean)** แล้ว OCR ตอนเกาหลีจริงสักตอน เทียบกับตัวเดิม · Hayai on a real Korean chapter.
+- เลือก **comic-text-mask** แล้วลบข้อความหน้าที่ตัวหนังสืออยู่บนลายภาพหรือมีแสงเรือง ว่าดีกว่าหรือแย่กว่าตัวเดิม · comic-text-mask on text over artwork or glowing text.
 
 - ลากแผงออกมาเป็นหน้าต่างลอย จัดใหม่ แล้วปิด-เปิดแอปว่าจำตำแหน่งได้ · Float and rearrange panels, then restart.
 - เมนูฟอนต์กับฟอนต์ไทยที่ใช้งานจริง (ฟอนต์ไทยส่วนใหญ่ไม่บอกหมวด จะอยู่ใน "ทุกหมวด") · The font menu with your Thai fonts (most declare no class and show under All Classes).
