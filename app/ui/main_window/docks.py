@@ -15,6 +15,18 @@ home screen, the settings and the Stitch page; it is shown only while the
 editor is (`sync_floating_panels`), and only once the main window is up —
 restoring the layout used to show floating panels before it was.
 
+A floating panel must also *belong* to the main window (its QWindow's
+transient parent; on Windows, its owner). `restoreState` runs while the
+window is built, before the main window has a native window, so every panel
+restored as floating came back owned by nothing: on Windows an unowned window
+is not kept above the app, so after a restart the panels sat behind the main
+window — ticked in the Panels menu and nowhere to be seen until toggled off
+and on — and, being top-level windows of their own, they stayed on screen and
+kept the process alive after the main window closed. Found by running the
+real app on a real X server (`scripts/probe_panels.py`); the offscreen tests
+had passed. `own_floating_panels` gives every floating panel the main window
+as its owner once that window is up, and again before any is shown.
+
 The editor's own QMainWindow is not used: its docks would show over the
 home screen and the settings page, which share its central stack.
 """
@@ -149,6 +161,33 @@ class DockMixin:
         editor = getattr(self, "main_content_widget", None)
         self.sync_floating_panels(stack is not None and stack.currentWidget() is editor)
 
+    def own_floating_panels(self) -> None:
+        """Make the main window the owner of every floating panel (see the
+        module notes). A panel already on screen is shown again, since some
+        platforms apply a new owner only when a window is shown."""
+        for dock in getattr(self, "panel_docks", {}).values():
+            if dock.isFloating():
+                self._own_floating(dock)
+
+    def _own_floating(self, dock: QtWidgets.QDockWidget) -> bool:
+        main = self.window().windowHandle()
+        handle = dock.windowHandle()
+        if main is None or handle is None or handle.transientParent() is main:
+            return False
+        visible = dock.isVisible()
+        if visible:
+            dock.hide()
+        handle.setTransientParent(main)
+        if visible:
+            dock.show()
+        return True
+
+    def hide_floating_panels(self) -> None:
+        """On quitting, after the layout is saved: no panel outlives the window."""
+        for dock in getattr(self, "panel_docks", {}).values():
+            if dock.isFloating() and not dock.isHidden():
+                dock.hide()
+
     def sync_floating_panels(self, editor_visible: bool) -> None:
         """Hide the floating panels off the editor page; bring back the ones
         hidden that way (not the ones the user closed) on returning to it."""
@@ -158,6 +197,7 @@ class DockMixin:
             for name in sorted(hidden):
                 dock = docks.get(name)
                 if dock is not None and dock.isFloating():
+                    self._own_floating(dock)
                     dock.show()
                     self._keep_on_screen(dock)
             hidden.clear()

@@ -1347,6 +1347,12 @@ class ComicTranslate(ComicTranslateUI):
                 os.rmdir(os.path.join(root, name))
         os.rmdir(self.temp_dir)
 
+        # The layout was saved above; a floating panel left on screen would
+        # outlive the window (and, owned by nothing, keep the app running).
+        try:
+            self.hide_floating_panels()
+        except Exception:
+            pass
         super().closeEvent(event)
 
     def shutdown(self):
