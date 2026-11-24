@@ -3,6 +3,7 @@
 ## ใหม่ตั้งแต่ beta.29 / Since beta.29
 
 - **Hayai อ่านภาษาอังกฤษและญี่ปุ่นได้แล้ว** (ชื่อในตั้งค่าเปลี่ยนเป็น "Hayai") — บนมังงะญี่ปุ่นทดสอบอ่านผิด 2 จาก 22 กล่อง (แค่ตัวเล็ก ぃ) เทียบกับตัวเดิม manga-ocr ที่ผิด 10 กล่อง ใครเลือก Hayai (Korean) ไว้แล้วไม่ต้องตั้งใหม่ · Hayai now reads English and Japanese too; on the Japanese test pages it misread 2 of 22 boxes against 10 for manga-ocr.
+- **แผงลอยหายหลังเปิดแอปใหม่ (ทั้งที่ติ๊กไว้ในเมนู) — แก้ที่ต้นเหตุแล้ว** — แผงที่เรียกคืนตอนเปิดแอปไม่ได้เป็นของหน้าต่างหลัก จึงไปซ่อนอยู่หลังหน้าต่างแอปพอคลิกหรือขยายเต็มจอ และปิดแอปแล้วแผงยังค้างทำให้โปรแกรมไม่ปิดจริง ตอนนี้แผงลอยอยู่เหนือหน้าต่างแอปเสมอและปิดพร้อมกัน ทดสอบด้วยหน้าต่างจริงทั้งบน Linux และ Windows · Floating panels came back behind the main window after a restart (still ticked in the menu) and kept the app running after it closed; they now belong to the main window.
 - **ภาพที่ไฟล์ขาดท้าย (ดาวน์โหลดไม่ครบ) ไม่ทำให้หยุดแล้ว** — เดิมขึ้น "image file is truncated" ตอนตรวจจับ ตอนนี้อ่านเท่าที่มี ส่วนที่ขาดเป็นสีเทา · A page file cut off at the end no longer stops Detect.
 
 ## ใหม่ตั้งแต่ beta.28 / Since beta.28
