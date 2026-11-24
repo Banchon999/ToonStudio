@@ -157,6 +157,14 @@ def drive(win) -> None:
 
 
 def _patch(controller) -> None:
+    if os.environ.get("PROBE_WITHOUT_FIX"):
+        # The code before panels were given an owner, to prove the probe sees
+        # the fault on this desktop (panel-probe.yml runs it both ways).
+        from app.ui.main_window.docks import DockMixin
+
+        DockMixin.own_floating_panels = lambda self: None
+        DockMixin._own_floating = lambda self, dock: False
+        DockMixin.hide_floating_panels = lambda self: None
     original = controller.ComicTranslate.__init__
 
     def init(self, *args, **kwargs):

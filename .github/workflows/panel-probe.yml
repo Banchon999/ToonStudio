@@ -62,9 +62,33 @@ jobs:
           if ($log -match "ticked but not seen \['" -or $log -match "not owned by the main window \['") { $failed = $true }
           if ($failed) { exit 1 }
 
+      - name: The same without the fix is caught (the probe can see the fault here)
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:RUNNER_TEMP "probe-without-fix"
+          $env:QT_QPA_PLATFORM = "offscreen"
+          python scripts/probe_panels.py make $out
+          Remove-Item Env:\QT_QPA_PLATFORM
+          $env:PROBE_WITHOUT_FIX = "1"
+          $hung = $false
+          foreach ($phase in @("float", "reopen")) {
+            $p = Start-Process python -ArgumentList "scripts/probe_panels.py", $phase, $out -PassThru -NoNewWindow `
+                 -RedirectStandardOutput (Join-Path $out "$phase.out") -RedirectStandardError (Join-Path $out "$phase.err")
+            if (-not $p.WaitForExit(120000)) { Write-Output "$phase did not exit (expected without the fix)"; $p.Kill(); $hung = $true }
+            else { Write-Output "$phase exit $($p.ExitCode)" }
+          }
+          Get-Content (Join-Path $out "probe.log")
+          $log = Get-Content (Join-Path $out "probe.log") -Raw
+          if (-not ($log -match "not owned by the main window \['" -or $hung)) {
+            Write-Output "::error::the probe did not see the fault without the fix; it proves nothing on this desktop"
+            exit 1
+          }
+
       - name: Upload screenshots and reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: panel-probe-${{ matrix.os }}
-          path: ${{ runner.temp }}/probe
+          path: |
+            ${{ runner.temp }}/probe
+            ${{ runner.temp }}/probe-without-fix
