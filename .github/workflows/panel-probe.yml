@@ -3,10 +3,16 @@ name: Panel Probe (real desktop)
 # Do the editor's panels come back after a restart, on a real desktop?
 # Offscreen tests passed while users on Windows still lost their floating
 # panels behind the main window; this runs the real start-up on a real
-# windowing system and keeps the screenshots. Run it by hand ("Run workflow").
+# windowing system and keeps the screenshots. Run it by hand ("Run workflow"),
+# and it runs by itself when the panel code or the probe changes.
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - app/ui/main_window/docks.py
+      - scripts/probe_panels.py
+      - .github/workflows/panel-probe.yml
 
 jobs:
   probe:
