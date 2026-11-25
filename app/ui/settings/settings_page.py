@@ -12,6 +12,7 @@ from .settings_ui import SettingsPageUI
 from modules.utils.device import is_gpu_available
 from app.update_checker import UpdateChecker, is_installer
 from modules.utils.paths import get_user_data_dir, get_default_project_autosave_dir
+from modules.utils.llm_providers import chosen_model, credential_fields, provider
 
 
 logger = logging.getLogger(__name__)
@@ -131,8 +132,9 @@ class SettingsPage(QtWidgets.QWidget):
             logger.exception("Failed to autosave main page settings")
 
     def _sync_extra_context_limit(self, translator: str) -> None:
-        normalized = self.ui.reverse_mappings.get(translator, translator)
-        self.ui.llms_page.set_extra_context_unlimited(normalized in ("Custom", "OpenRouter"))
+        normalized = self.ui.value_mappings.get(translator, translator)
+        self.ui.llms_page.set_extra_context_unlimited(
+            normalized in ("Custom", "OpenRouter") or provider(normalized) is not None)
 
     def on_theme_changed(self, theme: str):
         self.theme_changed.emit(theme)
@@ -279,6 +281,22 @@ class SettingsPage(QtWidgets.QWidget):
         """The export watermark (Settings > Export), as `core.watermark.WatermarkSettings`."""
         return self.ui.export_page.watermark_section.settings()
 
+    def get_translator_cache_key(self) -> str:
+        """The translator as translation caches should know it.
+
+        The translator's name alone missed the model: after choosing another
+        model for OpenRouter, Custom or a provider, the next run served the
+        old model's cached translation.
+        """
+        translator = self.get_tool_selection('translator')
+        normalized = self.ui.value_mappings.get(translator, translator)
+        if "model" not in credential_fields(normalized):
+            return translator
+        creds = self.get_credentials(translator)
+        prov = provider(normalized)
+        model = chosen_model(prov, creds) if prov else (creds.get('model') or '').strip()
+        return f"{translator}|{model}"
+
     def get_credentials(self, service: str = ""):
         save_keys = self.ui.save_keys_checkbox.isChecked()
 
@@ -289,12 +307,8 @@ class SettingsPage(QtWidgets.QWidget):
         if service:
             normalized = self.ui.value_mappings.get(service, service)
             creds = {'save_key': save_keys}
-            if normalized == "Custom":
-                for field in ("api_key", "api_url", "model"):
-                    creds[field] = _text_or_none(f"Custom_{field}")
-            elif normalized == "OpenRouter":
-                for field in ("api_key", "model", "ocr_model"):
-                    creds[field] = _text_or_none(f"OpenRouter_{field}")
+            for field in credential_fields(normalized):
+                creds[field] = _text_or_none(f"{normalized}_{field}")
 
             return creds
 
@@ -444,15 +458,8 @@ class SettingsPage(QtWidgets.QWidget):
         if save_keys:
             for service, cred in credentials.items():
                 translated_service = self.ui.value_mappings.get(service, service)
-                
-                if translated_service == "Custom":
-                    settings.setValue(f"{translated_service}_api_key", cred['api_key'])
-                    settings.setValue(f"{translated_service}_api_url", cred['api_url'])
-                    settings.setValue(f"{translated_service}_model", cred['model'])
-                elif translated_service == "OpenRouter":
-                    settings.setValue(f"{translated_service}_api_key", cred['api_key'])
-                    settings.setValue(f"{translated_service}_model", cred['model'])
-                    settings.setValue(f"{translated_service}_ocr_model", cred.get('ocr_model', ''))
+                for field in credential_fields(translated_service):
+                    settings.setValue(f"{translated_service}_{field}", cred.get(field) or '')
         else:
             settings.remove('credentials')  # Clear all credentials if save_keys is unchecked
         settings.endGroup()
@@ -623,15 +630,10 @@ class SettingsPage(QtWidgets.QWidget):
         if save_keys:
             for service in self.ui.credential_services:
                 translated_service = self.ui.value_mappings.get(service, service)
-                
-                if translated_service == "Custom":
-                    self.ui.credential_widgets[f"{translated_service}_api_key"].setText(settings.value(f"{translated_service}_api_key", ''))
-                    self.ui.credential_widgets[f"{translated_service}_api_url"].setText(settings.value(f"{translated_service}_api_url", ''))
-                    self.ui.credential_widgets[f"{translated_service}_model"].setText(settings.value(f"{translated_service}_model", ''))
-                elif translated_service == "OpenRouter":
-                    self.ui.credential_widgets[f"{translated_service}_api_key"].setText(settings.value(f"{translated_service}_api_key", ''))
-                    self.ui.credential_widgets[f"{translated_service}_model"].setText(settings.value(f"{translated_service}_model", ''))
-                    self.ui.credential_widgets[f"{translated_service}_ocr_model"].setText(settings.value(f"{translated_service}_ocr_model", ''))
+                for field in credential_fields(translated_service):
+                    widget = self.ui.credential_widgets.get(f"{translated_service}_{field}")
+                    if widget is not None:
+                        widget.setText(settings.value(f"{translated_service}_{field}", '') or '')
         settings.endGroup()
 
         # Initialize current language tracker after loading

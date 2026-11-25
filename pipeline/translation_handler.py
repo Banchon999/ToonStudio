@@ -50,7 +50,7 @@ class TranslationHandler:
             extra_context = settings_page.get_extra_context(
                 collect_source_text(self.main_page.blk_list)
             )
-            translator_key = settings_page.get_tool_selection('translator')
+            translator_key = settings_page.get_translator_cache_key()
 
             upper_case = settings_page.ui.uppercase_checkbox.isChecked()
 

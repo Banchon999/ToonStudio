@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING
 
 from app.ui.messages import Messages
 from core.i18n import translate
+from modules.utils.llm_providers import provider
 from modules.utils.openrouter_models import uses_openrouter
 
 if TYPE_CHECKING:
@@ -50,7 +51,7 @@ def _openrouter_key(settings_page) -> str:
 
 
 def validate_translator(main: ComicTranslate, target_lang: str):
-    """Ensure a translator is selected and, for Custom and OpenRouter, configured."""
+    """Ensure a translator is selected and, for one that needs a key, configured."""
     settings_page = main.settings_page
     tr = settings_page.ui.tr
     settings = settings_page.get_all_settings()
@@ -75,6 +76,15 @@ def validate_translator(main: ComicTranslate, target_lang: str):
     if uses_openrouter(_internal(settings_page, translator_tool)) and not _openrouter_key(settings_page):
         Messages.show_openrouter_key_missing_error(main)
         return False
+
+    # A provider on its own key needs only the key: an empty Model field
+    # means the provider's default model.
+    prov = provider(_internal(settings_page, translator_tool))
+    if prov is not None:
+        creds = settings_page.get_credentials(prov.name)
+        if not (creds.get('api_key') or '').strip():
+            Messages.show_provider_key_missing_error(main, prov.name)
+            return False
 
     return True
 

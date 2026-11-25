@@ -433,7 +433,7 @@ class ManualWorkflowController:
                 self.main.lang_mapping,
             )
             settings_page = self.main.settings_page
-            translator_key = settings_page.get_tool_selection("translator")
+            translator_key = settings_page.get_translator_cache_key()
             upper_case = settings_page.ui.uppercase_checkbox.isChecked()
 
             glossary_issues: list = []

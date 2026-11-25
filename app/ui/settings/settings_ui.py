@@ -6,6 +6,7 @@ from PySide6 import QtCore
 from ..dayu_widgets.tool_button import MToolButton
 from ..dayu_widgets.divider import MDivider
 from ..dayu_widgets.qt import MPixmap
+from modules.utils.llm_providers import PROVIDER_NAMES
 
 # New imports for refactored pages
 from .personalization_page import PersonalizationPage
@@ -87,9 +88,12 @@ class SettingsPageUI(QtWidgets.QWidget):
         self.themes = [self.tr('Dark'), self.tr('Light')]
         self.alignment = [self.tr("Left"), self.tr("Center"), self.tr("Right")]
 
+        # Provider names are brand names and are not translated; they are
+        # also the keys their settings are stored under.
         self.credential_services = [
-            self.tr("Custom"),
             self.tr("OpenRouter"),
+            *PROVIDER_NAMES,
+            self.tr("Custom"),
         ]
 
         self.supported_translators = [
@@ -100,6 +104,7 @@ class SettingsPageUI(QtWidgets.QWidget):
             self.tr("Claude-4.5-Haiku"),
             self.tr("Deepseek"),
             self.tr("OpenRouter"),
+            *PROVIDER_NAMES,
             self.tr("Custom"),
         ]
         
@@ -149,6 +154,7 @@ class SettingsPageUI(QtWidgets.QWidget):
             self.tr("Gemini-2.5-Pro"): "Gemini-2.5-Pro",
             self.tr("Yandex"): "Yandex",
             self.tr("Microsoft Translator"): "Microsoft Translator",
+            **{name: name for name in PROVIDER_NAMES},
 
             # OCR mappings
             self.tr("Default"): "Default",

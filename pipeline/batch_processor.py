@@ -403,7 +403,7 @@ class BatchProcessor:
 
             # Get Translations/ Export if selected
             extra_context = settings_page.get_extra_context(collect_source_text(blk_list))
-            translator_key = settings_page.get_tool_selection('translator')
+            translator_key = settings_page.get_translator_cache_key()
             translator = Translator(self.main_page, source_lang, target_lang)
             
             # Get translation cache key for batch processing

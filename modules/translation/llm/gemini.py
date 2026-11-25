@@ -7,6 +7,21 @@ from ...utils.api_errors import APIError
 from ...utils.translator_utils import MODEL_MAP
 
 
+def thinking_config(model_id: str) -> dict | None:
+    """How much a Gemini model may think before it answers, or None.
+
+    Gemini 3 takes a thinking level, and translation needs little. Gemini 2.5
+    refuses a level (it takes a token budget instead), so it is left to its
+    default there; only a Flash model may turn thinking off.
+    """
+    model_id = model_id.lower()
+    if model_id.startswith("gemini-3"):
+        return {"thinkingLevel": "minimal" if "flash-lite" in model_id else "low"}
+    if model_id.startswith("gemini-2.5-flash"):
+        return {"thinkingBudget": 0}
+    return None
+
+
 class GeminiTranslation(BaseLLMTranslation):
     """Translation engine using Google Gemini models via REST API."""
     
@@ -47,22 +62,16 @@ class GeminiTranslation(BaseLLMTranslation):
         Returns:
             Translated text from the model
         """
-        # Create API endpoint URL
-        url = f"{self.api_base_url}/{self.model_api_name}:generateContent?key={self.api_key}"
-        
-        # Setup generation config
-        if self.model_name in ["Gemini-3.1-Flash-Lite"]:
-            thinking_level = "minimal"
-        else:
-            thinking_level = "low"
+        # The key goes in a header, not the URL: an error quotes the URL.
+        url = f"{self.api_base_url}/{self.model_api_name}:generateContent"
 
         generation_config = {
             "temperature": self.temperature,
             "maxOutputTokens": self.max_tokens,
-            "thinkingConfig": {
-                "thinkingLevel": thinking_level
-            },
         }
+        thinking = thinking_config(self.model_api_name or "")
+        if thinking:
+            generation_config["thinkingConfig"] = thinking
         
         # Setup safety settings
         safety_settings = [
@@ -76,7 +85,7 @@ class GeminiTranslation(BaseLLMTranslation):
         parts = []
         
         # Add image if needed
-        if self.img_as_llm_input:
+        if self.img_as_llm_input and image is not None:
             # Base64 encode the image
 
             img_b64, mime_type = self.encode_image(image)
@@ -105,7 +114,8 @@ class GeminiTranslation(BaseLLMTranslation):
         
         # Send request to Gemini API
         headers = {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "x-goog-api-key": self.api_key or "",
         }
         
         response = requests.post(
