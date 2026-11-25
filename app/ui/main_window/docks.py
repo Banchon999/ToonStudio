@@ -10,6 +10,23 @@ is saved on close and restored at start (`DOCK_STATE_KEY`); a saved state
 that no longer fits (a panel added in a newer version) leaves the new panel
 where the default layout puts it.
 
+A floating panel is a window of its own, so it would stay on screen over the
+home screen, the settings and the Stitch page; it is shown only while the
+editor is (`sync_floating_panels`), and only once the main window is up —
+restoring the layout used to show floating panels before it was.
+
+A floating panel must also *belong* to the main window (its QWindow's
+transient parent; on Windows, its owner). `restoreState` runs while the
+window is built, before the main window has a native window, so every panel
+restored as floating came back owned by nothing: on Windows an unowned window
+is not kept above the app, so after a restart the panels sat behind the main
+window — ticked in the Panels menu and nowhere to be seen until toggled off
+and on — and, being top-level windows of their own, they stayed on screen and
+kept the process alive after the main window closed. Found by running the
+real app on a real X server (`scripts/probe_panels.py`); the offscreen tests
+had passed. `own_floating_panels` gives every floating panel the main window
+as its owner once that window is up, and again before any is shown.
+
 The editor's own QMainWindow is not used: its docks would show over the
 home screen and the settings page, which share its central stack.
 """
@@ -137,6 +154,71 @@ class DockMixin:
         self._arrange_default_docks()
         QtCore.QTimer.singleShot(0, self._size_default_docks)
 
+    # --- floating panels follow the editor page ---------------------------
+
+    def _on_center_page_changed(self, _index: int) -> None:
+        stack = getattr(self, "_center_stack", None)
+        editor = getattr(self, "main_content_widget", None)
+        self.sync_floating_panels(stack is not None and stack.currentWidget() is editor)
+
+    def own_floating_panels(self) -> None:
+        """Make the main window the owner of every floating panel (see the
+        module notes). A panel already on screen is shown again, since some
+        platforms apply a new owner only when a window is shown."""
+        for dock in getattr(self, "panel_docks", {}).values():
+            if dock.isFloating():
+                self._own_floating(dock)
+
+    def _own_floating(self, dock: QtWidgets.QDockWidget) -> bool:
+        main = self.window().windowHandle()
+        handle = dock.windowHandle()
+        if main is None or handle is None or handle.transientParent() is main:
+            return False
+        visible = dock.isVisible()
+        if visible:
+            dock.hide()
+        handle.setTransientParent(main)
+        if visible:
+            dock.show()
+        return True
+
+    def hide_floating_panels(self) -> None:
+        """On quitting, after the layout is saved: no panel outlives the window."""
+        for dock in getattr(self, "panel_docks", {}).values():
+            if dock.isFloating() and not dock.isHidden():
+                dock.hide()
+
+    def sync_floating_panels(self, editor_visible: bool) -> None:
+        """Hide the floating panels off the editor page; bring back the ones
+        hidden that way (not the ones the user closed) on returning to it."""
+        hidden = getattr(self, "_page_hidden_docks", set())
+        docks = getattr(self, "panel_docks", {})
+        if editor_visible:
+            for name in sorted(hidden):
+                dock = docks.get(name)
+                if dock is not None and dock.isFloating():
+                    self._own_floating(dock)
+                    dock.show()
+                    self._keep_on_screen(dock)
+            hidden.clear()
+        else:
+            for name, dock in docks.items():
+                if dock.isFloating() and not dock.isHidden():
+                    hidden.add(name)
+                    dock.hide()
+        self._page_hidden_docks = hidden
+
+    def _keep_on_screen(self, dock: QtWidgets.QDockWidget) -> None:
+        """A floating panel whose saved place is on no screen any more (a
+        monitor unplugged) comes back over the main window."""
+        from PySide6.QtGui import QGuiApplication
+
+        frame = dock.frameGeometry()
+        if any(screen.availableGeometry().intersects(frame) for screen in QGuiApplication.screens()):
+            return
+        centre = self.frameGeometry().center() if self.isVisible() else QtCore.QPoint(200, 200)
+        dock.move(centre - QtCore.QPoint(frame.width() // 2, frame.height() // 2))
+
     def show_panel(self, name: str) -> None:
         dock = self.panel_docks.get(name)
         if dock is None:
@@ -163,8 +245,19 @@ class DockMixin:
         # laid out: its state holds no real sizes and would replace a good one.
         if not getattr(self, "_dock_host_shown", False):
             return
+        # Panels hidden only because another page is showing are saved as shown.
+        hidden = [self.panel_docks[n] for n in getattr(self, "_page_hidden_docks", ()) if n in self.panel_docks]
+        for dock in hidden:
+            dock.setAttribute(QtCore.Qt.WidgetAttribute.WA_DontShowOnScreen, True)
+            dock.show()
+        try:
+            state = self.editor_docks.saveState(DOCK_STATE_VERSION)
+        finally:
+            for dock in hidden:
+                dock.hide()
+                dock.setAttribute(QtCore.Qt.WidgetAttribute.WA_DontShowOnScreen, False)
         settings = QSettings("ComicLabs", "ComicTranslate")
-        settings.setValue(DOCK_STATE_KEY, self.editor_docks.saveState(DOCK_STATE_VERSION))
+        settings.setValue(DOCK_STATE_KEY, state)
 
     def restore_dock_state(self) -> bool:
         from PySide6.QtCore import QSettings

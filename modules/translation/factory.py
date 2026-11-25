@@ -11,6 +11,8 @@ from .llm.gemini import GeminiTranslation
 from .llm.deepseek import DeepseekTranslation
 from .llm.custom import CustomTranslation
 from .llm.openrouter import OpenRouterTranslation
+from .llm.provider import engine_class_for
+from modules.utils.llm_providers import provider
 from modules.utils.openrouter_models import NAMED_MODELS, uses_openrouter
 
 
@@ -82,6 +84,13 @@ class TranslationFactory:
         if translator_key in cls.TRADITIONAL_ENGINES:
             return cls.TRADITIONAL_ENGINES[translator_key]
 
+        # A provider on its own key ("OpenAI API", "Gemini API"...) is
+        # matched exactly, before the substring search below could take
+        # "Gemini API" for the Gemini engine with no key field.
+        provider_engine = engine_class_for(translator_key)
+        if provider_engine is not None:
+            return provider_engine
+
         # The named models run on the OpenRouter key (see NAMED_MODELS)
         if translator_key in NAMED_MODELS:
             return OpenRouterTranslation
@@ -122,8 +131,8 @@ class TranslationFactory:
             extras["credentials"] = creds
 
         # If it's an LLM, also grab the llm settings
-        is_llm = any(identifier in translator_key
-                     for identifier in cls.LLM_ENGINE_IDENTIFIERS)
+        is_llm = provider(translator_key) is not None or any(
+            identifier in translator_key for identifier in cls.LLM_ENGINE_IDENTIFIERS)
         if is_llm:
             extras["llm"] = settings.get_llm_settings()
 

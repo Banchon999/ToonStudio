@@ -1,8 +1,14 @@
+from urllib.parse import urlparse
+
 from PySide6 import QtWidgets, QtCore
+from core import theme_tokens
+from ..dayu_widgets import dayu_theme
 from ..dayu_widgets.label import MLabel
 from ..dayu_widgets.line_edit import MLineEdit
 from ..dayu_widgets.check_box import MCheckBox
 from .model_selector import OpenRouterModelSelector
+from .provider_model_field import ProviderModelField
+from modules.utils.llm_providers import provider
 from .utils import set_label_width
 
 class CredentialsPage(QtWidgets.QWidget):
@@ -13,6 +19,7 @@ class CredentialsPage(QtWidgets.QWidget):
         self.credential_widgets: dict[str, MLineEdit] = {}
         self.openrouter_model_selector: OpenRouterModelSelector | None = None
         self.openrouter_ocr_model_selector: OpenRouterModelSelector | None = None
+        self._key_links: list[MLabel] = []
 
         # main layout (no internal scroll here — outer settings scroll handles it)
         main_layout = QtWidgets.QVBoxLayout(self)
@@ -21,9 +28,10 @@ class CredentialsPage(QtWidgets.QWidget):
         self.save_keys_checkbox = MCheckBox(self.tr("Save Keys"))
 
         info_label = MLabel(self.tr(
-            "Every AI model in the translator and OCR lists (GPT, Claude, Gemini, Deepseek and OpenRouter) "
-            "runs on your OpenRouter API key below. Custom is for your own OpenAI-compatible endpoint, "
-            "such as a local model. Tick Save Keys to keep the keys after restarting."
+            "The named AI models in the translator and OCR lists (GPT, Claude, Gemini, Deepseek and OpenRouter) "
+            "run on your OpenRouter API key below. The \"API\" translators (OpenAI API, Gemini API...) run on "
+            "that company's own key, with the model you choose. Custom is for your own OpenAI-compatible "
+            "endpoint, such as a local model. Tick Save Keys to keep the keys after restarting."
         )).secondary()
         info_label.setWordWrap(True)
         
@@ -149,6 +157,29 @@ class CredentialsPage(QtWidgets.QWidget):
                 service_layout.addWidget(self.openrouter_ocr_model_selector)
                 self.credential_widgets[f"{normalized}_ocr_model"] = self.openrouter_ocr_model_selector
 
+            elif provider(normalized) is not None:
+                prov = provider(normalized)
+                link = MLabel("").secondary()
+                link.setOpenExternalLinks(True)
+                link.setTextInteractionFlags(QtCore.Qt.TextInteractionFlag.TextBrowserInteraction)
+                link.setProperty("key_url", prov.key_url)
+                self._key_links.append(link)
+                service_layout.addWidget(link)
+
+                api_key_input = MLineEdit()
+                api_key_input.setEchoMode(QtWidgets.QLineEdit.Password)
+                api_key_input.setFixedWidth(400)
+                api_key_prefix = MLabel(self.tr("API Key")).border()
+                set_label_width(api_key_prefix)
+                api_key_prefix.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+                api_key_input.set_prefix_widget(api_key_prefix)
+                service_layout.addWidget(api_key_input)
+                self.credential_widgets[f"{normalized}_api_key"] = api_key_input
+
+                model_field = ProviderModelField(prov, api_key_input)
+                service_layout.addWidget(model_field)
+                self.credential_widgets[f"{normalized}_model"] = model_field
+
             elif normalized == "Yandex":
                 api_key_input = MLineEdit()
                 api_key_input.setEchoMode(QtWidgets.QLineEdit.Password)
@@ -185,9 +216,24 @@ class CredentialsPage(QtWidgets.QWidget):
 
         content_layout.addStretch(1)
         main_layout.addLayout(content_layout)
+        self._paint_key_links()
+
+    def _paint_key_links(self) -> None:
+        """The "Get a key" links in the theme's accent.
+
+        A rich-text link is drawn in the palette's link blue, unreadable on
+        the dark theme; repainted on every show so a theme switch follows.
+        """
+        accent = theme_tokens.palette(dark=dayu_theme.is_dark)["accent"]
+        for link in self._key_links:
+            url = link.property("key_url")
+            site = urlparse(url).netloc
+            link.setText(self.tr('Get a key: <a href="{0}">{1}</a>').format(
+                url, f'<span style="color:{accent}">{site}</span>'))
 
     def showEvent(self, event):
         super().showEvent(event)
+        self._paint_key_links()
         # Fetching the OpenRouter catalogue is deferred to the first time this
         # page is looked at, so opening the app never waits on the network.
         for selector in (self.openrouter_model_selector, self.openrouter_ocr_model_selector):

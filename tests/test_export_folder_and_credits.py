@@ -90,6 +90,25 @@ def test_a_folder_export_writes_each_chapter_into_its_own_folder(window, tmp_pat
     assert np.asarray(Image.open(out / "ch2" / "001.jpg")).mean() > 80
 
 
+def test_a_chapter_folder_is_named_after_the_folder_its_images_came_from(window, tmp_path):
+    """Export › Images (Folder) with no names given: each chapter folder takes
+    its source folder's name, not the project's or the first image's."""
+    ctrl = window.project_ctrl
+    rows = ctrl._build_export_rows(folder_names=True)
+    assert [row.group_name for row in rows] == ["ch1", "ch1", "ch2", "ch2"]
+    # A reopened project's pages live in the app's temp folder; their
+    # original paths say where they came from.
+    page = window.image_files[0]
+    window.path_originals[page] = os.path.join(str(tmp_path), "series", "ตอนที่ 3", "001.jpg")
+    assert ctrl._source_folder_name(page) == "ตอนที่ 3"
+    del window.path_originals[page]
+    inside_temp = os.path.join(window.temp_dir, "unique_images", "7", "001.jpg")
+    assert ctrl._source_folder_name(inside_temp) == "", "no name from the app's own temp folder"
+    # What the user named in the chapters dialog wins.
+    ctrl._persist_export_group_names({page: "Prologue"})
+    assert ctrl._build_export_rows(folder_names=True)[0].group_name == "Prologue"
+
+
 def test_credit_pages_open_and_close_every_chapter(window, tmp_path):
     first, last = tmp_path / "hello.png", tmp_path / "bye.png"
     Image.fromarray(np.full((50, 100, 3), (255, 0, 0), np.uint8)).save(first)

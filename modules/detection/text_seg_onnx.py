@@ -301,6 +301,17 @@ def get_segmenter(device: str = 'cpu') -> ComicTextSegmenter:
     return _segmenter
 
 
+def release_segmenter() -> bool:
+    """Drop the loaded model (~420 MB compiled on OpenVINO, ~1 GB on ONNX
+    Runtime) and its cached mask; the next use loads it again. True when one
+    was loaded."""
+    global _segmenter
+    with _segmenter_lock:
+        had = _segmenter is not None
+        _segmenter = None
+    return had
+
+
 def peek_cached_mask(image: np.ndarray) -> np.ndarray | None:
     """This page's mask if it is already in hand — never loads or runs a model."""
     with _segmenter_lock:

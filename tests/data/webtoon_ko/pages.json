@@ -1,0 +1,69 @@
+{
+  "about": "Three Korean webtoon pages generated with AI by the project owner, for testing (no third-party artwork). Ground truth transcribed by hand, top to bottom; see README.md.",
+  "source_lang": "Korean",
+  "kinds": {
+    "narration": "rectangular caption box",
+    "speech": "speech bubble",
+    "thought": "self-talk / inner voice: spiky, glowing or dark bubble, or a line said to no one",
+    "sfx": "sound effect lettered over the art",
+    "sign": "text drawn on an object in the scene (the invitation)",
+    "system": "game-style system window"
+  },
+  "speakers": {
+    "protagonist": "male"
+  },
+  "pages": {
+    "page_01.png": [
+      {"kind": "narration", "text": "그날도 평소처럼 게임을 하던 중—"},
+      {"kind": "thought", "speaker": "protagonist", "text": "…뭐야 이게?"},
+      {"kind": "sfx", "text": "스윽"},
+      {"kind": "narration", "text": "정체불명의 초대장이 도착했다."},
+      {"kind": "narration", "text": "그리고, 그 초대장에는—"},
+      {"kind": "sign", "text": "탑에 오신 것을 환영합니다."},
+      {"kind": "sign", "text": "이곳은, 모든 것이 시작되는 곳."},
+      {"kind": "sfx", "text": "퍽", "uncertain": true},
+      {"kind": "thought", "speaker": "protagonist", "text": "…탑?"},
+      {"kind": "narration", "text": "그 누구도 돌아오지 못했다는 그 탑—", "as_drawn": "그 누구도 돌아오자 못했다는 그 탑—"},
+      {"kind": "sfx", "text": "쿠웅…"},
+      {"kind": "narration", "text": "그곳에… 내가 들어가야 한다고?", "as_drawn": "그곳에::: 내가 들어가야 한다고?"},
+      {"kind": "narration", "text": "그리고, 그 순간…."},
+      {"kind": "thought", "speaker": "protagonist", "text": "…그래. 가보자.", "as_drawn": "∴그래. 가보자."},
+      {"kind": "sfx", "text": "휘오오"},
+      {"kind": "thought", "speaker": "protagonist", "text": "…이 탑, 대체 뭐야?"}
+    ],
+    "page_02.png": [
+      {"kind": "thought", "speaker": "protagonist", "text": "이게... 뭐지?"},
+      {"kind": "sfx", "text": "스윽"},
+      {"kind": "thought", "speaker": "protagonist", "text": "하... 이런 게 진짜로…?"},
+      {"kind": "sfx", "text": "쿠웅"},
+      {"kind": "thought", "speaker": "protagonist", "text": "여기가... 그 악명 높은 ‘탑’인가..."},
+      {"kind": "thought", "speaker": "protagonist", "text": "도대체 누가 이런 걸..."},
+      {"kind": "thought", "speaker": "protagonist", "text": "들어가는 순간, 돌아올 수 없다는 그곳..."},
+      {"kind": "sfx", "text": "저벅"},
+      {"kind": "thought", "speaker": "protagonist", "text": "...그래. 이번엔, 나도 가는 거야.", "as_drawn": "...그래. 이번앤, 나도 가는 거야."},
+      {"kind": "sfx", "text": "띠링"},
+      {"kind": "system", "text": "시스템 알림"},
+      {"kind": "system", "text": "당신을 ‘탑’에 입장시킵니다."},
+      {"kind": "system", "text": "— 준비가 완료되었습니다."},
+      {"kind": "thought", "speaker": "protagonist", "text": "뭐야... 이게 진짜 시스템이야?"},
+      {"kind": "thought", "speaker": "protagonist", "text": "장난이 아니잖아...!"},
+      {"kind": "thought", "speaker": "protagonist", "text": "좋아... 한번 해보자."},
+      {"kind": "thought", "speaker": "protagonist", "text": "이곳이... 내 세상이 되는 거야."}
+    ],
+    "page_03.png": [
+      {"kind": "thought", "speaker": "protagonist", "text": "…뭐야, 이게?"},
+      {"kind": "sfx", "text": "스윽"},
+      {"kind": "sfx", "text": "쿠오오"},
+      {"kind": "thought", "speaker": "protagonist", "text": "…하늘에 저게 뭐지?"},
+      {"kind": "thought", "speaker": "protagonist", "text": "설마… 그 유명한 「탑」인가?"},
+      {"kind": "thought", "speaker": "protagonist", "text": "환영합니다…? 이게 무슨…"},
+      {"kind": "sign", "text": "『탑』에 오신 것을 환영합니다."},
+      {"kind": "sign", "text": "이곳은, 모든 것이 시작되는 곳. 당신의 도전을 기다립니다."},
+      {"kind": "sign", "text": "— 탑 관리국 —"},
+      {"kind": "thought", "speaker": "protagonist", "text": "…이 탑이, 날 알고 있어?"},
+      {"kind": "thought", "speaker": "protagonist", "text": "그럼…"},
+      {"kind": "thought", "speaker": "protagonist", "text": "들어가야 하는 거야?"},
+      {"kind": "sfx", "text": "두둥"}
+    ]
+  }
+}

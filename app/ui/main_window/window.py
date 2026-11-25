@@ -192,6 +192,13 @@ class ComicTranslateUI(
 
         self._center_stack.setCurrentWidget(self.startup_home)
         self._set_document_tools_visible(False)
+        # Floating panels belong to the editor: hidden on every other page.
+        self._center_stack.currentChanged.connect(self._on_center_page_changed)
+        self.sync_floating_panels(False)
+        # ...and to this window: restored before it had a native window, they
+        # are owned by nothing until it is up (see docks.py).
+        from app.ui.main_window.docks import _FirstShow
+        self._own_panels_on_show = _FirstShow(self, self.own_floating_panels)
 
         self.main_layout.addWidget(self._center_stack)
 

@@ -142,6 +142,21 @@ class Messages:
         )
 
     @staticmethod
+    def show_provider_key_missing_error(parent, provider_name: str):
+        """Show an error when a provider's own key (OpenAI API, Gemini API...) is empty."""
+        MMessage.error(
+            text=QCoreApplication.translate(
+                "Messages",
+                "No API key is set for {0}.\n"
+                "Enter it under Settings > Advanced > {0}, and tick Save Keys "
+                "to keep it after restarting."
+            ).format(provider_name),
+            parent=parent,
+            duration=None,
+            closable=True
+        )
+
+    @staticmethod
     def show_error_with_copy(parent, title: str, text: str, detailed_text: str | None = None):
         """
         Show a critical error dialog where the main text is selectable and the

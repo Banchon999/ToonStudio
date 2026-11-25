@@ -32,6 +32,13 @@ class ToolsPage(QtWidgets.QWidget):
         ocr_widget, self.ocr_combo = create_title_and_combo(self.tr("Text Recognition"), self.ocr_engines, h4=True)
         set_combo_box_width(self.ocr_combo, self.ocr_engines)
         self._mark_unavailable_ocr_engines()
+        hayai = self.ocr_combo.findText("Hayai")
+        if hayai >= 0:
+            self.ocr_combo.setItemData(hayai, self.tr(
+                "Reads Korean, English and Japanese pages, the whole block at once\n"
+                "(~265 MB download on first use). Pages in other languages are read\n"
+                "by the Default engine for their language."
+            ), QtCore.Qt.ItemDataRole.ToolTipRole)
 
         detector_widget, self.detector_combo = create_title_and_combo(self.tr("Text Detector"), self.detectors, h4=True)
         set_combo_box_width(self.detector_combo, self.detectors)
@@ -83,6 +90,39 @@ class ToolsPage(QtWidgets.QWidget):
             "thresholding each box on its own. Much more accurate on text over artwork,\n"
             "gradients and screentone, and on coloured text.\n"
             "Downloads a 90 MB model once, and adds a few seconds per page on CPU."
+        ))
+
+        # Which model makes that prediction. Values are stored, labels translated.
+        self.text_seg_engine_options = [
+            ("ctd", self.tr("comic-text-detector — the whole page at once (default)")),
+            ("ctm", self.tr("comic-text-mask — one text box at a time, lighter")),
+        ]
+        self.text_seg_engine_widget, self.text_seg_engine_combo = create_title_and_combo(
+            self.tr("Text segmentation model"),
+            [label for _value, label in self.text_seg_engine_options], h4=False)
+        for index, (value, _label) in enumerate(self.text_seg_engine_options):
+            self.text_seg_engine_combo.setItemData(index, value)
+        set_combo_box_width(self.text_seg_engine_combo,
+                            [label for _value, label in self.text_seg_engine_options])
+        self.text_seg_engine_combo.setToolTip(self.tr(
+            "comic-text-detector reads the whole page in one pass (~420 MB, a second or two\n"
+            "a page). Its blurred view of the page is what lets cleaning take in the glow round\n"
+            "white lettering, so it stays the default.\n"
+            "comic-text-mask reads each detected text box on its own (~150 MB, ~60 ms a box,\n"
+            "57 MB download). On the test pages it removed a little more text over artwork\n"
+            "and was otherwise the same."
+        ))
+        self.text_segmentation_checkbox.toggled.connect(self.text_seg_engine_widget.setEnabled)
+
+        self.free_models_checkbox = MCheckBox(
+            self.tr("Free AI model memory after 3 minutes with no work")
+        )
+        self.free_models_checkbox.setChecked(True)
+        self.free_models_checkbox.setToolTip(self.tr(
+            "The detection, text and cleaning models take 1–1.5 GB of memory while loaded.\n"
+            "With this on they are let go when nothing has run for 3 minutes — editing text,\n"
+            "reading or a browser alongside get that memory back — and the next step loads\n"
+            "them again in a few seconds. Turn it off on a PC with plenty of memory."
         ))
 
         self.denoise_checkbox = MCheckBox(
@@ -254,12 +294,14 @@ class ToolsPage(QtWidgets.QWidget):
         layout.addLayout(detector_conf_layout)
         layout.addWidget(self.stitch_detection_checkbox)
         layout.addWidget(self.skia_text_checkbox)
+        layout.addWidget(self.free_models_checkbox)
         layout.addSpacing(10)
         layout.addWidget(ocr_widget)
         layout.addLayout(ocr_padding_layout)
         layout.addSpacing(10)
         layout.addWidget(inpainting_label)
         layout.addWidget(self.text_segmentation_checkbox)
+        layout.addWidget(self.text_seg_engine_widget)
         layout.addWidget(self.denoise_checkbox)
         layout.addLayout(mask_padding_layout)
         layout.addLayout(bubble_inset_layout)
@@ -309,6 +351,14 @@ class ToolsPage(QtWidgets.QWidget):
 
     def _update_smart_fill_widgets(self, inpainter: str):
         self.smart_fill_textured_widget.setVisible(inpainter == "Smart Fill")
+
+    def text_seg_engine(self) -> str:
+        value = self.text_seg_engine_combo.currentData()
+        return value if value in {v for v, _ in self.text_seg_engine_options} else "ctd"
+
+    def set_text_seg_engine(self, value: str) -> None:
+        index = self.text_seg_engine_combo.findData(value)
+        self.text_seg_engine_combo.setCurrentIndex(index if index >= 0 else 0)
 
     def smart_fill_textured(self) -> str:
         value = self.smart_fill_textured_combo.currentData()

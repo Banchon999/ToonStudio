@@ -12,6 +12,7 @@ from .settings_ui import SettingsPageUI
 from modules.utils.device import is_gpu_available
 from app.update_checker import UpdateChecker, is_installer
 from modules.utils.paths import get_user_data_dir, get_default_project_autosave_dir
+from modules.utils.llm_providers import chosen_model, credential_fields, provider
 
 
 logger = logging.getLogger(__name__)
@@ -69,7 +70,7 @@ class SettingsPage(QtWidgets.QWidget):
         combos = [
             ui.lang_combo, ui.theme_combo, ui.translator_combo, ui.ocr_combo,
             ui.detector_combo, ui.inpainter_combo, ui.inpaint_strategy_combo,
-            ui.smart_fill_textured_combo,
+            ui.smart_fill_textured_combo, ui.tools_page.text_seg_engine_combo,
         ]
         for combo in combos:
             combo.currentTextChanged.connect(self._mark_settings_dirty)
@@ -80,7 +81,7 @@ class SettingsPage(QtWidgets.QWidget):
             ui.translated_text_checkbox, ui.inpainted_image_checkbox,
             ui.per_class_fonts_checkbox, ui.stitch_detection_checkbox,
             ui.text_segmentation_checkbox, ui.denoise_checkbox,
-            ui.skia_text_checkbox,
+            ui.skia_text_checkbox, ui.free_models_checkbox,
             ui.use_style_defaults_checkbox,
         ]
         for checkbox in checkboxes:
@@ -131,8 +132,9 @@ class SettingsPage(QtWidgets.QWidget):
             logger.exception("Failed to autosave main page settings")
 
     def _sync_extra_context_limit(self, translator: str) -> None:
-        normalized = self.ui.reverse_mappings.get(translator, translator)
-        self.ui.llms_page.set_extra_context_unlimited(normalized in ("Custom", "OpenRouter"))
+        normalized = self.ui.value_mappings.get(translator, translator)
+        self.ui.llms_page.set_extra_context_unlimited(
+            normalized in ("Custom", "OpenRouter") or provider(normalized) is not None)
 
     def on_theme_changed(self, theme: str):
         self.theme_changed.emit(theme)
@@ -168,6 +170,13 @@ class SettingsPage(QtWidgets.QWidget):
 
     def get_use_text_segmentation_model(self) -> bool:
         return self.ui.text_segmentation_checkbox.isChecked()
+
+    def get_text_segmentation_engine(self) -> str:
+        """Which text segmentation model: "ctd" (comic-text-detector) or "ctm" (comic-text-mask)."""
+        return self.ui.tools_page.text_seg_engine()
+
+    def get_free_models_when_idle(self) -> bool:
+        return self.ui.free_models_checkbox.isChecked()
 
     def get_denoise_cleaned_areas(self) -> bool:
         return self.ui.denoise_checkbox.isChecked()
@@ -272,6 +281,22 @@ class SettingsPage(QtWidgets.QWidget):
         """The export watermark (Settings > Export), as `core.watermark.WatermarkSettings`."""
         return self.ui.export_page.watermark_section.settings()
 
+    def get_translator_cache_key(self) -> str:
+        """The translator as translation caches should know it.
+
+        The translator's name alone missed the model: after choosing another
+        model for OpenRouter, Custom or a provider, the next run served the
+        old model's cached translation.
+        """
+        translator = self.get_tool_selection('translator')
+        normalized = self.ui.value_mappings.get(translator, translator)
+        if "model" not in credential_fields(normalized):
+            return translator
+        creds = self.get_credentials(translator)
+        prov = provider(normalized)
+        model = chosen_model(prov, creds) if prov else (creds.get('model') or '').strip()
+        return f"{translator}|{model}"
+
     def get_credentials(self, service: str = ""):
         save_keys = self.ui.save_keys_checkbox.isChecked()
 
@@ -282,12 +307,8 @@ class SettingsPage(QtWidgets.QWidget):
         if service:
             normalized = self.ui.value_mappings.get(service, service)
             creds = {'save_key': save_keys}
-            if normalized == "Custom":
-                for field in ("api_key", "api_url", "model"):
-                    creds[field] = _text_or_none(f"Custom_{field}")
-            elif normalized == "OpenRouter":
-                for field in ("api_key", "model", "ocr_model"):
-                    creds[field] = _text_or_none(f"OpenRouter_{field}")
+            for field in credential_fields(normalized):
+                creds[field] = _text_or_none(f"{normalized}_{field}")
 
             return creds
 
@@ -325,12 +346,14 @@ class SettingsPage(QtWidgets.QWidget):
                 'ocr_min_padding': self.get_ocr_padding()[1],
                 'stitch_detection': self.ui.stitch_detection_checkbox.isChecked(),
                 'text_segmentation_model': self.get_use_text_segmentation_model(),
+                'text_segmentation_engine': self.get_text_segmentation_engine(),
                 'denoise_cleaned_areas': self.get_denoise_cleaned_areas(),
                 'smart_fill_textured': self.get_smart_fill_textured(),
                 # The checkbox, not the resolved engine: get_text_engine()
                 # answers Qt when skia-python is missing, and persisting
                 # that would silently turn the preference off for good.
                 'skia_text_engine': self.ui.skia_text_checkbox.isChecked(),
+                'free_models_when_idle': self.get_free_models_when_idle(),
                 'hd_strategy': self.get_hd_strategy_settings()
             },
             'llm': self.get_llm_settings(),
@@ -435,15 +458,8 @@ class SettingsPage(QtWidgets.QWidget):
         if save_keys:
             for service, cred in credentials.items():
                 translated_service = self.ui.value_mappings.get(service, service)
-                
-                if translated_service == "Custom":
-                    settings.setValue(f"{translated_service}_api_key", cred['api_key'])
-                    settings.setValue(f"{translated_service}_api_url", cred['api_url'])
-                    settings.setValue(f"{translated_service}_model", cred['model'])
-                elif translated_service == "OpenRouter":
-                    settings.setValue(f"{translated_service}_api_key", cred['api_key'])
-                    settings.setValue(f"{translated_service}_model", cred['model'])
-                    settings.setValue(f"{translated_service}_ocr_model", cred.get('ocr_model', ''))
+                for field in credential_fields(translated_service):
+                    settings.setValue(f"{translated_service}_{field}", cred.get(field) or '')
         else:
             settings.remove('credentials')  # Clear all credentials if save_keys is unchecked
         settings.endGroup()
@@ -478,6 +494,8 @@ class SettingsPage(QtWidgets.QWidget):
             self.ui.translator_combo.setCurrentIndex(-1)
 
         ocr = settings.value('ocr', 'Default')
+        if ocr == 'Hayai (Korean)':  # its name while it read Korean only
+            ocr = 'Hayai'
         translated_ocr = self.ui.reverse_mappings.get(ocr, ocr)
         # An engine chosen on a machine that had its packages, opened on one
         # that does not, would otherwise be restored and then fail at OCR time.
@@ -519,8 +537,14 @@ class SettingsPage(QtWidgets.QWidget):
         self.ui.text_segmentation_checkbox.setChecked(
             settings.value('text_segmentation_model', True, type=bool)
         )
+        self.ui.tools_page.set_text_seg_engine(
+            str(settings.value('text_segmentation_engine', 'ctd'))
+        )
         self.ui.denoise_checkbox.setChecked(
             settings.value('denoise_cleaned_areas', True, type=bool)
+        )
+        self.ui.free_models_checkbox.setChecked(
+            settings.value('free_models_when_idle', True, type=bool)
         )
         self.ui.tools_page.set_smart_fill_textured(
             str(settings.value('smart_fill_textured', 'model'))
@@ -606,15 +630,10 @@ class SettingsPage(QtWidgets.QWidget):
         if save_keys:
             for service in self.ui.credential_services:
                 translated_service = self.ui.value_mappings.get(service, service)
-                
-                if translated_service == "Custom":
-                    self.ui.credential_widgets[f"{translated_service}_api_key"].setText(settings.value(f"{translated_service}_api_key", ''))
-                    self.ui.credential_widgets[f"{translated_service}_api_url"].setText(settings.value(f"{translated_service}_api_url", ''))
-                    self.ui.credential_widgets[f"{translated_service}_model"].setText(settings.value(f"{translated_service}_model", ''))
-                elif translated_service == "OpenRouter":
-                    self.ui.credential_widgets[f"{translated_service}_api_key"].setText(settings.value(f"{translated_service}_api_key", ''))
-                    self.ui.credential_widgets[f"{translated_service}_model"].setText(settings.value(f"{translated_service}_model", ''))
-                    self.ui.credential_widgets[f"{translated_service}_ocr_model"].setText(settings.value(f"{translated_service}_ocr_model", ''))
+                for field in credential_fields(translated_service):
+                    widget = self.ui.credential_widgets.get(f"{translated_service}_{field}")
+                    if widget is not None:
+                        widget.setText(settings.value(f"{translated_service}_{field}", '') or '')
         settings.endGroup()
 
         # Initialize current language tracker after loading

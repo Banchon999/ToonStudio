@@ -403,7 +403,7 @@ class BatchProcessor:
 
             # Get Translations/ Export if selected
             extra_context = settings_page.get_extra_context(collect_source_text(blk_list))
-            translator_key = settings_page.get_tool_selection('translator')
+            translator_key = settings_page.get_translator_cache_key()
             translator = Translator(self.main_page, source_lang, target_lang)
             
             # Get translation cache key for batch processing
@@ -521,7 +521,7 @@ class BatchProcessor:
                 image, inpaint_blk_list,
                 default_padding=settings_page.get_mask_padding(),
                 bubble_inset=settings_page.get_bubble_inset(),
-                page_text_mask=segment_page(image, settings_page),
+                page_text_mask=segment_page(image, settings_page, inpaint_blk_list),
             )
             t1 = time.time()
             logger.info("pre-inpaint: mask generated in %.2fs (mask shape=%s)", t1 - t0, getattr(mask, 'shape', None))

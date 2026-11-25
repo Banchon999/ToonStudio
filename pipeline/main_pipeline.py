@@ -12,6 +12,21 @@ from pipeline.webtoon_batch import WebtoonBatchProcessor
 logger = logging.getLogger(__name__)
 
 
+def release_freed_memory() -> None:
+    """gc, then glibc's malloc_trim where there is one."""
+    import gc
+    import sys
+
+    gc.collect()
+    if sys.platform.startswith("linux"):
+        try:
+            import ctypes
+
+            ctypes.CDLL("libc.so.6").malloc_trim(0)
+        except Exception:
+            pass
+
+
 class ComicTranslatePipeline:
     """Main pipeline orchestrator for comic translation."""
     
@@ -77,12 +92,22 @@ class ComicTranslatePipeline:
         except Exception:
             pass
 
-        # Encourage Python-side cleanup; native allocators may still keep arenas.
+        # The text segmentation model, the largest one held between steps.
         try:
-            import gc
-            gc.collect()
+            from modules.detection.text_seg_onnx import release_segmenter
+            release_segmenter()
         except Exception:
             pass
+        try:
+            from modules.detection.text_mask_onnx import release_masker
+            release_masker()
+        except Exception:
+            pass
+
+        # Python's own cleanup, then hand the freed heap back to the system:
+        # glibc keeps large freed blocks otherwise, and the RSS would not move.
+        # (Windows' heap returns blocks this size by itself; macOS likewise.)
+        release_freed_memory()
 
     # Block detection methods (delegate to block_detection)
     def load_box_coords(self, blk_list):

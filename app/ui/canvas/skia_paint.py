@@ -252,6 +252,9 @@ def _needs_qt_layout(item) -> bool:
         return False
     from PySide6.QtGui import QFont, QTextCharFormat
 
+    # A gradient on some of the words: Skia's paragraph takes one paint per run.
+    if getattr(item, "range_gradients", ()):
+        return True
     block = document.begin()
     while block.isValid():
         fmt = block.blockFormat()

@@ -2,10 +2,11 @@
 
 Three changes, each pinned here:
 
-* The AOT and LaMa inpainters run on OpenVINO's CPU plugin (when it is
-  installed), in f32 — AOT went from 3.9 s to 2.8 s over a run of patch
-  sizes, with no pixel more than one grey level from ONNX Runtime's. A failure
-  falls back to ONNX Runtime, as the text segmentation model always has.
+* The AOT inpainter runs on OpenVINO's CPU plugin (when it is installed),
+  in f32 — 3.9 s to 2.8 s over a run of patch sizes, with no pixel more than
+  one grey level from ONNX Runtime's. A failure falls back to ONNX Runtime, as
+  the text segmentation model always has. (LaMa ran there too until its
+  memory was measured: tests/test_model_memory.py.)
 * The fast bubble fill's halo search builds every growth from one chain of
   single dilations instead of dilating from scratch per candidate (165
   dilations per bubble → 14), with identical masks.

@@ -195,7 +195,7 @@ class ManualWorkflowController:
         """
         if image is None:
             image = self.main.image_viewer.get_image_array()
-        page_text_mask = segment_page(image, self.main.settings_page) if image is not None else None
+        page_text_mask = segment_page(image, self.main.settings_page, blk_list) if image is not None else None
         build_stroke = self.main.image_viewer.drawing_manager.make_segmentation_stroke_data
         results = []
         for blk in blk_list:
@@ -433,7 +433,7 @@ class ManualWorkflowController:
                 self.main.lang_mapping,
             )
             settings_page = self.main.settings_page
-            translator_key = settings_page.get_tool_selection("translator")
+            translator_key = settings_page.get_translator_cache_key()
             upper_case = settings_page.ui.uppercase_checkbox.isChecked()
 
             glossary_issues: list = []

@@ -51,6 +51,10 @@ ensure_mandatory_models()
 # Toggle memory logging.
 ENABLE_MEMLOGGER = False
 
+# How long with no work before the AI models are freed (Settings › Tools).
+MODEL_IDLE_MS = 3 * 60 * 1000
+
+
 class ComicTranslate(ComicTranslateUI):
     image_processed = QtCore.Signal(int, object, str)
     patches_processed = QtCore.Signal(list, str)
@@ -136,6 +140,13 @@ class ComicTranslate(ComicTranslateUI):
         self.current_worker = None
         self._batch_active = False
         self._batch_cancel_requested = False
+        # The AI models are freed after a while with no work, so editing,
+        # reading or a browser alongside gets the memory back (~1–1.5 GB);
+        # the next step loads them again in a few seconds.
+        self._model_idle_timer = QtCore.QTimer(self)
+        self._model_idle_timer.setSingleShot(True)
+        self._model_idle_timer.setInterval(MODEL_IDLE_MS)
+        self._model_idle_timer.timeout.connect(self._release_idle_models)
 
         self.image_ctrl = ImageStateController(self)
         self.rect_item_ctrl = RectItemController(self)
@@ -1255,6 +1266,32 @@ class ComicTranslate(ComicTranslateUI):
         else:
             super().keyPressEvent(event)
 
+    def note_model_activity(self) -> None:
+        """A step just finished: start the idle count for freeing the models again."""
+        self._model_idle_timer.start()
+
+    def models_busy(self) -> bool:
+        runner = getattr(self, "task_runner_ctrl", None)
+        queued = bool(runner is not None and (runner.is_processing_queue or runner.operation_queue))
+        drawing = getattr(getattr(self, "image_viewer", None), "drawing_manager", None)
+        return (
+            queued
+            or self._batch_active
+            or self.threadpool.activeThreadCount() > 0
+            or bool(getattr(drawing, "pixel_busy", False))
+        )
+
+    def _release_idle_models(self) -> None:
+        settings = getattr(self, "settings_page", None)
+        if settings is not None and not settings.get_free_models_when_idle():
+            return
+        if self.models_busy():
+            self._model_idle_timer.start()  # try again later
+            return
+        if self.pipeline is not None:
+            self.pipeline.release_model_caches()
+            logging.getLogger(__name__).info("AI models freed after %d s with no work", MODEL_IDLE_MS // 1000)
+
     def closeEvent(self, event):
         try:
             self.text_ctrl._commit_pending_text_command()
@@ -1310,6 +1347,12 @@ class ComicTranslate(ComicTranslateUI):
                 os.rmdir(os.path.join(root, name))
         os.rmdir(self.temp_dir)
 
+        # The layout was saved above; a floating panel left on screen would
+        # outlive the window (and, owned by nothing, keep the app running).
+        try:
+            self.hide_floating_panels()
+        except Exception:
+            pass
         super().closeEvent(event)
 
     def shutdown(self):

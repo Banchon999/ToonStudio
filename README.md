@@ -114,7 +114,7 @@ Toon Studio ทำงานเป็นขั้นตอนเดียวก�
 | ขั้นตอน / Stage | ตัวเลือก / Options |
 |---|---|
 | ตรวจจับ / Detection | RT-DETR-v2 (บอลลูน + ข้อความ) · RT-DETR-v2 + Bubble Seg |
-| OCR | ค่าเริ่มต้นตามภาษา (manga-ocr ญี่ปุ่น, Pororo เกาหลี, PaddleOCR อื่นๆ) · PaddleOCR / PaddleOCR (Server) · Pororo · Microsoft OCR · Gemini · **OpenRouter** (โมเดลใดก็ได้ที่อ่านภาพได้) · EasyOCR และ PaddleOCR-VL (ติดตั้งเพิ่ม) |
+| OCR | ค่าเริ่มต้นตามภาษา (manga-ocr ญี่ปุ่น, Pororo เกาหลี, PaddleOCR อื่นๆ) · PaddleOCR / PaddleOCR (Server) · **Hayai (เกาหลี อังกฤษ ญี่ปุ่น)** อ่านแม่นที่สุดในตัวที่รันในเครื่อง · Pororo · Microsoft OCR · Gemini · **OpenRouter** (โมเดลใดก็ได้ที่อ่านภาพได้) · EasyOCR และ PaddleOCR-VL (ติดตั้งเพิ่ม) |
 | แปล / Translation | Gemini 3.1 Flash-Lite · GPT-4.1 / 4.1-mini · Claude 4.6 Sonnet / 4.5 Haiku · DeepSeek · **OpenRouter** · Custom (OpenAI-compatible) |
 | ลบข้อความ / Cleaning | เติมพื้นอัตโนมัติก่อนเสมอ แล้ว AOT · LaMa · Smart Fill สำหรับส่วนที่เหลือ · fast background fill first, then AOT, LaMa or Smart Fill |
 | วางข้อความ / Rendering | Skia หรือ Qt, ตัดคำไทยด้วย pythainlp, ตัวอักษรแนวตั้งสำหรับจีน/ญี่ปุ่น · Skia or Qt, Thai word breaking, vertical CJK |

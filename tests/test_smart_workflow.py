@@ -69,7 +69,7 @@ def window(qapp, monkeypatch, tmp_path):
     monkeypatch.setattr(manual_workflow, "validate_translator", lambda *a, **k: True)
     monkeypatch.setattr(manual_workflow, "validate_ocr", lambda *a, **k: True)
     monkeypatch.setattr(manual_workflow, "OCRProcessor", FakeOCR)
-    monkeypatch.setattr(manual_workflow, "segment_page", lambda image, settings: None)
+    monkeypatch.setattr(manual_workflow, "segment_page", lambda image, settings, blocks=None: None)
     monkeypatch.setattr(text_mod, "font_selected", lambda main: True)
     from app import validation
     monkeypatch.setattr(validation, "validate_translator", lambda *a, **k: True)

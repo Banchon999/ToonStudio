@@ -104,3 +104,99 @@ def test_a_window_whose_editor_was_never_shown_keeps_the_saved_layout(qapp):
         assert bytes(settings.value(DOCK_STATE_KEY)) == b"saved-by-a-real-session"
     finally:
         settings.remove(DOCK_STATE_KEY)
+
+
+def test_floating_panels_show_on_the_editor_page_only(win, qapp):
+    """A floating panel is its own window: it must not sit over the settings
+    or the home screen. One the user closed stays closed on coming back."""
+    color, gradients = win.panel_docks["dock_color"], win.panel_docks["dock_gradients"]
+    for dock in (color, gradients):
+        dock.setFloating(True)
+        dock.show()
+    qapp.processEvents()
+    gradients.close()
+    qapp.processEvents()
+    win.show_settings_page()
+    qapp.processEvents()
+    assert not color.isVisible()
+    win.show_main_page()
+    qapp.processEvents()
+    assert color.isVisible() and color.isFloating()
+    assert not gradients.isVisible(), "closed by the user, not by the page"
+    win.show_home_screen()
+    qapp.processEvents()
+    assert not color.isVisible()
+
+
+def test_a_layout_saved_from_another_page_keeps_its_floating_panels(qapp):
+    import controller
+    from app.ui.main_window.docks import DOCK_STATE_KEY
+
+    settings = QtCore.QSettings("ComicLabs", "ComicTranslate")
+    settings.remove(DOCK_STATE_KEY)
+    first = controller.ComicTranslate()
+    first.show()
+    first._center_stack.setCurrentWidget(first.main_content_widget)
+    for _ in range(3):
+        qapp.processEvents()
+    first.panel_docks["dock_color"].setFloating(True)
+    first.panel_docks["dock_color"].show()
+    first.show_settings_page()  # quit from the settings page
+    qapp.processEvents()
+    first._skip_close_prompt = True
+    first.close()
+    second = controller.ComicTranslate()
+    try:
+        second.show()
+        qapp.processEvents()
+        color = second.panel_docks["dock_color"]
+        assert color.isFloating()
+        assert not color.isVisible(), "not over the home screen the app opens on"
+        second._center_stack.setCurrentWidget(second.main_content_widget)
+        qapp.processEvents()
+        assert color.isVisible(), "shown once the editor (and the window) is"
+    finally:
+        second._skip_close_prompt = True
+        second.close()
+        settings.remove(DOCK_STATE_KEY)
+
+
+def test_a_restored_floating_panel_belongs_to_the_main_window(qapp):
+    """Reported as "after a restart the panels are gone though ticked in the
+    menu". The layout is restored while the window is built, before it has a
+    native window, so a panel restored as floating was owned by nothing: on a
+    real desktop it went behind the main window (seen on X11 with a window
+    manager, maximised window clicked), and it kept the app running after the
+    main window closed. Offscreen shows neither, so this checks the cause."""
+    import controller
+    from app.ui.main_window.docks import DOCK_STATE_KEY
+
+    settings = QtCore.QSettings("ComicLabs", "ComicTranslate")
+    settings.remove(DOCK_STATE_KEY)
+    first = controller.ComicTranslate()
+    first.show()
+    first._center_stack.setCurrentWidget(first.main_content_widget)
+    for _ in range(3):
+        qapp.processEvents()
+    first.panel_docks["dock_layers"].setFloating(True)
+    first.panel_docks["dock_layers"].show()
+    qapp.processEvents()
+    first._skip_close_prompt = True
+    first.close()
+    second = controller.ComicTranslate()
+    try:
+        second.show()
+        second._center_stack.setCurrentWidget(second.main_content_widget)
+        for _ in range(5):
+            qapp.processEvents()
+        layers = second.panel_docks["dock_layers"]
+        assert layers.isFloating() and layers.isVisible()
+        assert layers.windowHandle().transientParent() is second.windowHandle()
+        second._skip_close_prompt = True
+        second.close()
+        qapp.processEvents()
+        assert not layers.isVisible(), "no panel stays on screen after the app closes"
+    finally:
+        second._skip_close_prompt = True
+        second.close()
+        settings.remove(DOCK_STATE_KEY)

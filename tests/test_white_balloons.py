@@ -15,7 +15,7 @@ def no_segmentation_model(monkeypatch):
     mask; in a test's empty home that is a download. Thresholding it is."""
     from modules.utils import text_segmentation
 
-    monkeypatch.setattr(text_segmentation, "segment_page", lambda image, settings: None)
+    monkeypatch.setattr(text_segmentation, "segment_page", lambda image, settings, blocks=None: None)
 
 
 def _pump_until(qapp, condition, timeout_ms=20000):

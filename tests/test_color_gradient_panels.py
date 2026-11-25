@@ -50,6 +50,9 @@ def win(qapp):
     window.undo_group.addStack(stack)
     window.undo_group.setActiveStack(stack)
     window._stack = stack
+    # New text takes the toolbar's colour, which closing an earlier test's
+    # window saves to the settings: start from black.
+    window.block_font_color_button.setProperty("selected_color", "#000000")
     window.type_text_button.setChecked(True)
     window.toggle_type_text_tool()
     items = []
@@ -106,6 +109,7 @@ def test_both_panels_are_dock_windows_beside_character(win):
 
 def test_dragging_a_colour_previews_and_settles_as_one_undo_step(win):
     one, two, three = win._items
+    three_before = _colours(three)
     _select(win, one, two)
     before = win._stack.count()
     panel = win.color_panel
@@ -115,7 +119,7 @@ def test_dragging_a_colour_previews_and_settles_as_one_undo_step(win):
     assert win._stack.count() == before, "nothing is an undo step until the release"
     panel.square.released.emit()
     assert win._stack.count() == before + 1, "one step for both layers"
-    assert "#ff0000" not in _colours(three), "an unselected layer is left alone"
+    assert _colours(three) == three_before, "an unselected layer is left alone"
     assert QtGui.QColor(one.text_color).name() == "#ff0000"
     assert win.block_font_color_button.property("selected_color") == "#ff0000"
     win._stack.undo()

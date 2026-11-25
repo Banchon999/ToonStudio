@@ -25,6 +25,41 @@ from modules.rendering.text_effects import (
 )
 
 
+def _linear(brush):
+    gradient = brush.gradient() if brush is not None else None
+    if gradient is None or gradient.type() != QGradient.Type.LinearGradient:
+        return None
+    return gradient if isinstance(gradient, QLinearGradient) else QLinearGradient(gradient)
+
+
+def _gradient_key(brush):
+    """(start colour, end colour, angle) of a linear gradient brush, else None."""
+    gradient = _linear(brush)
+    if gradient is None:
+        return None
+    stops = gradient.stops()
+    if len(stops) < 2:
+        return None
+    start, stop = gradient.start(), gradient.finalStop()
+    angle = round(math.degrees(math.atan2(stop.y() - start.y(), stop.x() - start.x())), 3) % 360.0
+    return (QColor(stops[0][1]).name(QColor.NameFormat.HexArgb),
+            QColor(stops[-1][1]).name(QColor.NameFormat.HexArgb), angle)
+
+
+def _gradient_geometry(brush):
+    gradient = _linear(brush)
+    if gradient is None:
+        return None
+    start, stop = gradient.start(), gradient.finalStop()
+    return (round(start.x(), 2), round(start.y(), 2), round(stop.x(), 2), round(stop.y(), 2))
+
+
+def _line_x(line, position: int) -> float:
+    """QTextLine.cursorToX, whichever shape PySide returns it in."""
+    x = line.cursorToX(position)
+    return float(x[0] if isinstance(x, (tuple, list)) else x)
+
+
 @dataclass
 class TextBlockState:
     rect: tuple  
@@ -109,6 +144,7 @@ class TextBlockItem(QGraphicsTextItem):
         self.gradient_enabled = False
         self.gradient_color = QColor(255, 255, 255)
         self.gradient_angle = 90.0
+        self._applying_range_gradients = False
         # Outer glow (core.text_glow): a halo of one colour round the drawn
         # text; the colour's alpha is its strength, `glow_size` how far it reaches.
         self.glow_enabled = False
@@ -436,6 +472,7 @@ class TextBlockItem(QGraphicsTextItem):
         self.apply_quad()
         self.apply_shadow()
         self.apply_letter_spacing()
+        self.apply_range_gradients()
 
     def set_shadow(self, enabled: bool, color: QColor = None, offset=None, blur: float = None):
         """Drop shadow behind the whole item, outline included.
@@ -756,6 +793,9 @@ class TextBlockItem(QGraphicsTextItem):
         # contentsChanged; without this the re-apply would recurse.
         if self._applying_gradient:
             return
+        # The whole-text brush is laid over every character; the range
+        # gradients are read first and laid back on top after.
+        ranges = self.range_gradients
         self._applying_gradient = True
         try:
             cursor = QTextCursor(self.document())
@@ -765,7 +805,176 @@ class TextBlockItem(QGraphicsTextItem):
             cursor.mergeCharFormat(char_format)
         finally:
             self._applying_gradient = False
+        self._laid_whole = self._whole_gradient_key() if self.gradient_enabled else None
+        # A whole-text fill replaced every run's brush; the ranges go back on top.
+        self._lay_ranges(ranges)
         self.update()
+
+    # ------------------------------------------------------------------
+    # Gradient on a range of the text
+    # ------------------------------------------------------------------
+    #
+    # A range gradient is nothing but a gradient brush in the characters' own
+    # format, so it moves with edits (typed text takes its neighbour's
+    # format), and Qt's HTML keeps it — through saving, undo and export —
+    # with no record of its own. What goes stale is its geometry: the brush
+    # is in document coordinates, sized to the words as they were laid out.
+    # `apply_range_gradients` re-reads the ranges from the document and sizes
+    # each to its words again whenever the text or its width changes.
+
+    @property
+    def range_gradients(self) -> tuple:
+        """(start, end, start colour, end colour, angle) for each range
+        gradient: neighbouring characters with the same gradient brush,
+        minus the whole-text gradient's."""
+        # The whole-text gradient is not a range: neither the one on now nor
+        # the one last laid (still on the characters while it is turned off).
+        # A range with the very same colours and angle reads as part of it.
+        whole = {getattr(self, "_laid_whole", None)}
+        if getattr(self, "gradient_enabled", False):
+            whole.add(self._whole_gradient_key())
+        found = []
+        block = self.document().begin()
+        while block.isValid():
+            it = block.begin()
+            while not it.atEnd():
+                fragment = it.fragment()
+                brush = fragment.charFormat().foreground()
+                key = _gradient_key(brush)
+                if key is not None and key not in whole:
+                    start, end = fragment.position(), fragment.position() + fragment.length()
+                    if found and found[-1][5] == key and found[-1][1] == start:
+                        found[-1][1] = end
+                    else:
+                        found.append([start, end, *key[:2], key[2], key])
+                it += 1
+            block = block.next()
+        return tuple((s, e, c1, c2, angle) for s, e, c1, c2, angle, _key in found)
+
+    def _whole_gradient_key(self):
+        # Colours and angle only: the whole-text brush's geometry is whatever
+        # size the document had when it was laid (or saved), not now.
+        return _gradient_key(self.fill_brush())
+
+    def set_range_gradient(self, start: int, end: int, color1, color2, angle: float) -> None:
+        """Fade the characters [start, end) from `color1` to `color2`."""
+        start, end = sorted((int(start), int(end)))
+        if end <= start:
+            return
+        self._lay_ranges([(start, end, QColor(color1).name(QColor.NameFormat.HexArgb),
+                           QColor(color2).name(QColor.NameFormat.HexArgb), float(angle))])
+        # The rest of a range this one cut through is sized to what is left of it.
+        self.apply_range_gradients()
+
+    def remove_range_gradients(self, start: int, end: int) -> bool:
+        """Take range gradients off [start, end); those characters go back to
+        the item's colour. True when there was one to take off."""
+        start, end = sorted((int(start), int(end)))
+        covered = [(max(s, start), min(e, end)) for s, e, *_ in self.range_gradients if s < end and e > start]
+        if not covered:
+            return False
+        plain = QTextCharFormat()
+        plain.setForeground(QBrush(QColor(self.text_color) if self.text_color else QColor(0, 0, 0)))
+        self._applying_range_gradients = True
+        try:
+            for a, b in covered:
+                cursor = QTextCursor(self.document())
+                cursor.setPosition(a)
+                cursor.setPosition(b, QTextCursor.MoveMode.KeepAnchor)
+                cursor.mergeCharFormat(plain)
+        finally:
+            self._applying_range_gradients = False
+        self.apply_range_gradients()
+        return True
+
+    def range_gradient_at(self, position: int):
+        """The range gradient covering `position`, or None."""
+        for entry in self.range_gradients:
+            if entry[0] <= position < entry[1]:
+                return entry
+        return None
+
+    def _range_rect(self, start: int, end: int) -> QRectF:
+        """The laid-out box of the characters [start, end), in document coordinates."""
+        rect = QRectF()
+        block = self.document().findBlock(start)
+        while block.isValid() and block.position() < end:
+            layout = block.layout()
+            base = block.position()
+            origin = layout.position()
+            for i in range(layout.lineCount()):
+                line = layout.lineAt(i)
+                line_start = base + line.textStart()
+                a, b = max(start, line_start), min(end, line_start + line.textLength())
+                if a >= b:
+                    continue
+                x1 = _line_x(line, a - base)
+                x2 = _line_x(line, b - base)
+                part = QRectF(origin.x() + min(x1, x2), origin.y() + line.y(), abs(x2 - x1), line.height())
+                rect = part if rect.isNull() else rect.united(part)
+            block = block.next()
+        if rect.isNull() or rect.width() <= 0 or rect.height() <= 0:
+            # A vertical layout places its glyphs itself: span the document.
+            size = self.document().size()
+            rect = QRectF(0, 0, size.width(), size.height())
+        return rect
+
+    def apply_range_gradients(self) -> None:
+        """Size every range gradient to its characters as they are laid out now."""
+        if not self._applying_range_gradients:
+            self._lay_ranges(self.range_gradients)
+
+    def _lay_ranges(self, ranges) -> None:
+        if self._applying_range_gradients or not ranges:
+            return
+        document = self.document()
+        last = max(0, document.characterCount() - 1)
+        changed = False
+        self._applying_range_gradients = True
+        try:
+            for s, e, c1, c2, angle in ranges:
+                s, e = min(s, last), min(e, last)
+                if e <= s:
+                    continue
+                rect = self._range_rect(s, e)
+                x1, y1, x2, y2 = gradient_line(rect.width(), rect.height(), angle)
+                gradient = QLinearGradient(rect.left() + x1, rect.top() + y1, rect.left() + x2, rect.top() + y2)
+                gradient.setCoordinateMode(QGradient.CoordinateMode.LogicalMode)
+                gradient.setColorAt(0.0, QColor(c1))
+                gradient.setColorAt(1.0, QColor(c2))
+                brush = QBrush(gradient)
+                cursor = QTextCursor(document)
+                cursor.setPosition(s)
+                cursor.setPosition(e, QTextCursor.MoveMode.KeepAnchor)
+                # Unchanged geometry: no edit, so no echo and no churn per keystroke.
+                if _gradient_key(cursor.charFormat().foreground()) == _gradient_key(brush) \
+                        and _gradient_geometry(cursor.charFormat().foreground()) == _gradient_geometry(brush) \
+                        and self._uniform_brush(s, e, brush):
+                    continue
+                char_format = QTextCharFormat()
+                char_format.setForeground(brush)
+                cursor.mergeCharFormat(char_format)
+                changed = True
+        finally:
+            self._applying_range_gradients = False
+        if changed:
+            self.update()
+
+    def _uniform_brush(self, start: int, end: int, brush: QBrush) -> bool:
+        """Every character in [start, end) already wears `brush`."""
+        want = (_gradient_key(brush), _gradient_geometry(brush))
+        block = self.document().findBlock(start)
+        while block.isValid() and block.position() < end:
+            it = block.begin()
+            while not it.atEnd():
+                fragment = it.fragment()
+                if fragment.position() < end and fragment.position() + fragment.length() > start:
+                    have = fragment.charFormat().foreground()
+                    if (_gradient_key(have), _gradient_geometry(have)) != want:
+                        return False
+                it += 1
+            block = block.next()
+        return True
 
     # ------------------------------------------------------------------
     # Curved text
@@ -1138,6 +1347,9 @@ class TextBlockItem(QGraphicsTextItem):
         # The quad is a fraction of the box, so a new width re-shapes it.
         if getattr(self, 'quad', None):
             self.apply_quad()
+        # New line breaks move the words a range gradient spans.
+        if hasattr(self, '_applying_range_gradients'):
+            self.apply_range_gradients()
 
     def update_text_width(self):
         width = self.document().size().width()
@@ -1746,10 +1958,14 @@ class TextBlockItem(QGraphicsTextItem):
         self.update_outlines()
         if self.quad:
             self.apply_quad()
-        if self.gradient_enabled:
+        # A range gradient being laid is a format edit of our own; laying the
+        # whole-text gradient again in its echo would paint over it.
+        if self.gradient_enabled and not getattr(self, "_applying_range_gradients", False):
             # The gradient spans the laid-out document, so it has to be
             # rebuilt whenever the text that document holds changes size.
             self.apply_gradient()
+        if not getattr(self, "_applying_range_gradients", True) and not getattr(self, "_applying_gradient", False):
+            self.apply_range_gradients()
 
     def mouseMoveEvent(self, event):
         # Resize/rotate/move logic is now handled by EventHandler and QGraphicsView
