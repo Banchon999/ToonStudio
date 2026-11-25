@@ -44,3 +44,43 @@ Time each stage with `time.perf_counter()` and profile it with `cProfile`
 `scripts/build_readme_images.py` (`_blocks_from_cache`, the same `_Settings`
 stand-in) and on a stacked webtoon page. Run every stage twice: the first run
 includes loading, checksums and compiling, the second shows the steady state.
+
+## GPU: "Use GPU" is hidden unless onnxruntime-gpu is installed (noted 2026-11-25)
+
+The owner has an RTX 2060 and asked whether the app knows it. It does not look
+for a card: `modules/utils/device.is_gpu_available()` asks whether the
+installed `onnxruntime` offers a non-CPU provider, and Settings › Tools › "Use
+GPU" (`tools_page.py`) is **hidden** when it does not. `requirements.txt` and
+every build workflow install plain `onnxruntime`, so the Windows installer and
+zips (presumably; the bundles were not opened) have no GPU path at all: no
+checkbox, CPU only, whatever card is in the machine. Making a GPU build
+(onnxruntime-gpu plus the CUDA/cuDNN DLLs) is not done and would be a large
+download; to be decided.
+
+Measured 2026-11-25 on RunPod (RTX 4090, Secure Cloud; Xeon with 4/8/16 cores
+pinned by `taskset` for the CPU rows), 6 English webtoon pages from the owner's
+Google Drive folder (not in the repo, third-party art) cut into 84 chunks of
+2400 px, the real stages per chunk (detect, OCR, text segmentation, mask,
+inpaint; no translation), default engines (RT-DETR-v2, PP-OCR, ctd, AOT):
+
+| Config | Seconds for 84 chunks |
+|---|---|
+| GPU | 81 |
+| CPU 16 / 8 / 4 cores | 213 / 263 / 366 |
+| GPU + 8-core CPU process side by side | 0.99 chunks/s combined vs 1.12 for the GPU alone on the same 8 cores: adding the CPU did not help |
+
+- Text segmentation is what is slow on a CPU (150–250 s of the 263–366 s).
+  comic-text-mask (ctm): GPU 2 s vs 11 s for ctd, CPU 8 cores 82 s vs 149 s.
+- LaMa matches AOT on a GPU (82 s vs 81 s) but is about twice as slow on 8 CPU
+  cores (543 s vs 263 s).
+- Hayai OCR always runs on the CPU (`hayai_ocr.py` fixes the provider): with
+  "Use GPU" on, OCR went from 11 s to 448 s, the whole run to 534 s.
+- Not measured: **VRAM** (peak use on tall pages with AOT/LaMa, relevant to a
+  6 GB card), and any card other than the 4090. A 2060 is not rentable on
+  RunPod; the nearest are the 3070/A2000.
+
+Traps found on the way: `onnxruntime-gpu` 1.32 needs CUDA 13 and silently
+cannot use a GPU on a CUDA 12 image (1.24.1 works; `runpod/Dockerfile` installs
+it unpinned); two RunPod Community Cloud hosts failed `cuInit` with error 999
+while `nvidia-smi` worked, Secure Cloud was fine. The benchmark script lived in
+the session scratchpad and is not in the repo.
